@@ -1,0 +1,66 @@
+---
+title: "Set Up Slack Bot"
+description: "Connect Zell to your Slack workspace for real-time notifications"
+icon: "slack"
+---
+
+## Overview
+
+The Slack integration sends real-time notifications to your team about key events like feedback submissions, course completions, and training reminders. This guide shows you how to connect Zell to your Slack workspace.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    From anywhere in the app, click your avatar and select **Tenant Settings**.
+  </Step>
+
+  <Step title="Find Slack Integration">
+    In Settings, navigate to **Integrations** (or **Apps**) and locate **Slack**.
+  </Step>
+
+  <Step title="Connect to Slack">
+    Click **Connect to Slack**. A Slack authorization window will open for your workspace.
+
+    <Warning>You'll need admin rights in your Slack workspace to complete this authorization.</Warning>
+  </Step>
+
+  <Step title="Authorize the App">
+    1. Choose your workspace from the dropdown
+    2. Review the requested permissions
+    3. Click **Allow** to grant access
+
+    The app requires permissions to:
+    - Post messages to channels
+    - Read channel information
+    - Send direct messages (for personal notifications)
+  </Step>
+
+  <Step title="Confirm Connection">
+    Back in the Zell app, you should see Slack listed as **Connected** with a green indicator.
+
+    <Check>Connection successful! Your Slack integration is now active.</Check>
+  </Step>
+</Steps>
+
+## Notification Types
+
+The integration will automatically post notifications to your configured Slack channels for these events:
+
+<CardGroup cols={2}>
+  <Card title="Feedback Submitted" icon="comment">
+    When managers or peers submit feedback on a call or email
+  </Card>
+
+  <Card title="Course Events" icon="graduation-cap">
+    Enrollment confirmations and completion reminders
+  </Card>
+
+  <Card title="Task Assignments" icon="list-check">
+    When new tasks are assigned to team members
+  </Card>
+
+  <Card title="Training Reminders" icon="bell">
+    Automated reminders for upcoming training sessions
+  </Card>
+</CardGroup>

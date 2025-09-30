@@ -1,0 +1,199 @@
+---
+title: "Set Up a Course"
+description: "Create comprehensive training courses with modules, steps, and automated enrollment"
+icon: "graduation-cap"
+---
+
+## Overview
+
+Courses provide structured learning paths for your team with multiple modules, text content, and agent practice sessions. You can set deadlines and track progress through each step.
+
+## Creating a Course
+
+<Steps>
+  <Step title="Navigate to Courses">
+    Go to **Team Management** → **Courses** in the main navigation.
+  </Step>
+
+  <Step title="Create a Course">
+    Click **Create Course** to start building a new course from scratch.
+  </Step>
+
+  <Step title="Set Title & Description">
+    Configure the basic course information:
+
+    - **Title:** Enter a clear, descriptive course name (minimum 3 characters)
+    - **Description:** Summarize what learners will achieve (minimum 3 characters)
+
+    **Example:**
+    - Title: "Sales Fundamentals Bootcamp"
+    - Description: "Master consultative selling through interactive lessons and practice sessions with AI prospects."
+  </Step>
+
+  <Step title="Add Modules">
+    Organize your course content into logical modules. Click **Add Module** for each major topic.
+
+    For each module, provide:
+    - **Module Title:** The name of this section (e.g., "Discovery Fundamentals")
+    - **Module Description:** What participants will learn in this module
+
+    <Note>Modules appear in the order you create them.</Note>
+  </Step>
+
+  <Step title="Add Steps to Each Module">
+    Inside each module, click **Add Step** and choose the step type:
+
+    **Text Step:** Educational content, instructions, or reference materials
+    - **Title:** Name of the step
+    - **Description:** Optional additional context
+    - **Content:** The actual text content for learners to read
+
+    **Agent Call Step:** Practice sessions with AI agents
+    - **Title:** Name of the practice session
+    - **Agent:** Select which bot learners will practice with
+    - **Call Goal:** Number of calls required to complete this step (minimum 1)
+
+    <Tip>Alternate between text steps (learning) and agent call steps (practice) for better retention.</Tip>
+  </Step>
+
+  <Step title="Set Course End Date (Optional)">
+    Optionally set a deadline for course completion to drive urgency and track progress.
+  </Step>
+
+  <Step title="Enroll Users">
+    Select which team members should be enrolled in this course. You can:
+    - Select multiple users at once
+    - Add more users later after creation
+
+    <Note>Enrolled users will see the course on their dashboard immediately.</Note>
+  </Step>
+
+  <Step title="Save Course">
+    Click **Create** to save the course and make it available to enrolled users.
+  </Step>
+</Steps>
+
+## Step Types
+
+### Text Step
+
+Text steps deliver written educational content to learners.
+
+**Fields:**
+- **Title:** Name of the step (required, minimum 3 characters)
+- **Description:** Optional additional context
+- **Content:** The actual text content learners will read
+
+**Use Cases:**
+- Introduction to concepts
+- Theory and frameworks
+- Best practices guides
+- Scripts and talk tracks
+- Reference materials
+
+### Agent Call Step
+
+Agent call steps require learners to complete practice conversations with AI bots.
+
+**Fields:**
+- **Title:** Name of the practice session (required, minimum 3 characters)
+- **Agent:** Select which bot learners will practice with (required)
+- **Call Goal:** Number of practice calls required to complete this step (minimum 1)
+
+**Use Cases:**
+- Applying learned techniques
+- Building muscle memory
+- Handling specific scenarios
+- Skill practice and assessment
+
+## Example Course Structure
+
+Here's a complete example of a well-structured course:
+
+<Accordion title="Sales Fundamentals Bootcamp - 2 Week Course">
+
+**Module 1: Discovery Fundamentals** (Days 1-3)
+1. Text Step: "Introduction to Consultative Selling"
+2. Text Step: "The SPIN Questioning Framework"
+3. Agent Call Step: Practice discovery calls (3 calls with "Friendly Prospect")
+
+**Module 2: Qualifying Prospects** (Days 4-6)
+1. Text Step: "BANT Qualification Framework"
+2. Text Step: "Reading Buying Signals"
+3. Agent Call Step: Qualification practice (3 calls with "Mixed Signals Prospect")
+
+**Module 3: Presenting Solutions** (Days 7-9)
+1. Text Step: "Features vs Benefits"
+2. Text Step: "Tailoring Your Pitch"
+3. Agent Call Step: Pitch practice (3 calls with "Technical Buyer")
+
+**Module 4: Handling Objections** (Days 10-12)
+1. Text Step: "Common Objections and Responses"
+2. Text Step: "The Feel-Felt-Found Method"
+3. Agent Call Step: Objection handling drills (5 calls with "Skeptical Prospect")
+
+**Module 5: Closing Techniques** (Days 13-14)
+1. Text Step: "Recognizing Buying Signals"
+2. Text Step: "Trial Closes and Assumptive Closes"
+3. Agent Call Step: Full cycle role plays (3 calls with "Ready-to-Buy Prospect")
+
+</Accordion>
+
+## Managing Courses
+
+### Viewing Courses
+
+Navigate to **Team Management** → **Courses** to see all courses with:
+- Course title and description
+- Number of enrolled users
+- Total steps across all modules
+- Overall progress percentage
+- Enrolled user details and individual progress
+
+### Editing a Course
+
+To update an existing course:
+1. Navigate to the course you want to edit
+2. Update course details (title, description, end date)
+3. Modify modules (add, edit, remove)
+4. Adjust enrolled users
+5. Save your changes
+
+<Note>Changes to course structure affect all enrolled users going forward.</Note>
+
+### Tracking Progress
+
+For each course, you can monitor:
+- **Enrollment count:** How many users are enrolled
+- **Overall progress:** Average completion percentage across all users
+- **Individual progress:** Each user's completion status
+- **Completed steps:** Number of steps each user has finished
+- **Module completion:** Which modules users have completed
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start with Theory" icon="book">
+    Begin each module with text steps explaining concepts before practice.
+  </Card>
+
+  <Card title="Alternate Learning & Practice" icon="repeat">
+    Alternate between text (learning) and agent calls (practice) for better retention.
+  </Card>
+
+  <Card title="Progressive Difficulty" icon="stairs">
+    Start with easier scenarios and gradually increase complexity.
+  </Card>
+
+  <Card title="Bite-Sized Modules" icon="cookie-bite">
+    Keep modules focused on one skill to avoid overwhelming learners.
+  </Card>
+
+  <Card title="Clear Objectives" icon="target">
+    State learning outcomes upfront so learners know what to expect.
+  </Card>
+
+  <Card title="Provide Resources" icon="folder-open">
+    Include reference materials learners can return to after completion.
+  </Card>
+</CardGroup>

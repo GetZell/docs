@@ -1,0 +1,223 @@
+---
+title: "Assign People to Groups"
+description: "Organize your team into groups and assign bots for targeted training"
+icon: "users"
+---
+
+## Overview
+
+Groups help you organize team members and assign relevant training bots based on roles, departments, or skill levels. This makes it easy to manage permissions, distribute content, and track progress across different segments of your team.
+
+## Understanding Groups
+
+Groups help you organize users, bots, and personas together for easier management and targeted training.
+
+<CardGroup cols={2}>
+  <Card title="Team Organization" icon="sitemap">
+    Structure your organization by department, role, or skill level.
+  </Card>
+
+  <Card title="Targeted Access" icon="bullseye">
+    Control which users can access specific bots and personas.
+  </Card>
+
+  <Card title="Simplified Management" icon="sliders">
+    Manage user and bot assignments in one place.
+  </Card>
+
+  <Card title="Flexible Structure" icon="layer-group">
+    Users, bots, and personas can belong to multiple groups.
+  </Card>
+</CardGroup>
+
+## Managing Groups
+
+### Navigate to Groups
+
+<Steps>
+  <Step title="Go to Team Management">
+    Navigate to **Team Management** in the main menu.
+  </Step>
+
+  <Step title="View Groups Table">
+    You'll see a table with all groups showing:
+    - **Group Name**
+    - **Number of Users** in the group
+    - **Number of Bots** assigned
+    - **Number of Personas** assigned
+  </Step>
+</Steps>
+
+## Working with Groups
+
+### View Group Details
+
+Click on a group row to expand and see:
+- **Users:** All team members in the group with avatars and names
+- **Bots:** All AI agents assigned to the group
+- **Personas:** All personas assigned to the group
+
+<Note>The expanded view shows all assigned users, bots, and personas with options to add or remove each.</Note>
+
+### Add Users to a Group
+
+<Steps>
+  <Step title="Expand the Group">
+    Click on the group row to expand it and see the Users section.
+  </Step>
+
+  <Step title="Click Add Button">
+    Click the **+** (Add) button in the Users section.
+  </Step>
+
+  <Step title="Select a User">
+    A popover will appear with all available users. Click on a user to add them to the group.
+    - View user names and email addresses
+    - Users already in the group won't appear in the list
+
+    <Tip>Users can belong to multiple groups simultaneously.</Tip>
+  </Step>
+
+  <Step title="User Added">
+    The user is immediately added to the group and will now have access to all bots and personas assigned to this group.
+  </Step>
+</Steps>
+
+### Add Bots to a Group
+
+<Steps>
+  <Step title="Expand the Group">
+    Click on the group row to expand it and see the Bots section.
+  </Step>
+
+  <Step title="Click Add Button">
+    Click the **+** (Add) button in the Bots section.
+  </Step>
+
+  <Step title="Select a Bot">
+    A popover will appear with all available bots. Click on a bot to add it to the group.
+    - View bot names and feature badges
+    - Bots already in the group won't appear in the list
+  </Step>
+
+  <Step title="Bot Added">
+    The bot is immediately assigned to the group and becomes available to all users in this group.
+  </Step>
+</Steps>
+
+### Add Personas to a Group
+
+<Steps>
+  <Step title="Expand the Group">
+    Click on the group row to expand it and see the Personas section.
+  </Step>
+
+  <Step title="Click Add Button">
+    Click the **+** (Add) button in the Personas section.
+  </Step>
+
+  <Step title="Select a Persona">
+    A popover will appear with all available personas. Click on a persona to add it to the group.
+    - View persona names
+    - Personas already in the group won't appear in the list
+  </Step>
+
+  <Step title="Persona Added">
+    The persona is immediately assigned to the group.
+  </Step>
+</Steps>
+
+### Remove Users from a Group
+
+<Steps>
+  <Step title="Expand the Group">
+    Click on the group row to see all users.
+  </Step>
+
+  <Step title="Hover Over User">
+    Hover over the user card you want to remove.
+  </Step>
+
+  <Step title="Click Remove">
+    Click the trash icon that appears on hover.
+
+    <Warning>The user is immediately removed from the group and loses access to group-specific bots and personas.</Warning>
+  </Step>
+</Steps>
+
+### Remove Bots or Personas from a Group
+
+The process is the same:
+1. Expand the group
+2. Hover over the bot or persona card
+3. Click the trash icon that appears
+
+<Note>Removing a bot or persona from a group immediately removes access for all users in that group.</Note>
+
+## Group Management Actions
+
+### Create a New Group
+
+<Steps>
+  <Step title="Click Create Group">
+    From the Groups page, click the **Create New Group** button.
+  </Step>
+
+  <Step title="Enter Group Name">
+    A dialog will appear. Enter a descriptive name for the group:
+    - Department-based: "Sales Team", "Support Team"
+    - Role-based: "Account Executives", "SDRs", "Managers"
+    - Skill-based: "New Hires", "Advanced Users"
+  </Step>
+
+  <Step title="Create">
+    Click **Create** to save the new group.
+
+    <Tip>You can add users, bots, and personas to the group after creation.</Tip>
+  </Step>
+</Steps>
+
+### Edit a Group Name
+
+To rename a group, use the edit functionality in the groups table to update the group name.
+
+<Note>Group name is the primary editable field. Add/remove users, bots, and personas using the methods described above.</Note>
+
+### Delete a Group
+
+To delete a group, use the delete action in the groups table.
+
+<Warning>
+When you delete a group:
+- Users in the group are not deleted, only their group membership
+- Bot and persona assignments to the group are removed
+- Users lose access to bots/personas that were only available through this group
+</Warning>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Groups Meaningful" icon="lightbulb">
+    Create groups that reflect actual training needs, not just org chart structure.
+  </Card>
+
+  <Card title="Allow Multiple Memberships" icon="layer-group">
+    Users can belong to multiple groups for cross-functional training.
+  </Card>
+
+  <Card title="Review Regularly" icon="calendar-check">
+    Audit group memberships quarterly to ensure they're still relevant.
+  </Card>
+
+  <Card title="Document Purpose" icon="file-lines">
+    Use clear names and descriptions so everyone understands each group's purpose.
+  </Card>
+
+  <Card title="Start Simple" icon="seedling">
+    Begin with a few broad groups, then refine as needs become clearer.
+  </Card>
+
+  <Card title="Review Memberships" icon="users-round">
+    Periodically review who is in each group to ensure proper access.
+  </Card>
+</CardGroup>
