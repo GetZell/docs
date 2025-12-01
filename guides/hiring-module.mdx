@@ -1,7 +1,7 @@
 ---
 title: "Hiring Module"
 description: "Use Zell's hiring module to evaluate candidates through AI-powered simulations"
-icon: "user-tie"
+icon: "user"
 ---
 
 ## Overview
@@ -11,19 +11,19 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
 ## Why Use the Hiring Module?
 
 <CardGroup cols={2}>
-  <Card title="Objective Assessment" icon="scale-balanced">
+  <Card title="Objective Assessment" icon="scale">
     Remove bias with standardized scenarios and AI evaluation criteria.
   </Card>
 
-  <Card title="Real-World Simulation" icon="briefcase">
-    See how candidates handle actual situations they'll face on the job.
-  </Card>
+<Card title="Real-World Simulation" icon="briefcase">
+  See how candidates handle actual situations they'll face on the job.
+</Card>
 
-  <Card title="Time Efficiency" icon="clock">
-    Screen more candidates in less time with automated simulations.
-  </Card>
+<Card title="Time Efficiency" icon="clock">
+  Screen more candidates in less time with automated simulations.
+</Card>
 
-  <Card title="Better Hiring Decisions" icon="check-circle">
+  <Card title="Better Hiring Decisions" icon="circle-check">
     Make data-driven choices based on performance, not just interviews.
   </Card>
 </CardGroup>
@@ -37,9 +37,9 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
     Go to **Team Management** → **Hiring** in the main menu.
   </Step>
 
-  <Step title="Create Assessment">
-    Click **Create New Assessment** to begin configuring your hiring evaluation.
-  </Step>
+<Step title="Create Assessment">
+  Click **Create New Assessment** to begin configuring your hiring evaluation.
+</Step>
 
   <Step title="Name the Assessment">
     Enter a clear name that reflects the role and scenario:
@@ -48,6 +48,7 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
     - "Customer Support - Difficult Customer Scenario"
 
     <Tip>Include the role name so you can easily identify assessments later.</Tip>
+
   </Step>
 
   <Step title="Add Steps">
@@ -58,12 +59,14 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
     - **Agent:** Select which AI bot candidates will interact with
 
     <Note>You can add multiple steps with different bots to create a comprehensive assessment.</Note>
+
   </Step>
 
   <Step title="Set Attempts">
     Define the number of attempts candidates have to complete the assessment.
 
     <Tip>Allowing multiple attempts lets candidates improve and shows their learning ability.</Tip>
+
   </Step>
 
   <Step title="Add Instructions">
@@ -75,11 +78,13 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
 
     **Example:**
     > "You'll practice calls with potential customers. Your goal is to identify their pain points, present relevant solutions, and handle objections professionally."
+
   </Step>
 
-  <Step title="Show Results to Candidate">
-    Choose whether candidates can see their performance results after completing the assessment.
-  </Step>
+<Step title="Show Results to Candidate">
+  Choose whether candidates can see their performance results after completing
+  the assessment.
+</Step>
 
   <Step title="Save Assessment">
     Click **Save** to create the hiring assessment.
@@ -95,18 +100,45 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
     Navigate to the assessment you want to send to candidates.
   </Step>
 
-  <Step title="Click Send Invitation">
-    Click the **Send Invitation** button to open the invitation popover.
-  </Step>
+<Step title="Click Send Invitation">
+  Click the **Send Invitation** button to open the invitation popover.
+</Step>
 
-  <Step title="Enter Email">
-    Enter the candidate's email address in the popover.
-  </Step>
+<Step title="Enter Email">
+  Enter the candidate's email address in the popover.
+</Step>
 
   <Step title="Send">
     Click **Send** to send the invitation email to the candidate.
   </Step>
 </Steps>
+
+### Invitation Validity and Expiration
+
+Invitations have a validity period that determines how long candidates have to access and complete the assessment:
+
+- **Default validity:** 5 days (configurable from 1-7 days when creating the assessment)
+- **Expiration:** Invitations automatically expire after the validity period
+
+<Note>
+  Invitations cannot be accessed after they expire. If a candidate needs more
+  time, you'll need to send them a new invitation.
+</Note>
+
+### Invitation Statuses
+
+Invitations can have the following statuses:
+
+- **Pending:** Invitation sent but candidate hasn't started yet
+- **Started:** Candidate has begun the assessment
+- **Completed:** Candidate has finished all assessment steps
+- **Expired:** Invitation has passed its expiration date
+- **Revoked:** Invitation was manually revoked by an admin
+
+<Warning>
+  Candidates cannot access expired, revoked, or completed invitations. They will
+  see clear error messages explaining why access is blocked.
+</Warning>
 
 ### Send Bulk Invitations
 
@@ -115,22 +147,20 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
     Navigate to the assessment you want to send.
   </Step>
 
-  <Step title="Click Bulk Invite">
-    Click the **Bulk Invite** button to open the bulk invitation dialog.
-  </Step>
+<Step title="Click Bulk Invite">
+  Click the **Bulk Invite** button to open the bulk invitation dialog.
+</Step>
 
-  <Step title="Enter Emails">
-    Enter multiple email addresses in the text area. You can separate emails by:
-    - Commas
-    - Spaces
-    - Newlines
-    - Semicolons
-  </Step>
+<Step title="Enter Emails">
+  Enter multiple email addresses in the text area. You can separate emails by: -
+  Commas - Spaces - Newlines - Semicolons
+</Step>
 
   <Step title="Send Invitations">
     Click **Send** to send invitations to all entered email addresses.
 
     <Note>The system will show you which invitations were successful and which failed.</Note>
+
   </Step>
 </Steps>
 
@@ -141,50 +171,99 @@ The Hiring Module enables you to assess job candidates using realistic AI-powere
     Navigate to the assessment in **Team Management** → **Hiring**.
   </Step>
 
-  <Step title="View Submissions Table">
-    See the submissions table showing all candidates who have been invited with:
+  <Step title="View Invitations Table">
+    See the invitations table showing all candidates who have been invited with:
     - Candidate name
     - Email address
-    - Status (Pending, In Progress, Completed)
-    - Started date
-    - Completed date
-    - View action
+    - Status (Pending, Started, Completed, Expired, Revoked)
+    - Sent date
+    - Expiration date
+    - Actions (revoke, delete)
+
+    <Tip>Expired invitations are automatically marked when you view the list, so you'll always see accurate status information.</Tip>
+
   </Step>
 
-  <Step title="Click View on a Submission">
-    Click **View** on any candidate submission to see their detailed performance.
-  </Step>
+<Step title="View Submissions Table">
+  See the submissions table showing all candidates who have completed or started
+  the assessment with: - Candidate name - Email address - Status (Pending, In
+  Progress, Completed) - Started date - Completed date - View action
+</Step>
 
-  <Step title="Review Attempts">
-    On the submission detail page, you'll see a table of all their attempts showing:
-    - **Step Name:** Which assessment step
-    - **Attempt Number:** Which attempt (1, 2, 3, etc.)
-    - **Call Duration:** Length of the call
-    - **Status:** Started, Submitted, Failed, or Not Started
-    - **Completed At:** When the attempt was completed
-    - **Recording:** Audio player to listen to the call
-    - **Analysis:** Link to view detailed call analysis and evaluation
-  </Step>
+<Step title="Click View on a Submission">
+  Click **View** on any candidate submission to see their detailed performance.
+</Step>
+
+<Step title="Review Attempts">
+  On the submission detail page, you'll see a table of all their attempts
+  showing: - **Step Name:** Which assessment step - **Attempt Number:** Which
+  attempt (1, 2, 3, etc.) - **Call Duration:** Length of the call - **Status:**
+  Started, Submitted, Failed, or Not Started - **Completed At:** When the
+  attempt was completed - **Recording:** Audio player to listen to the call -
+  **Analysis:** Link to view detailed call analysis and evaluation
+</Step>
 
   <Step title="View Call Analysis">
     Click the analysis button (chevron icon) to view the detailed call summary, transcript, and evaluation scores for any attempt.
   </Step>
 </Steps>
 
+## Managing Invitations
+
+### Revoke an Invitation
+
+If you need to prevent a candidate from accessing an assessment:
+
+<Steps>
+  <Step title="Open Assessment">
+    Navigate to the assessment in **Team Management** → **Hiring**.
+  </Step>
+
+<Step title="View Invitations">
+  Scroll to the invitations table showing all sent invitations.
+</Step>
+
+<Step title="Click Revoke">
+  Click the **Revoke** action next to the invitation you want to revoke.
+</Step>
+
+  <Step title="Confirm">
+    Confirm the revocation. The invitation status will change to "Revoked" and the candidate will no longer be able to access it.
+  </Step>
+</Steps>
+
+<Warning>
+  Revoked invitations cannot be restored. You'll need to send a new invitation
+  if the candidate needs access again.
+</Warning>
+
+### Resend an Invitation
+
+If an invitation expires or is revoked, you can send a new one:
+
+<Steps>
+  <Step title="Open Assessment">
+    Navigate to the assessment.
+  </Step>
+
+  <Step title="Send New Invitation">
+    Click **Send Invitation** and enter the candidate's email again. This creates a new invitation with a fresh expiration date.
+  </Step>
+</Steps>
+
 ## Privacy and Compliance
 
 <Warning>
-When using hiring assessments, ensure compliance with local employment laws:
-- **GDPR (Europe):** Inform candidates about AI evaluation and data usage
-- **EEOC (US):** Ensure assessments don't create adverse impact
-- **Accessibility:** Provide accommodations for candidates with disabilities
-- **Data Retention:** Follow local laws on candidate data storage
+  When using hiring assessments, ensure compliance with local employment laws: -
+  **GDPR (Europe):** Inform candidates about AI evaluation and data usage -
+  **EEOC (US):** Ensure assessments don't create adverse impact -
+  **Accessibility:** Provide accommodations for candidates with disabilities -
+  **Data Retention:** Follow local laws on candidate data storage
 </Warning>
 
 <Card title="Recommended Practices" icon="shield-check">
-  - Get explicit candidate consent for assessment and recording
-  - Don't use assessments as the sole hiring criteria
-  - Validate that assessment scores predict job success
-  - Document your evaluation process
-  - Provide feedback to candidates when possible
+  - Get explicit candidate consent for assessment and recording - Don't use
+  assessments as the sole hiring criteria - Validate that assessment scores
+  predict job success - Document your evaluation process - Provide feedback to
+  candidates when possible
 </Card>
