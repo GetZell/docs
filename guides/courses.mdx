@@ -6,17 +6,29 @@ icon: "graduation-cap"
 
 ## Overview
 
-Courses provide structured learning paths for your team with multiple modules, text content, and agent practice sessions. You can set deadlines and track progress through each step.
+Courses provide structured learning paths for your team with multiple modules, text content, and agent practice sessions. Each course has an **intensity preset** that controls the number of practice calls required and the minimum score a call must reach to count.
+
+## Intensity Presets
+
+When creating a course, you select one of three intensity presets that define the training rigor:
+
+| Preset | Calls per Exercise | Min. Score per Call | Best For |
+|--------|-------------------|---------------------|----------|
+| **Light** | 2 calls | ≥70% | Refreshers, product updates, quick check-ins |
+| **Standard** | 5 calls | ≥80% | Ongoing training, skill building |
+| **Intensive** | 10 calls | ≥85% | New hire onboarding, certification programs |
+
+<Note>Intensity presets are locked—you select a preset and cannot customize individual values. This ensures consistent training standards across your organization.</Note>
 
 ## Creating a Course
 
+Course creation is a 2-step process: first configure the course details, then build the module structure.
+
+### Step 1: Course Details
+
 <Steps>
   <Step title="Navigate to Courses">
-    Go to **Team Management** → **Courses** in the main navigation.
-  </Step>
-
-  <Step title="Create a Course">
-    Click **Create Course** to start building a new course from scratch.
+    Go to **Team Management** → **Courses** in the main navigation and click **Create Course**.
   </Step>
 
   <Step title="Set Title & Description">
@@ -30,14 +42,47 @@ Courses provide structured learning paths for your team with multiple modules, t
     - Description: "Master consultative selling through interactive lessons and practice sessions with AI prospects."
   </Step>
 
+  <Step title="Select Intensity Preset">
+    Choose the training intensity that matches your course goals:
+
+    - **Light:** Quick refreshers with 2 calls per exercise, each call must score ≥70%
+    - **Standard:** Regular training with 5 calls per exercise, each call must score ≥80%
+    - **Intensive:** Rigorous programs with 10 calls per exercise, each call must score ≥85%
+
+    <Tip>Start new hires with **Intensive** courses for thorough onboarding, and use **Light** for periodic product updates.</Tip>
+  </Step>
+
+  <Step title="Select Target Groups (Optional)">
+    Choose which groups this course is designed for. This filters the available agents and users to only show those relevant to the selected groups.
+
+    **Why use target groups?**
+    - Focus on specific teams or departments
+    - Filter agents trained for those teams
+    - Pre-filter users when enrolling
+  </Step>
+
+  <Step title="Enroll Users">
+    Select which team members should be enrolled in this course. If you selected target groups, only users from those groups will be shown.
+
+    <Note>You can add or remove users later directly from the course card—no need to edit the course.</Note>
+  </Step>
+
+  <Step title="Continue to Modules">
+    Click **Next** to proceed to building your course modules.
+  </Step>
+</Steps>
+
+### Step 2: Build Modules
+
+<Steps>
   <Step title="Add Modules">
-    Organize your course content into logical modules. Click **Add Module** for each major topic.
+    Click **Add Module** for each major topic in your course. Each module is a collapsible section containing related steps.
 
     For each module, provide:
     - **Module Title:** The name of this section (e.g., "Discovery Fundamentals")
     - **Module Description:** What participants will learn in this module
 
-    <Note>Modules appear in the order you create them.</Note>
+    <Note>Modules appear in the order you create them. Click on a module to expand or collapse its steps.</Note>
   </Step>
 
   <Step title="Add Steps to Each Module">
@@ -50,22 +95,11 @@ Courses provide structured learning paths for your team with multiple modules, t
 
     **Agent Call Step:** Practice sessions with AI agents
     - **Title:** Name of the practice session
-    - **Agent:** Select which bot learners will practice with
-    - **Call Goal:** Number of calls required to complete this step (minimum 1)
+    - **Agent:** Select which bot learners will practice with (filtered by target groups if selected)
+
+    <Info>The number of calls required is automatically set by your course's intensity preset. For example, a **Standard** course requires 5 calls per agent step.</Info>
 
     <Tip>Alternate between text steps (learning) and agent call steps (practice) for better retention.</Tip>
-  </Step>
-
-  <Step title="Set Course End Date (Optional)">
-    Optionally set a deadline for course completion to drive urgency and track progress.
-  </Step>
-
-  <Step title="Enroll Users">
-    Select which team members should be enrolled in this course. You can:
-    - Select multiple users at once
-    - Add more users later after creation
-
-    <Note>Enrolled users will see the course on their dashboard immediately.</Note>
   </Step>
 
   <Step title="Save Course">
@@ -93,12 +127,15 @@ Text steps deliver written educational content to learners.
 
 ### Agent Call Step
 
-Agent call steps require learners to complete practice conversations with AI bots.
+Agent call steps require learners to complete practice conversations with AI bots. The number of calls and the minimum score per call are determined by the course's intensity preset.
 
 **Fields:**
 - **Title:** Name of the practice session (required, minimum 3 characters)
 - **Agent:** Select which bot learners will practice with (required)
-- **Call Goal:** Number of practice calls required to complete this step (minimum 1)
+
+**Pass Criteria:**
+- Each call must score at or above the preset's minimum (≥70%, ≥80%, or ≥85%) to count toward completion
+- Accumulate the required number of passing calls (2, 5, or 10 depending on preset)
 
 **Use Cases:**
 - Applying learned techniques
@@ -106,36 +143,72 @@ Agent call steps require learners to complete practice conversations with AI bot
 - Handling specific scenarios
 - Skill practice and assessment
 
+## Managing Enrollment
+
+### Adding Users to a Course
+
+You can add users directly from the course card without editing the course:
+
+<Steps>
+  <Step title="Expand Enrolled Users">
+    On any course card, click **Enrolled People** to expand the enrolled users section.
+  </Step>
+
+  <Step title="Click Add User">
+    Click the **+ Add User** button at the top of the enrollment list.
+  </Step>
+
+  <Step title="Select User">
+    Search for and select the user you want to enroll. They'll be added immediately.
+  </Step>
+</Steps>
+
+### Removing Users from a Course
+
+<Steps>
+  <Step title="Expand Enrolled Users">
+    On the course card, expand the enrolled users section.
+  </Step>
+
+  <Step title="Remove User">
+    Hover over the user row and click the **X** button that appears to remove them from the course.
+  </Step>
+</Steps>
+
+<Note>Removing a user from a course does not delete their progress—if re-enrolled, their progress will be restored.</Note>
+
 ## Example Course Structure
 
 Here's a complete example of a well-structured course:
 
-<Accordion title="Sales Fundamentals Bootcamp - 2 Week Course">
+<Accordion title="Sales Fundamentals Bootcamp - Standard Intensity">
 
-**Module 1: Discovery Fundamentals** (Days 1-3)
+**Intensity:** Standard (5 passing calls per exercise, each call must score ≥80%)
+
+**Module 1: Discovery Fundamentals**
 1. Text Step: "Introduction to Consultative Selling"
 2. Text Step: "The SPIN Questioning Framework"
-3. Agent Call Step: Practice discovery calls (3 calls with "Friendly Prospect")
+3. Agent Call Step: Practice discovery calls (5 passing calls with "Friendly Prospect")
 
-**Module 2: Qualifying Prospects** (Days 4-6)
+**Module 2: Qualifying Prospects**
 1. Text Step: "BANT Qualification Framework"
 2. Text Step: "Reading Buying Signals"
-3. Agent Call Step: Qualification practice (3 calls with "Mixed Signals Prospect")
+3. Agent Call Step: Qualification practice (5 passing calls with "Mixed Signals Prospect")
 
-**Module 3: Presenting Solutions** (Days 7-9)
+**Module 3: Presenting Solutions**
 1. Text Step: "Features vs Benefits"
 2. Text Step: "Tailoring Your Pitch"
-3. Agent Call Step: Pitch practice (3 calls with "Technical Buyer")
+3. Agent Call Step: Pitch practice (5 passing calls with "Technical Buyer")
 
-**Module 4: Handling Objections** (Days 10-12)
+**Module 4: Handling Objections**
 1. Text Step: "Common Objections and Responses"
 2. Text Step: "The Feel-Felt-Found Method"
-3. Agent Call Step: Objection handling drills (5 calls with "Skeptical Prospect")
+3. Agent Call Step: Objection handling drills (5 passing calls with "Skeptical Prospect")
 
-**Module 5: Closing Techniques** (Days 13-14)
+**Module 5: Closing Techniques**
 1. Text Step: "Recognizing Buying Signals"
 2. Text Step: "Trial Closes and Assumptive Closes"
-3. Agent Call Step: Full cycle role plays (3 calls with "Ready-to-Buy Prospect")
+3. Agent Call Step: Full cycle role plays (5 passing calls with "Ready-to-Buy Prospect")
 
 </Accordion>
 
@@ -144,7 +217,7 @@ Here's a complete example of a well-structured course:
 ### Viewing Courses
 
 Navigate to **Team Management** → **Courses** to see all courses with:
-- Course title and description
+- Course title, description, and intensity preset
 - Number of enrolled users
 - Total steps across all modules
 - Overall progress percentage
@@ -153,26 +226,31 @@ Navigate to **Team Management** → **Courses** to see all courses with:
 ### Editing a Course
 
 To update an existing course:
-1. Navigate to the course you want to edit
-2. Update course details (title, description, end date)
-3. Modify modules (add, edit, remove)
-4. Adjust enrolled users
-5. Save your changes
+1. Click the **Edit** icon on the course
+2. Update course details:
+   - Title
+   - Description
+   - Intensity preset
+3. Save your changes
 
-<Note>Changes to course structure affect all enrolled users going forward.</Note>
+<Note>Changes to intensity preset affect the call requirements and minimum score per call for all steps going forward. User enrollment is managed directly on course cards.</Note>
 
 ### Tracking Progress
 
 For each course, you can monitor:
 - **Enrollment count:** How many users are enrolled
 - **Overall progress:** Average completion percentage across all users
-- **Individual progress:** Each user's completion status
+- **Individual progress:** Each user's completion status and average score
 - **Completed steps:** Number of steps each user has finished
 - **Module completion:** Which modules users have completed
 
 ## Best Practices
 
 <CardGroup cols={2}>
+  <Card title="Match Intensity to Goals" icon="gauge-high">
+    Use Intensive for critical skills (onboarding, certification), Standard for ongoing training, Light for refreshers.
+  </Card>
+
   <Card title="Start with Theory" icon="book">
     Begin each module with text steps explaining concepts before practice.
   </Card>
@@ -185,15 +263,11 @@ For each course, you can monitor:
     Start with easier scenarios and gradually increase complexity.
   </Card>
 
+  <Card title="Use Target Groups" icon="users">
+    Filter agents and users by group to ensure relevant practice scenarios.
+  </Card>
+
   <Card title="Bite-Sized Modules" icon="cookie-bite">
     Keep modules focused on one skill to avoid overwhelming learners.
-  </Card>
-
-  <Card title="Clear Objectives" icon="target">
-    State learning outcomes upfront so learners know what to expect.
-  </Card>
-
-  <Card title="Provide Resources" icon="folder-open">
-    Include reference materials learners can return to after completion.
   </Card>
 </CardGroup>
