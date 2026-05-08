@@ -1,0 +1,98 @@
+---
+title: "Connect Gong"
+description: "Import your Gong calls and scorecards into Zell for AI-powered coaching"
+icon: "phone"
+---
+
+## Video Walkthrough
+
+<iframe
+  src="https://www.loom.com/embed/f2c618ef579c4b50996bb807d9cfdbca"
+  width="100%"
+  height="450"
+  frameBorder="0"
+  allowFullScreen
+/>
+
+## Overview
+
+The Gong integration lets you import real sales calls directly into Zell — including transcripts, recordings, and scorecards. Once connected, you can use Zell's AI coaching features on your actual conversations.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    From anywhere in the app, click your avatar and select **Tenant Settings**.
+  </Step>
+
+  <Step title="Find Gong Integration">
+    Navigate to **Integrations** and locate **Gong**.
+  </Step>
+
+  <Step title="Connect to Gong">
+    Click **Connect to Gong**. You'll be redirected to Gong's authorization page.
+
+    <Warning>You'll need admin rights in your Gong workspace to complete this authorization.</Warning>
+  </Step>
+
+  <Step title="Authorize the App">
+    Review the permissions Zell is requesting and click **Allow** to grant access to your Gong workspace.
+  </Step>
+
+  <Step title="Import Scorecards (Optional)">
+    After authorization, a pop-up appears where you can import your Gong scorecards into Zell. Select the ones you want and click **Import**, or skip this for now.
+  </Step>
+
+  <Step title="Set Up the Webhook">
+    This step is required so Zell can automatically receive your new calls from Gong.
+
+    1. In Zell, copy the **Webhook URL** shown on the Gong integration page
+    2. Go to your **Gong account** → **Settings** → **Admin Center**
+    3. Scroll down to **Ecosystem** and click **Automation Rules**
+    4. Click **Add a Rule**
+    5. Paste the webhook URL you copied from Zell
+    6. Give the rule a name (e.g. "Zell")
+    7. Click **Save**
+    8. **Enable the rule** — by default it's inactive. Click **Enable** so it turns on (you'll see a green check mark)
+
+    <Warning>If you skip this step or forget to enable the rule, Zell won't receive your new calls automatically.</Warning>
+  </Step>
+
+  <Step title="Confirm Setup in Zell">
+    Go back to Zell and confirm that you've set up the automation rule. You'll see Gong listed as **Connected**.
+  </Step>
+
+  <Step title="Import Past Calls (Optional)">
+    You can import your last 50 calls right away. Browse the available calls on the integration page and select the ones you'd like to import.
+  </Step>
+</Steps>
+
+## Set a Default Scorecard
+
+After importing scorecards, set a **default scorecard per call type** so Zell automatically evaluates incoming calls:
+
+1. Go to **Scorecards** in the main navigation
+2. For each call type (e.g. Discovery, Demo, Follow-up), assign a default scorecard
+
+<Warning>Without a default scorecard assigned, imported calls won't be automatically evaluated.</Warning>
+
+## Importing Calls
+
+Once connected, you can import your most recent Gong calls into Zell:
+
+1. Go to the **Gong** integration page
+2. Browse your recent calls
+3. Select the calls you want to import
+4. Click **Import**
+
+Zell will pull in the full transcript, recording, and call metadata automatically.
+
+## Importing Scorecards
+
+You can also import your existing Gong scorecards into Zell to use them for AI-powered evaluation:
+
+1. Go to the **Gong** integration page
+2. Click **Import Scorecards**
+3. Select which scorecards to import
+
+The scorecard questions and criteria will be mapped to Zell's evaluation format.
