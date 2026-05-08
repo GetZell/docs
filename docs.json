@@ -32,6 +32,7 @@
           {
             "group": "Integrations",
             "pages": [
+              "guides/gong-integration",
               "guides/slack-integration"
             ]
           },
