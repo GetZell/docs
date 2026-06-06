@@ -1,14 +1,123 @@
 ---
-title: "How to Create a Scorecard"
-description: "Learn how to create and configure scorecards to evaluate team performance"
+title: "Scorecards & Signals"
+description: "Learn how to create scorecards, manage signals, and configure evaluation criteria for your team"
 icon: "star"
 ---
 
 ## Overview
 
-Scorecards help you systematically evaluate calls, emails, and interactions based on custom criteria. This guide walks you through creating an effective scorecard for your team.
+Scorecards evaluate calls, emails, and interactions based on **signals** — reusable evaluation criteria that can be shared across multiple scorecards. Each signal defines *what* to detect and *how* to score it.
 
-## Steps to Create a Scorecard
+A scorecard is simply a weighted collection of signals assigned to your team's interactions.
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Signal" icon="signal">
+    A single evaluation criterion with a detection method and scoring config. Signals are reusable across scorecards.
+  </Card>
+
+  <Card title="Scorecard" icon="star">
+    A named collection of signals, each with a weight and order. Assigned to agents or teams.
+  </Card>
+
+  <Card title="Detection Method" icon="magnifying-glass">
+    How the signal is evaluated: LLM Rubric, Keyword match, Metric, or Semantic similarity.
+  </Card>
+
+  <Card title="Weight" icon="weight-hanging">
+    How much each signal contributes to the overall scorecard score (weights sum to 100%).
+  </Card>
+</CardGroup>
+
+---
+
+## Signal Detection Methods
+
+Signals support four detection methods, each suited to different evaluation needs:
+
+### LLM Rubric
+
+The AI judges the transcript against a rubric you define. Best for nuanced, qualitative criteria.
+
+| Field | Description |
+|-------|-------------|
+| **Description** | What the signal checks (e.g., "Did the rep handle the objection?") |
+| **Evaluation Guide** | Instructions for reviewers on what good/bad performance looks like |
+| **Rubric** | Structured scoring criteria with examples |
+| **Mode** | `YES_NO` (binary pass/fail) or `RANGE` (0–10 scale) |
+
+### Keyword
+
+Deterministic phrase matching over the transcript — no LLM needed. Fast and consistent.
+
+| Field | Description |
+|-------|-------------|
+| **Phrases** | List of phrases to detect (at least one required) |
+| **Speaker** | Who to listen for: `rep`, `customer`, or `any` |
+| **Match Word Forms** | Whether to match conjugations and plurals |
+| **Bands** | Maps hit count → score (e.g., ≥1 hit → 10, 0 hits → 0) |
+
+### Metric
+
+A numeric measure computed from call timing data. No LLM.
+
+| Field | Description |
+|-------|-------------|
+| **Metric** | One of: `talk_ratio`, `longest_monologue`, `question_rate`, `speaking_time` |
+| **Bands** | Maps measured value → score |
+
+### Semantic
+
+Embedding similarity match against example phrases. Useful for detecting intent without exact keyword matches.
+
+| Field | Description |
+|-------|-------------|
+| **Prompt** | What you're looking for semantically |
+| **Examples** | Optional example phrases to improve matching |
+| **Threshold** | Similarity threshold (0–1) to trigger a match |
+| **Pass/Fail scores** | Score when above/below threshold (default: 10/0) |
+
+---
+
+## Creating Signals
+
+<Steps>
+  <Step title="Navigate to Signals">
+    Go to **Team Management** → **Signals**.
+  </Step>
+
+  <Step title="Create a New Signal">
+    Click **Create New** and choose a detection method based on your evaluation need:
+    - Use **LLM Rubric** for subjective or complex criteria
+    - Use **Keyword** for specific phrases you want to detect
+    - Use **Metric** for call timing measurements
+    - Use **Semantic** for intent-based detection
+  </Step>
+
+  <Step title="Configure the Signal">
+    Fill in the configuration fields for your chosen method. Be specific in descriptions and provide examples where possible.
+
+    <Tip>For LLM Rubric signals, writing a clear evaluation guide significantly improves scoring consistency.</Tip>
+  </Step>
+
+  <Step title="Set Status">
+    Signals have three statuses:
+    - **Published** — active and available for use in scorecards
+    - **Draft** — work in progress, not yet used for evaluation
+    - **Archived** — retired, no longer used
+
+    <Note>You cannot delete a signal that is currently in use by a scorecard. Archive it instead.</Note>
+  </Step>
+
+  <Step title="Save">
+    Click **Save**. The signal is now available to add to any scorecard.
+  </Step>
+</Steps>
+
+---
+
+## Creating a Scorecard
 
 <Steps>
   <Step title="Navigate to Scorecards">
@@ -21,80 +130,66 @@ Scorecards help you systematically evaluate calls, emails, and interactions base
     <Tip>Duplicating an existing scorecard is a quick way to create variations for different teams or use cases.</Tip>
   </Step>
 
-  <Step title="Duplicate (Optional)">
-    If duplicating:
-    - Select the scorecard you want to copy
-    - Click **Duplicate**
-    - Click **Open** on the new copy
+  <Step title="Name & Configure">
+    - Set a descriptive name (e.g., "Sales Discovery Call" or "Support Quality Check")
+    - Optionally add a description and difficulty level
+    - Select applicable call types
   </Step>
 
-  <Step title="Rename Your Scorecard">
-    Change the title to something descriptive that reflects the scorecard's purpose (e.g., "Sales Call Evaluation" or "Customer Support Quality Check").
+  <Step title="Add Signals">
+    Add signals to your scorecard from the signal library:
+    - Browse or search available signals
+    - Click **Add** to include a signal
+    - Reorder signals by dragging them into the desired sequence
+
+    <Note>Each signal can only appear once per scorecard.</Note>
   </Step>
 
-  <Step title="Add Categories">
-    For each skill or stage you want to evaluate:
-    - Click **Add Category**
-    - Enter a clear category name (e.g., "Objection Handling", "Opening Statement", "Closing Technique")
+  <Step title="Set Weights">
+    Assign a weight to each signal to control its contribution to the overall score. Weights are distributed as percentages that sum to 100%.
 
-    <Note>Categories help organize your evaluation criteria and make scorecards easier to use.</Note>
+    <Tip>If you want equal weighting, leave the defaults — the system automatically distributes weights evenly across all signals.</Tip>
   </Step>
 
-  <Step title="Define Evaluation Criteria">
-    Under each category, write a concise rule that the AI model or reviewer will check.
-
-    **Example:**
-    > "Did the rep rephrase the objection and address it?"
-
-    Keep criteria specific and measurable for consistent evaluations.
-  </Step>
-
-  <Step title="Provide User Guidance">
-    In the "Explanation" or "User Guide" field, give clear instructions on how to meet the criteria.
-
-    **Example:**
-    > "When an objection arises, first acknowledge it, then restate it in your own words, and finally provide a clear resolution or alternative perspective."
-
-    This helps team members understand what's expected.
-  </Step>
-
-  <Step title="Include Examples">
-    Paste sample scenarios or dialogue snippets to illustrate:
-    - **Good performance:** What a successful interaction looks like
-    - **Poor performance:** Common mistakes to avoid
-
-    Examples help both AI evaluators and human reviewers maintain consistency.
-  </Step>
-
-  <Step title="Save Your Scorecard">
-    Click **Save** to finalize your scorecard configuration.
-  </Step>
-
-  <Step title="Assign & Test">
-    - Attach the new scorecard to calls or training sessions
-    - Run a demo evaluation to ensure your categories and criteria work as intended
-    - Make adjustments based on the test results
-
-    <Tip>Start with a small test group before rolling out to your entire team.</Tip>
+  <Step title="Save & Assign">
+    Save your scorecard, then assign it to agents or teams. Run a test evaluation to verify your signals and weights produce meaningful results.
   </Step>
 </Steps>
+
+---
+
+## Cloning & Reusing Signals
+
+Signals are designed to be reusable:
+
+- **Shared across scorecards** — One signal (e.g., "Proper greeting") can be used in multiple scorecards with different weights.
+- **Signal library** — Global library signals (maintained by Zell) are available to all tenants. Clone them to customize.
+- **Clone to edit** — Use **Clone** to create an editable copy of any signal (library or your own) that you can modify independently.
+
+---
+
+## Importing from Gong
+
+When importing scorecards from Gong, each question is automatically converted into an **LLM Rubric** signal. The answer guide becomes the signal description, and all signals are assigned equal weights.
+
+---
 
 ## Best Practices
 
 <CardGroup cols={2}>
-  <Card title="Be Specific" icon="bullseye">
-    Write clear, measurable criteria that leave little room for interpretation.
+  <Card title="Keep Signals Focused" icon="bullseye">
+    Each signal should evaluate one specific behavior or criterion. Avoid combining multiple checks into a single signal.
   </Card>
 
-  <Card title="Use Examples" icon="lightbulb">
-    Provide concrete examples of both good and poor performance for each criterion.
+  <Card title="Reuse Over Duplicate" icon="recycle">
+    Before creating a new signal, check if one already exists in the library. Reusing signals ensures consistent evaluation across teams.
   </Card>
 
-  <Card title="Test First" icon="flask">
-    Always test your scorecard on sample interactions before deploying widely.
+  <Card title="Use the Right Method" icon="sliders">
+    LLM Rubric is powerful but slower. Use Keyword or Metric signals for simple, deterministic checks — they're faster and more predictable.
   </Card>
 
-  <Card title="Iterate" icon="rotate">
-    Regularly review and refine your scorecards based on team feedback and results.
+  <Card title="Test & Iterate" icon="flask">
+    Run test evaluations after setting up a scorecard. Adjust weights and signal configs based on the results.
   </Card>
 </CardGroup>
