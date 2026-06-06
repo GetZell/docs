@@ -22,6 +22,7 @@
           {
             "group": "Core Features",
             "pages": [
+              "guides/workspaces",
               "guides/scorecards",
               "guides/bots",
               "guides/tasks",

@@ -1,0 +1,193 @@
+---
+title: "Workspaces"
+description: "Organize your account into workspaces to separate teams, departments, or business units"
+icon: "grid-2"
+---
+
+## Overview
+
+Workspaces are the top-level organizational unit in Zell. They let you separate users, bots, scorecards, personas, courses, and groups into distinct containers — ideal for multi-team or multi-department setups.
+
+Every resource in Zell (agents, scorecards, groups, etc.) belongs to exactly one workspace, ensuring clean separation of data and access.
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Isolation" icon="shield">
+    Each workspace contains its own users, bots, scorecards, personas, courses, and groups. Resources don't leak between workspaces.
+  </Card>
+
+  <Card title="Managers & Hierarchy" icon="sitemap">
+    Users within a workspace can be assigned a manager, forming a reporting hierarchy for coaching visibility.
+  </Card>
+
+  <Card title="Default Workspace" icon="house">
+    Every account has a default workspace created automatically. New resources are placed here unless you specify otherwise.
+  </Card>
+
+  <Card title="Workspace Admins" icon="user-shield">
+    Workspace admins can manage members and resources within their workspace without needing full account-level admin access.
+  </Card>
+</CardGroup>
+
+---
+
+## Managing Workspaces
+
+### Navigate to Workspaces
+
+Go to **Team Management** → **Workspaces**. You'll see a list of all workspaces with counts for:
+- Users
+- Groups
+- Bots (Agents)
+- Scorecards
+- Personas
+- Courses
+
+---
+
+### Create a Workspace
+
+<Steps>
+  <Step title="Click Create Workspace">
+    From the Workspaces page, click **Create Workspace**.
+  </Step>
+
+  <Step title="Enter a Name">
+    Choose a clear, descriptive name (e.g., "Sales EMEA", "Customer Success", "New Hire Onboarding").
+
+    <Note>Workspace names must be unique within your account.</Note>
+  </Step>
+
+  <Step title="Done">
+    The workspace is created and ready to have members and resources assigned.
+  </Step>
+</Steps>
+
+---
+
+### Rename a Workspace
+
+<Steps>
+  <Step title="Open Workspace Settings">
+    Click on a workspace, then click **Edit**.
+  </Step>
+
+  <Step title="Update the Name">
+    Change the name and save.
+  </Step>
+</Steps>
+
+---
+
+### Delete a Workspace
+
+<Steps>
+  <Step title="Ensure No Users Remain">
+    You must reassign all users to another workspace before deleting.
+
+    <Warning>A workspace cannot be deleted while it still has users assigned. Move users first.</Warning>
+  </Step>
+
+  <Step title="Delete">
+    Click **Delete** on the empty workspace. All remaining resources (scorecards, groups, bots, etc.) within the workspace are permanently removed.
+  </Step>
+</Steps>
+
+---
+
+## Managing Members
+
+### Assign Users to a Workspace
+
+<Steps>
+  <Step title="Open the Workspace">
+    Navigate to the workspace you want to manage.
+  </Step>
+
+  <Step title="Set Members">
+    Use the **Members** section to select which users belong to this workspace. You can:
+    - Add individual users
+    - Bulk-assign multiple users at once
+
+    <Note>Each user belongs to exactly one workspace at a time. Assigning a user to a new workspace removes them from their previous one.</Note>
+  </Step>
+</Steps>
+
+### Set a Manager
+
+<Steps>
+  <Step title="Select a User">
+    From the workspace members list, select the user you want to assign a manager to.
+  </Step>
+
+  <Step title="Choose Manager">
+    Set their manager from the list of available users within the same tenant.
+
+    <Tip>Managers gain visibility into their direct reports' training progress, call evaluations, and coaching data.</Tip>
+  </Step>
+</Steps>
+
+<Warning>
+Manager assignments cannot create cycles. You cannot assign someone as a manager if they are already a descendant in the reporting chain.
+</Warning>
+
+---
+
+## What Lives in a Workspace
+
+When you create or assign resources, they are scoped to a workspace:
+
+| Resource | Behavior |
+|----------|----------|
+| **Users** | Each user belongs to one workspace |
+| **Agents (Bots)** | Created within a workspace, visible only there |
+| **Scorecards** | Scoped to a workspace for evaluation |
+| **Groups** | Organize users and bots within the workspace |
+| **Personas** | Available to users in that workspace |
+| **Courses** | Training content scoped to workspace members |
+| **Calls** | Logged under the workspace of the participating user |
+
+---
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Multi-Department" icon="building">
+    Separate Sales, Support, and Success teams — each with their own bots, scorecards, and training content.
+  </Card>
+
+  <Card title="Regional Teams" icon="globe">
+    Create workspaces per region (EMEA, APAC, Americas) with localized personas and evaluation criteria.
+  </Card>
+
+  <Card title="Onboarding vs. Active" icon="graduation-cap">
+    Keep new hires in an "Onboarding" workspace with beginner-level scorecards and move them to the main workspace once ramped.
+  </Card>
+
+  <Card title="Client-Separated" icon="handshake">
+    For agencies or BPOs managing multiple clients, keep each client's training content and evaluations isolated.
+  </Card>
+</CardGroup>
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start with One" icon="seedling">
+    Don't over-segment. Start with the default workspace and only split when you need genuine isolation between teams.
+  </Card>
+
+  <Card title="Use Groups for Soft Boundaries" icon="layer-group">
+    If you just need to organize access to specific bots, use Groups within a workspace instead of creating separate workspaces.
+  </Card>
+
+  <Card title="Name Clearly" icon="tag">
+    Use names that make the scope obvious: team, region, or purpose.
+  </Card>
+
+  <Card title="Reassign Before Deleting" icon="arrow-right-arrow-left">
+    Always move users to their new workspace before deleting the old one.
+  </Card>
+</CardGroup>
