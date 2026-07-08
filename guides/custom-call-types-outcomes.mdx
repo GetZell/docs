@@ -1,0 +1,223 @@
+---
+title: "Custom Call Types & Outcomes"
+description: "Configure the call categories and result labels Zell uses for scoring, reports, and integrations"
+icon: "tags"
+---
+
+## Overview
+
+Call types and call outcomes control how Zell classifies real customer conversations.
+
+<CardGroup cols={2}>
+  <Card title="Call Type" icon="phone-call">
+    What kind of conversation took place, such as a cold call, demo, discovery call, renewal call, or support call.
+  </Card>
+
+  <Card title="Call Outcome" icon="flag-checkered">
+    What happened as a result of the conversation, such as a demo booked, no interest, information requested, or another team-specific result.
+  </Card>
+</CardGroup>
+
+Zell includes default values for both concepts. Admins can add custom values when the defaults do not match the team's process.
+
+---
+
+## How Zell Uses Them
+
+### Call Types
+
+Call types are used to route calls into the right coaching and evaluation setup:
+
+- **Scorecards** can be assigned to specific call types.
+- **Default scorecards** use call type to decide which scorecard should automatically score an imported real call.
+- **Bots and playbooks** can be aligned with the kind of conversation a user needs to practice.
+- **Reports** can be filtered by call type to compare performance across conversation types.
+
+### Call Outcomes
+
+Call outcomes are used to summarize the result of a real call:
+
+- **Real call reports** can be filtered by outcome.
+- **Imported calls** from dialers and calling tools can be categorized automatically.
+- **Integration mappings** can map external tags or dispositions into Zell's outcome labels.
+- **Coaching reviews** can separate successful calls from calls that need follow-up.
+
+---
+
+## Default vs. Custom Values
+
+Default values are available to every workspace and are read-only. Zell localizes the default labels in the app where supported.
+
+Custom values belong to your tenant. They appear alongside the defaults in call type and outcome selectors.
+
+<Note>
+  Custom values do not replace defaults. If you no longer need a custom value, remove it from the custom list.
+</Note>
+
+### Default Call Types
+
+Zell's default call types include:
+
+- Cold Call
+- Demo
+- Gatekeeper
+- Discovery
+- Check-in
+- Warm Call
+- Customer Care
+- Proposal
+
+### Default Call Outcomes
+
+Zell's default call outcomes include:
+
+- Contact Received
+- Demo Booked
+- Information Requested
+- No Interest
+- Pilot Booked
+- Stakeholder Intro
+- Other
+
+---
+
+## Add Custom Call Types
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    Open **Settings** → **Tenant Settings**.
+  </Step>
+
+  <Step title="Go to Call Types">
+    Select **Call Types** from the tenant settings menu.
+  </Step>
+
+  <Step title="Review Defaults">
+    The default call types are shown as locked labels. They are available automatically and cannot be edited.
+  </Step>
+
+  <Step title="Add a Custom Type">
+    Click **Add call type**, enter a label, and add a description that explains when this call type should apply.
+
+    <Tip>Use the same language your team already uses, such as "Renewal Call", "Onboarding Call", or "Technical Qualification".</Tip>
+  </Step>
+
+  <Step title="Save Changes">
+    Click **Save Changes**. The custom call type becomes available in scorecards, bots, playbooks, integrations, and report filters.
+  </Step>
+</Steps>
+
+---
+
+## Add Custom Outcomes
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    Open **Settings** → **Tenant Settings**.
+  </Step>
+
+  <Step title="Go to Call Outcomes">
+    Select **Call Outcomes** from the tenant settings menu.
+  </Step>
+
+  <Step title="Review Defaults">
+    The default outcomes are shown as locked labels. They are available automatically and cannot be edited.
+  </Step>
+
+  <Step title="Add a Custom Outcome">
+    Click **Add outcome** and enter the result label your team needs.
+
+    <Tip>Write outcomes as final states, such as "Trial Started", "Budget Confirmed", or "Competitor Mentioned".</Tip>
+  </Step>
+
+  <Step title="Save Changes">
+    Click **Save Changes**. The custom outcome becomes available for real call categorization, reporting, and integration mappings.
+  </Step>
+</Steps>
+
+---
+
+## Map Integrations
+
+For connected calling tools, configure mappings after you add custom values.
+
+### Aircall
+
+Aircall tags can be mapped to a call type, an outcome, or both. When a mapped tag is present on an imported call, Zell uses the mapped value instead of relying on automatic classification.
+
+<Steps>
+  <Step title="Open Aircall Settings">
+    Go to **Tenant Settings** → **Integrations** → **Aircall**.
+  </Step>
+
+  <Step title="Refresh Tags">
+    Click **Refresh Tags** if the tag list is outdated.
+  </Step>
+
+  <Step title="Map Tags">
+    For each Aircall tag, choose the matching call type and/or outcome.
+  </Step>
+
+  <Step title="Save">
+    Save the mapping so future Aircall imports use your configured labels.
+  </Step>
+</Steps>
+
+### Amplemarket
+
+Amplemarket dispositions can be mapped to Zell call outcomes.
+
+<Steps>
+  <Step title="Open Amplemarket Settings">
+    Go to **Tenant Settings** → **Integrations** → **Amplemarket**.
+  </Step>
+
+  <Step title="Refresh Dispositions">
+    Refresh dispositions to pull the latest values from Amplemarket.
+  </Step>
+
+  <Step title="Map Outcomes">
+    Match each disposition to the Zell outcome it represents.
+  </Step>
+
+  <Step title="Save">
+    Save the mapping so future Amplemarket imports use your configured outcomes.
+  </Step>
+</Steps>
+
+---
+
+## Limits and Behavior
+
+- You can add up to **50** custom call types.
+- You can add up to **50** custom call outcomes.
+- Labels cannot be empty.
+- Duplicate custom labels are ignored.
+- Custom labels that exactly match default labels are ignored.
+- Saving replaces the current custom list with the values shown on the settings page.
+
+<Warning>
+  Removing a custom call type can affect scorecards, bots, playbooks, and mappings that were using it. Review related configuration before deleting values that are already in use.
+</Warning>
+
+---
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep Labels Short" icon="text-cursor-input">
+    Use labels that are easy to scan in filters, tables, and mapping menus.
+  </Card>
+
+  <Card title="Avoid Overlap" icon="split">
+    Do not create custom values that mean nearly the same thing as an existing default or another custom value.
+  </Card>
+
+  <Card title="Use Process Language" icon="users">
+    Match your CRM, dialer, and sales process vocabulary so mappings are easier to maintain.
+  </Card>
+
+  <Card title="Update Scorecards" icon="star">
+    After adding a new call type, assign relevant scorecards and default scorecards so real calls are evaluated automatically.
+  </Card>
+</CardGroup>
