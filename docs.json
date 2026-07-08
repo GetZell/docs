@@ -46,6 +46,7 @@
           {
             "group": "Settings",
             "pages": [
+              "guides/custom-call-types-outcomes",
               "guides/language-settings"
             ]
           }
