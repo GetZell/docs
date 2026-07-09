@@ -60,11 +60,62 @@
         "tab": "Internal",
         "groups": [
           {
-            "group": "Platform Features",
+            "group": "Overview",
+            "pages": [
+              "internal/overview"
+            ]
+          },
+          {
+            "group": "Home & Coaching",
             "pages": [
               "internal/features/feedback-inbox",
               "internal/features/manager-feedback-inbox",
-              "internal/features/calls-history"
+              "internal/features/streaks-and-achievements",
+              "internal/features/coaching-insights"
+            ]
+          },
+          {
+            "group": "Calls & Feedback",
+            "pages": [
+              "internal/features/calls-history",
+              "internal/features/call-analysis",
+              "internal/features/call-collections",
+              "internal/features/real-calls-reports"
+            ]
+          },
+          {
+            "group": "Training & Simulation",
+            "pages": [
+              "internal/features/bots",
+              "internal/features/personas",
+              "internal/features/tasks",
+              "internal/features/courses",
+              "internal/features/dialer"
+            ]
+          },
+          {
+            "group": "AI & Automation",
+            "pages": [
+              "internal/features/zell-ai",
+              "internal/features/notifications"
+            ]
+          },
+          {
+            "group": "Team & Admin",
+            "pages": [
+              "internal/features/users-and-teams",
+              "internal/features/workspaces",
+              "internal/features/groups",
+              "internal/features/scorecards-and-signals",
+              "internal/features/settings"
+            ]
+          },
+          {
+            "group": "Modules & Integrations",
+            "pages": [
+              "internal/features/hiring",
+              "internal/features/integrations",
+              "internal/features/internal-tools"
             ]
           },
           {

@@ -1,0 +1,64 @@
+---
+title: "Platform Overview"
+description: "A map of Zell's internal feature areas and what each documentation page should explain"
+icon: "map"
+---
+
+## Overview
+
+This section is the internal product map for Zell. The goal is to document every meaningful platform feature in one place so employees can quickly answer how a feature works, where it appears, who can access it, and which backend logic drives it.
+
+Use the feature pages as living outlines. Some pages are complete; others are intentionally lightweight placeholders until the automatic documentation agent fills them from source changes.
+
+## Feature Areas
+
+<CardGroup cols={2}>
+  <Card title="Home & Coaching" icon="house">
+    Rep and manager inboxes, coaching insights, streaks, achievements, and daily progress.
+  </Card>
+
+  <Card title="Calls & Feedback" icon="phone-call">
+    Calls history, call analysis, feedback threads, snippets, collections, and real call reports.
+  </Card>
+
+  <Card title="Training & Simulation" icon="graduation-cap">
+    Bots, personas, courses, tasks, role-play flows, and dialer training.
+  </Card>
+
+  <Card title="AI & Automation" icon="sparkles">
+    Zell AI, notifications, assistant workflows, and automated coaching logic.
+  </Card>
+
+  <Card title="Team & Admin" icon="users">
+    Users, workspaces, groups, scorecards, signals, settings, roles, and permissions.
+  </Card>
+
+  <Card title="Modules & Integrations" icon="plug">
+    Hiring, Gong, Slack, Aircall, HubSpot, internal tools, and external system sync.
+  </Card>
+</CardGroup>
+
+---
+
+## Documentation Standard
+
+Each feature page should eventually answer:
+
+| Question | Meaning |
+| --- | --- |
+| What is it? | Short product explanation in customer/internal language. |
+| Where is it? | Main navigation path, app route, or user surface. |
+| Who uses it? | Roles and permission boundaries. |
+| How does it work? | Main user workflow and backend behavior. |
+| What data drives it? | Important filters, query keys, APIs, and source tables. |
+| What can go wrong? | Empty states, edge cases, and support/debug notes. |
+
+## Source Repositories
+
+| Area | Repository |
+| --- | --- |
+| Frontend | `zell-frontend` |
+| Backend | `zell-backend-ts` |
+| Agent workflows | `zell-agent-workflows` |
+| Documentation | `docs` |
+
