@@ -1,0 +1,157 @@
+# Backend Snippet Selection
+
+Last verified: 2026-07-09
+
+## Summary
+
+The backend has two different snippet-selection flows for the two inboxes:
+
+- User Feedback Inbox: selects unread coaching feedback for the current user's own daily review.
+- Manager Feedback Inbox: selects feedback where a rep has replied and a manager/admin still needs to respond.
+
+Both flows eventually call `buildSnippetsFromRows()`, which turns selected database rows into UI-ready snippets with transcript context, replies, localization, votes, and audio URL data.
+
+Source references:
+
+- `zell-backend-ts/src/services/inboxReview/index.ts`
+- `zell-backend-ts/prisma/queries/inboxReviewQueries.ts`
+- `zell-backend-ts/src/services/inboxReview/planBuilder.ts`
+- `zell-backend-ts/src/services/feedback/index.ts`
+- `zell-backend-ts/prisma/queries/feedbackQueries.ts`
+- `zell-backend-ts/src/services/snippets.ts`
+
+## Shared Hydration Step
+
+Selection and hydration are separate.
+
+| Step | File | Purpose |
+| --- | --- | --- |
+| Select rows | Inbox-specific SQL query | Decides which `CallComment`/feedback rows are eligible. |
+| Build snippet | `src/services/snippets.ts` | Converts selected rows into `CoachableSnippet`-style response objects. |
+
+`buildSnippetsFromRows()` does not decide which rows should be in an inbox. It enriches rows that were already selected.
+
+Hydration currently does this:
+
+| Hydration behavior | Current logic |
+| --- | --- |
+| Replies | Loads all replies for selected feedback IDs, ordered by `createdAt` ascending. |
+| Localization | Resolves viewer locale and localizes feedback text/transcript when localized data exists. |
+| Transcript expansion | Starts from `transcriptIndex` and expands backward to include contiguous same-speaker context, then one previous speaker turn when available. |
+| Context window | Adds `CONTEXT_WINDOW = 5` messages before the expanded start and 5 messages after `transcriptEndIndex`. |
+| Core indexes | Returns `coreStart`, `coreEnd`, `feedbackStart`, and `feedbackEnd` relative to the sliced transcript window. |
+| Audio | Resolves `recordingPath` into `bucketUrl` through GCS. |
+| Vote state | Adds the viewer's vote when present. |
+| Reviewer | Adds reviewer name/image when the feedback row has a reviewer. |
+
+## User Feedback Inbox Selection
+
+The user inbox starts at `InboxReviewService.getCurrentItem(userId)`.
+
+### Candidate Pool
+
+`queryInboxPool(userId, focusSignalIds)` builds the candidate pool.
+
+| Rule | Current behavior |
+| --- | --- |
+| Owner | `Call.userId` must equal the current user ID. |
+| Workspace | `Call.workspaceId` must not be null. |
+| Time window | Feedback must be from the last `INBOX_REVIEW_WINDOW_DAYS`, currently 30 days. |
+| Unread only | `CallComment.readAt` must be null. |
+| Disliked exclusion | Excludes feedback with an `EvaluationVote` of `DISLIKE` for that comment. |
+| Quality/input requirement | Includes feedback if it has a snippet score or has admin/team-lead input. |
+| Deduplication | Uses `DISTINCT ON (callId, transcriptIndex)` so only one feedback item per transcript position survives. |
+| Deduplication preference | For duplicate transcript positions, feedback with direct `reviewerId` is preferred. |
+| Pool order | After deduplication, rows are ordered by feedback `createdAt` descending. |
+| Pool limit | The query returns at most `POOL_LIMIT`, currently 300 rows. |
+
+### Polarity
+
+The query calculates the user's average snippet score over scored feedback from the same 30-day window.
+
+| Polarity | Current behavior |
+| --- | --- |
+| Positive | `SnippetEvaluation.score >= user's 30-day average score`. |
+| Negative | Anything below average. Rows without a score fall into the negative branch because the score comparison is not true. |
+
+### Focus Priority
+
+Before building the plan, `focusSignalIds(userId)` reads the user's `coachingFocus` and converts it into signal IDs. Candidate rows whose category signal matches those IDs get `isFocus = true`.
+
+### Daily Plan Ranking
+
+`buildPlan(pool, seed, date)` ranks and trims the candidate pool.
+
+| Ranking/selection rule | Current behavior |
+| --- | --- |
+| Seed | Uses `userId:date`, so plan order is deterministic for a user on a given day. |
+| Max plan size | `MAX_PLAN_ITEMS = 30`. |
+| Primary ordering | Focus rows before non-focus rows. |
+| Secondary ordering | Higher `coachability` before lower `coachability`. |
+| Tie-breaker | Stable hash of `feedbackId` and seed. |
+| Positive ratio | Attempts `MIN_POSITIVE_RATIO = 0.2` positives when enough positives exist. |
+| Main set | Negatives are selected first, then positives fill the intended positive share. |
+| Final order | Positive rows are distributed through the negative rows rather than grouped together. |
+
+### Current Item Selection
+
+After the daily plan exists:
+
+1. Backend reads the plan's feedback IDs.
+2. Backend checks which plan feedback IDs are still unread.
+3. `completed = total - unreadIds.size`.
+4. The current item is the first plan item whose feedback ID is still unread.
+5. If none remain, the inbox returns `done: true`.
+
+### Interaction Assignment
+
+Interaction type is assigned per plan item through a seeded hash.
+
+| Interaction | Allowed when |
+| --- | --- |
+| `passive` | Always. |
+| `score_estimate` | The row has an AI/snippet score. |
+| `multiple_choice` | The row is negative, has a transcript index, and the transcript row is a rep/caller line. |
+
+## Manager Feedback Inbox Selection
+
+The manager inbox starts at `FeedbackService.getPendingManagerReplies(tenantId, managerId, userIds?)`.
+
+### Candidate Rows
+
+`queryPendingManagerReplySnippets(tenantId, userIds?)` selects feedback rows that need a manager response.
+
+| Rule | Current behavior |
+| --- | --- |
+| Tenant | Call workspace tenant must equal the current tenant ID. |
+| Optional user filter | If `userIds` is provided, call owner must be in that list. This is used for team-lead subtree scoping. |
+| User reply required | At least one `CallCommentReply` must exist where reply author role is `USER`. |
+| No later manager/admin reply | There must be no reply by `ADMIN`, `TEAM_LEAD`, or `INTERNAL_TOOL_ADMIN` after the latest `USER` reply. |
+| Read status | `readAt` is returned but not used as a pending-reply filter. Pending status is based on reply order, not read status. |
+| Score defaults | Missing score and coachability are returned as `0`. |
+| Sort order | Calls sort by `startedAt` descending; snippets inside a call sort by `transcriptIndex` ascending with nulls last. |
+
+### Grouping
+
+After hydration, `FeedbackService.getPendingManagerReplies()` groups snippets:
+
+1. Rows are hydrated with `buildSnippetsFromRows(rows, managerId, extraFields)`.
+2. Snippets are grouped by rep/user ID.
+3. Inside each user, snippets are grouped by call ID.
+4. Users are sorted by latest `callStartedAt` descending.
+5. Each user includes `totalSnippets` and `lastReplyAt`.
+
+### Frontend Display Choice
+
+The frontend does not re-run backend selection. It receives grouped pending snippets and:
+
+1. Selects the first user by default unless a selected user is still present.
+2. Flattens that user's calls/snippets.
+3. Shows the first snippet in the flattened list.
+
+## Employee Answer Pattern
+
+If asked, "How does Zell choose which snippet appears?", answer:
+
+For the user inbox, Zell first builds a daily pool of unread eligible feedback from the user's own calls, prioritizes coaching-focus signals and higher coachability, mixes in positive examples, then shows the first unread item from that deterministic daily plan. For the manager inbox, Zell selects feedback where a rep has replied and no manager/admin has responded after that reply, then groups those snippets by rep and call.
+

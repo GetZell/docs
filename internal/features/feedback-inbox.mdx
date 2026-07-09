@@ -1,0 +1,62 @@
+# User Feedback Inbox Feature
+
+Last verified: 2026-07-09
+
+## Summary
+
+The user Feedback Inbox is the daily review surface for a non-manager user to work through unread coaching feedback from their own calls. The backend generates a daily plan, the frontend renders one item at a time, and answering an item marks the feedback as read.
+
+There is a separate manager inbox for replies that need manager follow-up. See [Manager Feedback Inbox feature](/internal/features/manager-feedback-inbox).
+
+Source references:
+
+- `zell-frontend/src/app/(auth)/page.tsx`
+- `zell-frontend/src/components/dashboard/user/FeedbackInbox/FeedbackInbox.tsx`
+- `zell-frontend/src/components/dashboard/user/FeedbackInbox/cards/PassiveCard.tsx`
+- `zell-frontend/src/components/dashboard/user/FeedbackInbox/cards/ScoreEstimateCard.tsx`
+- `zell-frontend/src/components/dashboard/user/FeedbackInbox/cards/MultipleChoiceCard.tsx`
+- `zell-frontend/src/hooks/api-hooks/calls/queries/useInboxReview.ts`
+- `zell-frontend/src/hooks/api-hooks/calls/mutations/useAnswerInteraction.ts`
+- `zell-frontend/src/hooks/api-hooks/calls/mutations/useFeedbackReply.ts`
+- `zell-backend-ts/src/api/call/callRouter.ts`
+- `zell-backend-ts/src/services/inboxReview/index.ts`
+- `zell-backend-ts/src/services/inboxReview/planBuilder.ts`
+- `zell-backend-ts/prisma/queries/inboxReviewQueries.ts`
+
+## End-To-End Flow
+
+1. The home page renders `FeedbackInbox` for users who are not `ADMIN` or `TEAM_LEAD`.
+2. Frontend loads `/calls/inbox-snippets` through `useInboxReview()`.
+3. Backend authenticates the user through `requireAuth`.
+4. `InboxReviewService.getCurrentItem(userId)` resolves today's plan.
+5. If no plan exists, backend builds one from unread eligible feedback.
+6. Backend returns one current item, plus `completed`, `total`, and `done`.
+7. Frontend renders the item as passive, score estimate, or multiple choice.
+8. User answers or completes the card.
+9. Frontend posts to `/calls/inbox-snippets/{feedbackId}/answer`.
+10. Backend evaluates the answer, awards interaction XP for correct non-passive answers, and marks the feedback as read.
+11. User clicks continue; frontend refetches the inbox and renders the next unread plan item.
+
+## Daily Review Progress
+
+The frontend uses `PROGRESS_GOAL = 10` as the visible daily progress target. Backend plans can contain up to 30 items, but the first 10 drive the normal progress indicator. After reaching the progress goal, the frontend can show an extra-reps gate stored in local storage under `zell:extra-reps:{yyyy-mm-dd}`.
+
+## Save And Reply Actions
+
+| Action | Behavior |
+| --- | --- |
+| Reply | Calls `/calls/{callId}/feedbacks/{feedbackId}/replies`, then invalidates inbox, call analysis, real call details, coaching snippets, call snippets, calls history, manager pending replies, and user stats queries. |
+| Save for later | Opens `AddToCollectionDialog` for the current call. |
+| Continue passive item | Posts an answer with no `choiceIndex` or `guess`, then refetches. |
+| Continue answered item | Refetches after the reveal/coaching state. |
+
+## Empty State
+
+If backend returns `item: null`, the frontend renders `EmptyInboxState`. This can mean there are no eligible unread feedback items, or all items in today's generated plan are complete.
+
+## Important Implementation Notes
+
+- Answering an item intentionally does not invalidate `['inbox-snippets']` immediately. This keeps the reveal state visible until the user advances.
+- `score_estimate` hides the score from the returned item until answer evaluation.
+- Multiple choice is only eligible for negative snippets tied to a rep transcript line.
+- The backend marks the feedback read only if it was not already read.

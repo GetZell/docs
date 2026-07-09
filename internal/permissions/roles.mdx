@@ -1,0 +1,63 @@
+# Roles And Permissions
+
+Last verified: 2026-07-09
+
+## Summary
+
+Backend role checks are centralized around authentication middleware plus role helper functions. The core application roles are defined in Prisma.
+
+Source references:
+
+- `zell-backend-ts/prisma/schema/_base.prisma`
+- `zell-backend-ts/src/api/auth/authMiddleware.ts`
+- `zell-backend-ts/src/common/utils/roles.ts`
+- `zell-backend-ts/src/common/middleware/adminAuth.ts`
+- `zell-backend-ts/src/common/middleware/teamLeadAuth.ts`
+- `zell-backend-ts/src/api/admin/feedback/feedbackRouter.ts`
+
+## Defined Roles
+
+| Role | Notes |
+| --- | --- |
+| `USER` | Standard user/rep role. |
+| `TEAM_LEAD` | Manager/team-lead role. Included in team-lead-or-admin checks. |
+| `ADMIN` | Admin role. Included in admin checks. |
+| `INTERNAL_TOOL_ADMIN` | Internal admin role. Included in admin checks and team-lead-or-admin checks. |
+| `HIRING_ASSESSMENT_CANDIDATE` | Candidate role. Some frontend mutations explicitly block this role from replying to feedback. |
+
+## Role Helper Groups
+
+| Helper/group | Included roles |
+| --- | --- |
+| `ADMIN_ROLES` | `ADMIN`, `INTERNAL_TOOL_ADMIN` |
+| `TEAM_LEAD_OR_ADMIN_ROLES` | `ADMIN`, `INTERNAL_TOOL_ADMIN`, `TEAM_LEAD` |
+| `isWorkspaceAdmin()` | Admin roles, or `TEAM_LEAD` with `managerId === null`. |
+
+## Middleware
+
+| Middleware | Behavior |
+| --- | --- |
+| `requireAuth` | Authenticates bearer token or cookie session. Cookie write requests require CSRF validation. Adds user and request context. |
+| `requireAuthNoCsrf` | Authenticates bearer token or cookie session after origin validation. Used where CSRF is intentionally not required. |
+| `requireAdmin` | Runs `requireAuth`, then requires `isAdminRole(user.role)`. |
+| `requireTeamLeadOrAdmin` | Runs `requireAuth`, then requires `isTeamLeadOrAdminRole(user.role)`. |
+
+## Admin Feedback Routes
+
+`/admin/feedback` uses `adminFeedbackRouter.use(requireAdmin)`, so every route below it starts with admin-role access. The pending-replies routes additionally call `requireTeamLeadOrAdmin`, but because the router already uses `requireAdmin`, the effective access for this router is currently admin roles unless route mounting changes.
+
+| Route | Middleware in file | Effective note |
+| --- | --- | --- |
+| `GET /admin/feedback` | Router-level `requireAdmin` | Admin roles only. |
+| `GET /admin/feedback/pending-replies` | Router-level `requireAdmin`, route-level `requireTeamLeadOrAdmin` | Admin roles pass. Team-lead-only access would require this route not to be behind router-level `requireAdmin`. |
+| `POST /admin/feedback/pending-replies/{feedbackId}/skip` | Router-level `requireAdmin`, route-level `requireTeamLeadOrAdmin` | Same effective access note as above. |
+
+## Frontend Role Guard Example
+
+`useAddFeedbackReply()` prevents `HIRING_ASSESSMENT_CANDIDATE` users from leaving feedback replies before calling the backend.
+
+## Open Verification Items
+
+- Verify whether the admin feedback router is mounted in a way that intentionally makes pending replies admin-only, or whether team leads are expected to access it directly.
+- Add a route-by-route permission matrix for the rest of `/admin/*` after inspecting router mounting.
+

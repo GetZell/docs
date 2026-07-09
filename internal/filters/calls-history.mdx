@@ -1,0 +1,76 @@
+# Calls History Filters
+
+Last verified: 2026-07-09
+
+## Summary
+
+Calls History has a small visible filter set in the frontend and a larger backend/API filter set. Employees should distinguish between "available in the UI" and "supported by the API".
+
+Source references:
+
+- `zell-frontend/src/components/dashboard/user/UserCallsHistoryDisplay.tsx`
+- `zell-frontend/src/hooks/useCallsHistoryData.ts`
+- `zell-frontend/src/hooks/api-hooks/calls/queries/useUserCallHistory.ts`
+- `zell-frontend/src/constants/coaching.ts`
+- `zell-backend-ts/src/api/call/history/index.ts`
+- `zell-backend-ts/src/services/call/index.ts`
+
+## Visible UI Filters
+
+| Filter | UI state | Backend query params | Behavior |
+| --- | --- | --- | --- |
+| Date range | Stored with key `calls-history-date-range` | `startDate`, `endDate` | Filters by `Call.startedAt >= startDate` and `Call.startedAt <= endDate`. |
+| Coaching score | Stored with key `calls-history-coaching-score` | `minCoachingScore`, `maxCoachingScore` | Filters calls by Zell/coachable score range. |
+
+## Coaching Score Values
+
+| UI option | API range |
+| --- | --- |
+| All coaching scores | No min or max score. |
+| High coaching | `minCoachingScore=4`, no max. |
+| Medium coaching | `minCoachingScore=2`, `maxCoachingScore=4`. |
+| Low coaching | `minCoachingScore=0`, `maxCoachingScore=2`. |
+
+The frontend passes the selected value through `getCoachingScoreRange()` before calling `useUserCallHistory()`.
+
+## API-Supported Filters
+
+These filters are supported by `useUserCallHistory()` and `CallService.getUserCalls()`, but are not all visible in `UserCallsHistoryDisplay.tsx`.
+
+| Filter | Query param | Backend behavior |
+| --- | --- | --- |
+| Page | `page` | Defaults to `1`. |
+| Page size | `pageSize` | Defaults to `10`. |
+| Scorecards | `scorecardIds` | Comma-separated IDs. Backend matches calls by agent scorecard or call metadata scorecard. |
+| Date from | `startDate` | Filters `startedAt >= startDate`. |
+| Date to | `endDate` | Filters `startedAt <= endDate`. |
+| Coaching score min | `minCoachingScore` | Filters to call IDs returned by the score-range lookup. |
+| Coaching score max | `maxCoachingScore` | Used with the score-range lookup when provided. |
+| Has comments | `hasComments=true` | Requires at least one feedback/comment. |
+| Has unread comments | `hasUnreadComments=true` | Requires unread feedback with score `<= 5`, coachability `> 5`, and no dislike vote. |
+| Source | `source` | Filters by call source. |
+
+## Scope And Sorting
+
+| Area | Behavior |
+| --- | --- |
+| User scope | The backend uses `DB.calls.withUser(userId)`, so regular Calls History returns calls for the authenticated user. |
+| Valid calls | The route passes `valid: true`; invalid calls are excluded. |
+| Sort order | Calls are ordered by `startedAt` descending. |
+| Returned data | Each call includes source, timestamps, call type, agent, evaluation, contact info, and feedback counts. |
+| Pagination | Backend returns a paginated response. Frontend keeps the current page in module state and resets to page `1` when page size changes. |
+
+## Query Freshness
+
+The query key starts with `['calls-history']` and includes page, page size, scorecards, date range, coaching-score range, comment filters, and source. Mutations that add feedback replies or mark feedback as read invalidate this query key.
+
+## Employee Answer Pattern
+
+If asked, "Why is a call missing from Calls History?", check:
+
+1. The call belongs to the authenticated user.
+2. The call is valid.
+3. The selected date range includes `startedAt`.
+4. The selected coaching score range includes the call's Zell/coachable score.
+5. If an API client used hidden filters, check scorecard, source, comment, and unread-comment query params.
+

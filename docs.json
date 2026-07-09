@@ -15,12 +15,14 @@
         "groups": [
           {
             "group": "Getting Started",
+            "public": true,
             "pages": [
               "index"
             ]
           },
           {
             "group": "Core Features",
+            "public": true,
             "pages": [
               "guides/workspaces",
               "guides/scorecards",
@@ -32,6 +34,7 @@
           },
           {
             "group": "Integrations",
+            "public": true,
             "pages": [
               "guides/gong-integration",
               "guides/slack-integration"
@@ -39,14 +42,44 @@
           },
           {
             "group": "Modules",
+            "public": true,
             "pages": [
               "guides/hiring-module"
             ]
           },
           {
             "group": "Settings",
+            "public": true,
             "pages": [
               "guides/language-settings"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Internal",
+        "groups": [
+          {
+            "group": "Features",
+            "pages": [
+              "internal/features/feedback-inbox",
+              "internal/features/manager-feedback-inbox",
+              "internal/features/backend-snippet-selection"
+            ]
+          },
+          {
+            "group": "Filters",
+            "pages": [
+              "internal/filters/feedback-inbox",
+              "internal/filters/manager-feedback-inbox",
+              "internal/filters/calls-history"
+            ]
+          },
+          {
+            "group": "Permissions",
+            "pages": [
+              "internal/permissions/roles",
+              "internal/permissions/tenant-scoping"
             ]
           }
         ]

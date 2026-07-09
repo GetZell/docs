@@ -1,0 +1,93 @@
+# User Feedback Inbox Filters
+
+Last verified: 2026-07-09
+
+## Summary
+
+The user Feedback Inbox is the daily review inbox shown to non-manager users on the authenticated home page. It does not expose manual filter controls in the UI. The item list is filtered and ordered by backend logic for the current authenticated user.
+
+There is a separate manager inbox for pending team replies. See [Manager Feedback Inbox filters](/internal/filters/manager-feedback-inbox).
+
+Source references:
+
+- `zell-frontend/src/components/dashboard/user/FeedbackInbox/FeedbackInbox.tsx`
+- `zell-frontend/src/hooks/api-hooks/calls/queries/useInboxReview.ts`
+- `zell-frontend/src/hooks/api-hooks/calls/mutations/useAnswerInteraction.ts`
+- `zell-backend-ts/src/api/call/callRouter.ts`
+- `zell-backend-ts/src/services/inboxReview/index.ts`
+- `zell-backend-ts/prisma/queries/inboxReviewQueries.ts`
+- `zell-backend-ts/src/services/inboxReview/planBuilder.ts`
+- `zell-backend-ts/src/services/snippets.ts`
+
+## Visible UI Filters
+
+| Filter | Visible to user | Behavior |
+| --- | --- | --- |
+| Manual date range | No | Not exposed in the inbox UI. The backend uses a rolling 30-day pool. |
+| Score filter | No | Not exposed in the inbox UI. Score is used by backend plan logic. |
+| Signal/category filter | No | Not exposed in the inbox UI. The backend prioritizes the user's coaching focus signals when available. |
+| Read/unread filter | No | Not user-selectable. The inbox only chooses unread feedback from the generated daily plan. |
+
+## Backend Pool Rules
+
+The backend builds the candidate pool through `queryInboxPool(userId, focusSignalIds)`.
+
+| Rule | Current behavior |
+| --- | --- |
+| User scope | Only calls where `Call.userId` is the current user. |
+| Workspace requirement | Calls must have a non-null `workspaceId`. |
+| Time window | Feedback must be created within `INBOX_REVIEW_WINDOW_DAYS`, currently `30`. |
+| Read status | Feedback must have `readAt = null`. |
+| Disliked feedback | Feedback is excluded if any `DISLIKE` vote exists on the comment. |
+| Score/admin input | Feedback is included if it has a snippet score or admin/team-lead input. |
+| Duplicate transcript comments | Query keeps one feedback per `(callId, transcriptIndex)`, preferring feedback with a direct reviewer. |
+| Pool size | Query limits the pool to `POOL_LIMIT`, currently `300`. |
+
+## Daily Plan Rules
+
+The backend creates one daily plan per user and date.
+
+| Rule | Current behavior |
+| --- | --- |
+| Seed | Plan seed is based on `userId:date`. |
+| Max items | `MAX_PLAN_ITEMS`, currently `30`. |
+| Focus priority | User coaching-focus signals sort before non-focus items. |
+| Coachability priority | Higher coachability sorts first inside focus/non-focus groups. |
+| Positive/negative mix | The plan aims for at least `MIN_POSITIVE_RATIO`, currently `0.2`, if enough positive items exist. |
+| Completion | Completed count is `total - unreadIds.size`. |
+| Done state | Inbox is done when no unread item remains in the plan. |
+
+## Backend Snippet Selection
+
+For the full backend selection flow, see [Backend snippet selection](../features/backend-snippet-selection).
+
+Short version:
+
+1. `queryInboxPool()` finds unread eligible feedback rows for the current user.
+2. `buildPlan()` ranks and mixes the pool into a deterministic daily plan.
+3. `getCurrentItem()` picks the first unread feedback ID from that plan.
+4. `queryInboxRowsByIds()` fetches the full row for that one feedback ID.
+5. `buildSnippetsFromRows()` hydrates the row into the snippet shown in the UI.
+
+## Interaction Types
+
+| Interaction | When allowed | Notes |
+| --- | --- | --- |
+| `passive` | Always allowed | User can continue after reading/reviewing. |
+| `score_estimate` | Allowed when the snippet has an AI score. | The score is hidden from the item until after answer evaluation. |
+| `multiple_choice` | Allowed when the snippet is negative, has a transcript index, and points to a rep line. | Options are generated for the selected transcript line. |
+
+## Frontend Freshness
+
+| Action | Query behavior |
+| --- | --- |
+| Load inbox | `useInboxReview` fetches `/calls/inbox-snippets` with query key `['inbox-snippets']`. |
+| Answer item | `useAnswerInteraction` posts to `/calls/inbox-snippets/{feedbackId}/answer`. It intentionally does not invalidate `['inbox-snippets']` immediately, so the reveal/coaching state remains visible. |
+| Continue after answer | `FeedbackInbox` calls `refetch()` to load the next item. |
+| Add reply | `useAddFeedbackReply` invalidates `['inbox-snippets']` plus related call, snippet, history, manager pending reply, and user stats queries. |
+
+## Employee Answer Pattern
+
+If asked, "Why do I see this feedback in my inbox?", answer:
+
+The inbox is automatically generated from unread feedback on the current user's calls, currently limited to feedback from the last 30 days. The system excludes feedback with any dislike vote, prioritizes coaching-focus signals and high coachability, and creates a daily plan of up to 30 items.

@@ -1,0 +1,68 @@
+# Manager Feedback Inbox Feature
+
+Last verified: 2026-07-09
+
+## Summary
+
+The manager Feedback Inbox is the manager follow-up queue. It helps managers find rep replies that still need a manager/admin response.
+
+This is separate from the user Feedback Inbox. The user inbox is for a user's own daily review items; the manager inbox is for manager follow-up on team replies.
+
+Source references:
+
+- `zell-frontend/src/app/(auth)/page.tsx`
+- `zell-frontend/src/components/dashboard/manager/ManagerInbox.tsx`
+- `zell-frontend/src/components/dashboard/manager/ManagerInboxUserRow.tsx`
+- `zell-frontend/src/components/dashboard/manager/ManagerSnippetViewer.tsx`
+- `zell-frontend/src/components/dashboard/manager/ManagerSnippetCard.tsx`
+- `zell-frontend/src/components/dashboard/manager/ManagerSnippetFeedbackPanel.tsx`
+- `zell-frontend/src/hooks/api-hooks/feedback/queries/useGetManagerPendingReplies.ts`
+- `zell-frontend/src/hooks/api-hooks/feedback/mutations/useSkipManagerPendingReply.ts`
+- `zell-frontend/src/lib/feedbackReplies.ts`
+- `zell-frontend/src/components/analysis/inlineCoaching/CommentThread.tsx`
+- `zell-frontend/src/components/snippets/SnippetCard.tsx`
+- `zell-backend-ts/src/api/admin/feedback/feedbackRouter.ts`
+- `zell-backend-ts/src/services/feedback/index.ts`
+- `zell-backend-ts/prisma/queries/feedbackQueries.ts`
+
+## End-To-End Flow
+
+1. The home page checks the session role.
+2. If the role is `ADMIN` or `TEAM_LEAD`, the home page renders `ManagerInbox`.
+3. Frontend loads `/admin/feedback/pending-replies` through `useGetManagerPendingReplies()`.
+4. Backend returns users with pending reply snippets, grouped by user and call.
+5. The left column shows each user with a remaining snippet count and agent names.
+6. Selecting a user shows the first pending snippet for that user.
+7. The manager can review transcript context, play audio when available, open call analysis, add the call to a collection, reply, or skip.
+8. Replying invalidates `['manager-pending-replies']`.
+9. Skipping optimistically removes the snippet and creates an internal manager skip reply on the backend.
+
+## Empty State
+
+If no users are returned, `ManagerInbox` renders `ManagerInboxEmptyState` with the message `No pending replies from your team.`
+
+If a selected user has no current snippet, `ManagerSnippetViewer` renders an empty state saying all snippets for that rep have been reviewed.
+
+## Snippet Card
+
+The manager snippet card can show:
+
+- Rep/user name.
+- Call title from recipient or company.
+- Call date.
+- Score and coachability.
+- Audio waveform when `bucketUrl` exists.
+- Transcript window with load-earlier and load-later controls.
+- Feedback bubble and replies.
+- Open-call-analysis action.
+- Add-to-collection action.
+- Skip action.
+
+## Important Implementation Notes
+
+- The viewer always displays the first flattened pending snippet for the selected user.
+- There is no manager-side manual filter for date, score, signal, or agent in the current UI.
+- Pending status is reply-order based: a user reply creates manager pending work only until a manager/admin replies later.
+- Skipping is represented as an internal reply rather than deleting or hiding the original feedback.
+- The skip reply text is an internal state marker. Frontend reply surfaces filter `__ZELL_MANAGER_SKIPPED__` out through `getVisibleFeedbackReplies()`, so it should not appear in inline comment threads, snippet reply counts, collapsed last-reply previews, or snippet reply panels.
+
