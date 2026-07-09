@@ -1,0 +1,118 @@
+---
+title: "Access Control"
+description: "Understand roles, authentication, tenant scoping, and manager visibility"
+icon: "shield-check"
+---
+
+## Overview
+
+Access control defines who can see and manage data in Zell. The platform combines authentication, role checks, tenant scoping, resource loaders, and manager hierarchy filters.
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Authentication Context" icon="key-round">
+    Authenticated requests carry the user ID, tenant ID, workspace ID, role, and manager relationship.
+  </Card>
+
+  <Card title="Roles" icon="users-round">
+    Zell uses roles such as `USER`, `TEAM_LEAD`, `ADMIN`, `INTERNAL_TOOL_ADMIN`, and `HIRING_ASSESSMENT_CANDIDATE`.
+  </Card>
+
+  <Card title="Tenant Scope" icon="building-2">
+    Most data access is scoped to the authenticated tenant or the authenticated user.
+  </Card>
+
+  <Card title="Hierarchy Scope" icon="sitemap">
+    Team-lead workflows can be limited to users in the manager's reporting subtree.
+  </Card>
+</CardGroup>
+
+---
+
+## Roles
+
+| Role | Purpose |
+| --- | --- |
+| `USER` | Standard rep/user role. |
+| `TEAM_LEAD` | Manager role included in team-lead-or-admin checks. |
+| `ADMIN` | Tenant admin role included in admin checks. |
+| `INTERNAL_TOOL_ADMIN` | Internal admin role with special cross-tenant loader behavior where supported. |
+| `HIRING_ASSESSMENT_CANDIDATE` | Candidate role with restricted feedback reply behavior in the frontend. |
+
+## Role Groups
+
+| Group | Included roles |
+| --- | --- |
+| Admin roles | `ADMIN`, `INTERNAL_TOOL_ADMIN` |
+| Team lead or admin roles | `ADMIN`, `INTERNAL_TOOL_ADMIN`, `TEAM_LEAD` |
+| Workspace admin | Admin roles, or `TEAM_LEAD` with no manager. |
+
+---
+
+## Authentication
+
+Zell authenticates backend requests through bearer tokens or cookie sessions.
+
+| Middleware | Behavior |
+| --- | --- |
+| `requireAuth` | Authenticates bearer token or cookie session. Cookie write requests require CSRF validation. |
+| `requireAuthNoCsrf` | Authenticates after origin validation where CSRF is intentionally skipped. |
+| `requireAdmin` | Requires an admin role after authentication. |
+| `requireTeamLeadOrAdmin` | Requires team lead or admin role after authentication. |
+
+The authenticated request context includes `userId`, `tenantId`, `workspaceId`, and `managerId` when available.
+
+---
+
+## Tenant Scoping
+
+| Area | Behavior |
+| --- | --- |
+| Calls History | Uses the authenticated user ID and returns that user's valid calls. |
+| Feedback Inbox | Uses the authenticated user ID and returns unread eligible feedback from that user's calls. |
+| Manager Pending Replies | Uses tenant scope and optional team-lead subtree filtering. |
+| Resource Loaders | Pass tenant ID for normal users; pass `null` for `INTERNAL_TOOL_ADMIN` where loaders support cross-tenant lookup. |
+
+<Warning>
+Do not assume `INTERNAL_TOOL_ADMIN` bypasses every tenant check. It only gets `tenantId = null` in resource loaders that are designed to support that behavior.
+</Warning>
+
+---
+
+## Manager Visibility
+
+Manager workflows can use the reporting hierarchy to limit visibility.
+
+<Steps>
+  <Step title="Authenticate the manager">
+    The backend resolves the current user, role, tenant, workspace, and manager data.
+  </Step>
+
+  <Step title="Resolve subtree">
+    For `TEAM_LEAD`, Zell can resolve the reporting subtree through `teamLeadSubtree(ctx)`.
+  </Step>
+
+  <Step title="Filter data">
+    Manager-specific queries can restrict calls or snippets to users in that subtree.
+  </Step>
+</Steps>
+
+## Operational Notes
+
+- The admin feedback router currently uses router-level admin middleware.
+- Pending manager reply routes also use team-lead-or-admin middleware.
+- Verify route mounting before documenting team-lead access as guaranteed for a specific endpoint.
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| Roles | `zell-backend-ts/prisma/schema/_base.prisma` |
+| Auth middleware | `zell-backend-ts/src/api/auth/authMiddleware.ts` |
+| Role helpers | `zell-backend-ts/src/common/utils/roles.ts` |
+| Admin middleware | `zell-backend-ts/src/common/middleware/adminAuth.ts` |
+| Team lead middleware | `zell-backend-ts/src/common/middleware/teamLeadAuth.ts` |
+| Resource loader | `zell-backend-ts/src/common/middleware/resourceLoader.ts` |
+| Team-lead subtree | `zell-backend-ts/src/api/admin/coachingInsights/filters.ts` |
+

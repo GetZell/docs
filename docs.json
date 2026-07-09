@@ -60,26 +60,18 @@
         "tab": "Internal",
         "groups": [
           {
-            "group": "Features",
+            "group": "Platform Features",
             "pages": [
               "internal/features/feedback-inbox",
               "internal/features/manager-feedback-inbox",
-              "internal/features/backend-snippet-selection"
+              "internal/features/calls-history"
             ]
           },
           {
-            "group": "Filters",
+            "group": "Platform Logic",
             "pages": [
-              "internal/filters/feedback-inbox",
-              "internal/filters/manager-feedback-inbox",
-              "internal/filters/calls-history"
-            ]
-          },
-          {
-            "group": "Permissions",
-            "pages": [
-              "internal/permissions/roles",
-              "internal/permissions/tenant-scoping"
+              "internal/features/backend-snippet-selection",
+              "internal/features/access-control"
             ]
           }
         ]
