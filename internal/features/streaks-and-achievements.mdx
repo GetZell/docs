@@ -1,40 +1,233 @@
 ---
 title: "Streaks & Achievements"
-description: "Track daily progress, streak recovery, XP, and achievement notifications"
+description: "Understand streaks, freezes, XP, levels, and achievement notifications"
 icon: "flame"
 ---
 
 ## Overview
 
-Streaks and achievements motivate reps to keep training and reviewing feedback consistently. They appear around daily review progress, experience rewards, achievement notifications, and streak-related notifications.
+Streaks and achievements motivate reps to keep reviewing coaching feedback consistently. The system combines four mechanics:
+
+- **XP** rewards completed coaching activity.
+- **Levels** summarize total XP progress.
+- **Streaks** track consistent feedback-review behavior.
+- **Freezes** protect an active streak when a rep had calls but missed the required review activity.
+
+The streak is not a raw call-activity streak. Calls can award XP, but the streak only advances when the rep reads feedback or replies to feedback.
 
 ## Key Concepts
 
 <CardGroup cols={2}>
-  <Card title="Daily Progress" icon="calendar-check">
-    Progress is tied to actions such as completing Feedback Inbox items.
+  <Card title="XP" icon="sparkles">
+    Experience points are awarded for evaluated calls, feedback reads, feedback replies, and selected correct inbox interactions.
   </Card>
 
-  <Card title="XP Rewards" icon="badge-check">
-    Correct non-passive inbox interactions can award bonus XP.
+  <Card title="Level" icon="badge-check">
+    A user's level is derived from total XP using fixed thresholds from level 0 to level 10.
   </Card>
 
-  <Card title="Achievement Toasts" icon="bell-ring">
-    The frontend can show achievement notifications when milestones are reached.
+  <Card title="Streak" icon="flame">
+    A streak advances at most once per day from feedback read or reply activity.
   </Card>
 
-  <Card title="Streak Recovery" icon="rotate-ccw">
-    Backend notifications include streak recovery messaging such as streak-saved events.
+  <Card title="Freeze" icon="shield">
+    A freeze can save an active streak when the rep had valid calls but did not complete streak-advancing activity.
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+---
 
-This page is a feature placeholder. It should be expanded with:
+## XP Sources
 
-- The full streak calculation rules.
-- Which user actions count toward streaks.
-- How XP and levels are calculated.
-- Notification triggers for streak saved/lost events.
-- Source references for achievement UI and backend notification templates.
+| Source | Base XP | Streak effect | Advances streak |
+| --- | ---: | --- | --- |
+| Evaluated call | `15 + score * 4`, multiplied by duration and simulation factors | Yes | No |
+| Feedback read | `5` | Yes | Yes |
+| Feedback reply | `8` | Yes | Yes |
+| Correct inbox interaction bonus | `5` | No | No |
+
+<Note>
+Call XP is awarded after a call evaluation is created. Demo workspaces are skipped. Simulation calls use the simulation multiplier.
+</Note>
+
+### Call Duration Multiplier
+
+| Call duration | Multiplier |
+| --- | ---: |
+| Under 60 seconds | `0.5x` |
+| 60 to 119 seconds | `0.8x` |
+| 120 to 299 seconds | `1.0x` |
+| 300 to 599 seconds | `1.25x` |
+| 600 seconds or longer | `1.4x` |
+
+Simulation calls multiply the result by `0.35x`.
+
+### Streak XP Multiplier
+
+Most XP sources go through the normal XP award flow and are multiplied by the user's current streak state.
+
+| Streak after the activity | XP multiplier |
+| --- | ---: |
+| 0 days | `0.5x` |
+| 1 to 2 days | `1.0x` |
+| 3 to 6 days | `1.1x` |
+| 7 to 13 days | `1.15x` |
+| 14 to 29 days | `1.25x` |
+| 30+ days | `1.4x` |
+
+<Warning>
+The correct inbox interaction bonus is a direct `+5` experience increment. It does not advance the streak and does not go through the normal streak multiplier flow.
+</Warning>
+
+---
+
+## Levels
+
+Levels are computed from total XP. The level is the highest threshold the user has reached.
+
+| Level | XP required |
+| ---: | ---: |
+| 0 | 0 |
+| 1 | 50 |
+| 2 | 200 |
+| 3 | 700 |
+| 4 | 2,500 |
+| 5 | 7,500 |
+| 6 | 20,000 |
+| 7 | 45,000 |
+| 8 | 80,000 |
+| 9 | 140,000 |
+| 10 | 200,000 |
+
+The user stats endpoint also returns progress toward the next level, including current-level XP, next-level XP, and percent progress.
+
+---
+
+## How Streaks Advance
+
+Only two activity types advance the streak:
+
+- `feedback_read`
+- `reply`
+
+Calls are intentionally excluded. A rep can earn call XP without keeping the streak alive.
+
+<Steps>
+  <Step title="The rep completes a streak-advancing activity">
+    Reading feedback or replying to feedback enters the normal XP award flow.
+  </Step>
+
+  <Step title="Zell checks whether it is the first qualifying activity of the day">
+    Multiple qualifying actions on the same day can award XP, but they do not increment the streak multiple times.
+  </Step>
+
+  <Step title="Zell decides whether the streak continues">
+    The streak continues when the activity happens on a weekend, when the user has an unused freeze on their account, or when the previous streak activity was recent enough based on the last working day.
+  </Step>
+
+  <Step title="Zell updates progress">
+    The backend updates current streak, longest streak, XP, level, last activity timestamp, last activity type, and resets used freezes back to `0`.
+  </Step>
+</Steps>
+
+### Working Day Logic
+
+The backend uses the last working day to decide whether a streak is still current.
+
+| Current day | Expected previous activity day |
+| --- | --- |
+| Tuesday to Friday | Previous calendar day |
+| Saturday | Friday |
+| Sunday | Friday |
+| Monday | Friday |
+
+This means Friday to Monday continues a streak. Weekend activity is also safe: Saturday or Sunday activity can continue a streak instead of breaking it.
+
+### Same-Day Activity
+
+The streak can only increment once per day. After the first feedback read or reply on a day:
+
+- more feedback reads can still award XP,
+- replies can still award XP,
+- the streak count does not increase again until another day.
+
+---
+
+## Freezes And Resets
+
+A freeze protects an active streak when a rep had valid calls but did not read or reply to feedback in time.
+
+| Rule | Behavior |
+| --- | --- |
+| Maximum freezes | `2` |
+| Freeze condition | User has an active streak, stale or missing last streak activity, fewer than 2 freezes used, and at least one valid call since the cutoff. |
+| Reset condition | Same stale activity and valid-call condition, but the user already has 2 freezes used. |
+| No valid calls | No freeze and no reset. Days off and vacations do not consume freezes. |
+| Recovery | The next feedback read or reply continues the streak when freezes are present and resets `streakFreezes` to `0`. |
+
+<Note>
+The daily maintenance job runs reset logic before freeze logic. A user with exhausted freezes can be reset instead of receiving another freeze.
+</Note>
+
+### Example Scenarios
+
+| Scenario | Result |
+| --- | --- |
+| Rep is active Friday and next reads feedback Monday | Streak continues. |
+| Rep has calls Tuesday but no feedback read or reply | One freeze can be consumed. |
+| Rep has no calls Tuesday and no feedback read or reply | Nothing happens; no freeze is used. |
+| Rep has already used 2 freezes and has calls without feedback activity | Current streak resets to `0`, longest streak is preserved. |
+| Rep has one freeze used and reads feedback today | Streak continues and freezes reset to `0`. |
+| Rep only receives call XP today | XP can increase, but the streak does not advance. |
+
+---
+
+## Achievements And UI
+
+Achievement UI is driven by the user stats endpoint and frontend comparison against previously loaded stats.
+
+| UI area | Behavior |
+| --- | --- |
+| Achievement toasts | Shows a level-up toast when `level` increases and a streak toast when `currentStreak` increases above `1`. |
+| Toast duration | `4000ms`. |
+| Player card | Shows level, XP progress, best streak, call stats, and rank. |
+| Daily review toast | Separate from achievements; shown when Feedback Inbox daily review progress reaches its goal. |
+| Streak saved notification | Sent when `streakFreezes` increases. |
+
+The streak-saved notification includes:
+
+- current streak days,
+- freezes used,
+- freezes remaining.
+
+No streak-saved notification is sent when a streak resets or when freezes decrease after recovery activity.
+
+---
+
+## Operational Notes
+
+| Topic | Detail |
+| --- | --- |
+| User progress model | `experience`, `level`, `currentStreak`, `longestStreak`, `streakFreezes`, `lastActivityAt`, `lastActivityType`. |
+| Stats endpoint | `GET /user/{userId}/stats` |
+| Frontend stats query key | `['userStats', userId]` |
+| Streak-advancing activities | `feedback_read`, `reply` |
+| Non-advancing XP activity | `call` |
+| Freeze limit | `2` |
+| Simulation multiplier | `0.35x` |
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| XP constants and thresholds | `zell-backend-ts/src/services/experience/constants.ts` |
+| XP, level, streak, and freeze service | `zell-backend-ts/src/services/experience/index.ts` |
+| Freeze and reset queries | `zell-backend-ts/prisma/queries/experienceQueries.ts` |
+| User progress schema | `zell-backend-ts/prisma/schema/userProgress.prisma` |
+| Call XP trigger | `zell-backend-ts/prisma/callbacks/callEvaluation.ts` |
+| Feedback read and reply XP triggers | `zell-backend-ts/prisma/callbacks/callComment.ts` |
+| Streak saved notification trigger | `zell-backend-ts/prisma/callbacks/userProgress.ts` |
+| Achievement toasts | `zell-frontend/src/components/achievements/AchievementNotifications.tsx` |
+| Player card | `zell-frontend/src/components/achievements/PlayerCard.tsx` |
+| User stats query | `zell-frontend/src/hooks/api-hooks/users/queries/useGetUserStats.ts` |
 
