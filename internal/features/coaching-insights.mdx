@@ -1,39 +1,288 @@
 ---
 title: "Coaching Insights"
-description: "Understand team coaching performance, signals, snippets, and coachable moments"
+description: "Understand team coaching performance, signals, snippets, engagement, and coaching focus"
 icon: "chart-line"
 ---
 
 ## Overview
 
-Coaching Insights helps managers understand coaching opportunities across users, signals, calls, scorecards, and snippets. It connects evaluated call moments with actionable feedback and team performance views.
+Coaching Insights is the manager-facing dashboard for finding coaching opportunities across reps, signals, calls, and coachable snippets. It is used in both simulation reports and real-call reports:
+
+- Simulation reports mount the tab with `source=SIMULATION`.
+- Real-call reports mount the tab with `source=REAL_CALL`.
+
+The dashboard answers three main questions:
+
+- Which reps have the highest coaching potential?
+- Which signals are weakest across the selected team?
+- Which concrete snippets should a manager review with a rep?
 
 ## Key Concepts
 
 <CardGroup cols={2}>
-  <Card title="Signals" icon="signal">
-    Coaching insights are organized around evaluated signals and categories.
+  <Card title="Zell Score" icon="zap">
+    Coaching potential for a call. Higher means there is more coaching ROI because the call score has room to improve and the moment is coachable.
   </Card>
 
-  <Card title="Coachable Snippets" icon="message-square-quote">
-    Snippets show specific transcript moments with score, coachability, feedback, and replies.
+  <Card title="Signal Score" icon="signal">
+    Average evaluation score for a signal, shown at team level and member level.
   </Card>
 
-  <Card title="Filters" icon="sliders-horizontal">
-    Views can be filtered by users, groups, workspaces, scorecards, source, and date ranges.
+  <Card title="Engagement" icon="check-check">
+    A 0-10 score based on how many surfaced coachable snippets were read by users.
   </Card>
 
-  <Card title="Manager Scope" icon="sitemap">
-    Team-lead views can be constrained by reporting hierarchy and tenant scope.
+  <Card title="Coachable Snippet" icon="message-square-quote">
+    A low-scoring, high-coachability feedback moment with transcript context, score, coachability, replies, votes, and recording audio when available.
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+---
 
-This page is a feature placeholder. It should be expanded with:
+## Dashboard Sections
 
-- Coaching Insights navigation path and visible dashboard sections.
-- All available filters and how they affect backend queries.
-- How member detail, signal scores, and coachable snippets are calculated.
-- How this feature relates to Feedback Inbox and Manager Feedback Inbox.
+| Section | What it shows | Source data |
+| --- | --- | --- |
+| Stats cards | Average performance, average coaching potential, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
+| Weak signals | Lowest-performing signals for the selected scope. | Evaluation categories grouped by signal. |
+| Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
+| Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
+| Member detail | Selected rep's signal breakdown and engagement. | Per-signal scores, snippet counts, and read counts. |
+| Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
+
+---
+
+## Filters
+
+Coaching Insights combines global report filters with tab-local filters.
+
+| Filter | Where it comes from | Backend behavior |
+| --- | --- | --- |
+| Date range | Parent reports page | Applies to `Call.startedAt`. Previous-period comparisons are only returned when both `dateFrom` and `dateTo` are present. |
+| Source | Parent reports page | `SIMULATION` on team reports, `REAL_CALL` on real-call reports. |
+| Groups | Parent reports page | Intersects the selected group members with any selected users. |
+| Users | Coaching Insights tab | Restricts overview results to selected users. |
+| Scorecards | Coaching Insights tab | Matches either the call agent's scorecard or `call.metadata.scorecardId`. |
+| Workspace | Request context | If a workspace context exists, overview is scoped to that workspace's users. |
+
+<Note>
+When group and user filters are both active, the backend intersects them. If the intersection is empty, the overview returns empty stats and empty lists.
+</Note>
+
+---
+
+## Permissions And Scope
+
+The Coaching Insights router requires team-lead or admin access.
+
+| Role behavior | Rule |
+| --- | --- |
+| Admin | Can query the tenant-scoped data allowed by the provided filters. |
+| Team lead | Server-side scope is restricted to the team lead subtree. |
+| Team lead overview | Requested users are intersected with the subtree. If no users are requested, the subtree is used. |
+| Team lead member detail | Returns an empty member detail when the requested user is outside the subtree. |
+| Team lead snippets | Returns no snippets when the requested user is outside the subtree. |
+
+All overview-level team aggregates only include regular users with `role = USER` and `isTestUser = false`.
+
+---
+
+## Score Calculations
+
+### Zell Score
+
+Zell Score is computed from call score and coachability:
+
+```text
+zellScore = (10 - callScore) * (coachability / 10)
+```
+
+The stored value is rounded to two decimals. A high Zell Score means the call has both low performance and high coachability.
+
+### Coachability
+
+Call coachability is computed from snippet-level coachability, weighted by the score gap:
+
+```text
+gap = 10 - snippetScore
+coachability = weighted average of snippetCoachability by gap
+```
+
+Snippets with a perfect score do not contribute because their score gap is `0`.
+
+### Average Performance
+
+Average performance uses `CallEvaluation.totalScore` from valid calls with non-null total score. The overview stats card computes the displayed team average from the daily trend values and rounds it to one decimal.
+
+### Average Coaching Potential
+
+Average coaching potential is the average of member-level `avgZellScore` values in the current result set. Each member's value is rounded to two decimals.
+
+---
+
+## Engagement
+
+Engagement measures whether users read the coachable snippets Zell surfaced.
+
+| Rule | Behavior |
+| --- | --- |
+| Eligible snippet | `SnippetEvaluation.score <= 5` and `coachability > 5`. |
+| Excluded snippet | Any snippet with a `DISLIKE` vote is excluded. |
+| Read snippet | Eligible snippet whose feedback has `readAt` set. |
+| Daily cap | At most `10` surfaced snippets per user per day count toward engagement. |
+| Score scale | Engagement is displayed on a 0-10 scale. |
+
+The daily cap is computed as:
+
+```text
+10 * numberOfDaysInDateRange
+```
+
+If no explicit date range is provided, the cap is `10`.
+
+Team engagement sums capped snippet counts per user, then computes:
+
+```text
+engagement = round((totalRead / totalSnippets) * 100) / 10
+```
+
+That means `10.0` is fully read, `5.0` is half read, and `0.0` means no eligible snippets were read.
+
+---
+
+## Weak Signals
+
+Weak signals show the lowest-scoring signals across the selected scope.
+
+| Rule | Behavior |
+| --- | --- |
+| Source | `EvaluationCategory` rows joined to valid scored calls. |
+| Required data | `score IS NOT NULL` and `signalId IS NOT NULL`. |
+| Minimum sample | The signal must have at least `2` evaluations. |
+| Sort order | Lowest average score first. |
+| Evaluated count | Count of distinct users evaluated for that signal. |
+| Previous score | Returned only when both `dateFrom` and `dateTo` are present. |
+
+The UI displays weak signals as bars on a 0-10 scale. Green starts at `7`, amber at `4`, and red below `4`.
+
+---
+
+## Member Detail
+
+Selecting a member loads that user's detailed signal breakdown.
+
+| Field | Behavior |
+| --- | --- |
+| Call count | Count of valid calls with a non-null total score for that user. |
+| Signal average | Average `EvaluationCategory.score`, rounded to one decimal. |
+| Snippet count | Count of eligible coachable snippets for that signal. |
+| Read count | Count of eligible coachable snippets with `readAt` set. |
+| Signal order | Lowest average score first. |
+| Previous signal score | Same signal over the previous period when a full date range exists. |
+
+Member engagement uses the same eligible-snippet and daily-cap rules as team engagement, but only for the selected user.
+
+---
+
+## Coachable Snippets
+
+The snippets modal opens from a member signal card and loads snippets for one user and one signal.
+
+| Rule | Behavior |
+| --- | --- |
+| Required user | The selected member's user ID. |
+| Required signal | The selected signal ID. |
+| Score rule | `SnippetEvaluation.score <= 5`. |
+| Coachability rule | `SnippetEvaluation.coachability > 5`. |
+| Vote exclusion | Snippets with any `DISLIKE` vote are excluded. |
+| Sort order | Highest coachability first, then lowest score. |
+| Limit | `50` snippets. |
+| Hydration | Adds transcript context, replies, viewer vote, reviewer, recording URL, and call metadata. |
+
+The frontend sorts loaded snippets so snippets with replies appear first. Audio playback is coordinated so only one snippet plays at a time.
+
+<Note>
+For the shared snippet hydration behavior, see [Snippet Selection Logic](/internal/features/backend-snippet-selection).
+</Note>
+
+---
+
+## Coaching Focus
+
+Managers can set one or more focus signals for a rep from the member detail panel.
+
+| Action | Behavior |
+| --- | --- |
+| Set focus | Stores unique signal IDs on `User.coachingFocus` with `assignedBy` and `assignedAt`. |
+| Clear focus | Sets `User.coachingFocus` to database null. |
+| Validation | The backend checks that the user and all selected signals belong to the same tenant. |
+| UI state | Focused signals show a focus badge in the member detail panel. |
+| Downstream use | Feedback Inbox prioritizes snippets that match the rep's coaching focus. |
+
+The backend supports both the current multi-signal format and an older single-signal stored format when reading focus data.
+
+---
+
+## Previous Period Comparisons
+
+When both `dateFrom` and `dateTo` exist, Coaching Insights compares the selected period to the immediately preceding period with the same duration.
+
+| Current selected period | Previous period |
+| --- | --- |
+| July 8 to July 15 | July 1 to July 8 |
+| Last 14 days | The 14 days before that window |
+
+Previous-period values are used for deltas on:
+
+- average performance,
+- average coaching potential,
+- average engagement,
+- weak signal average score,
+- member signal average score,
+- member engagement.
+
+---
+
+## Empty States
+
+| Situation | Result |
+| --- | --- |
+| No users after filter intersection | Empty overview. |
+| No scored valid calls | Stats are `0`, member and trend lists can be empty. |
+| Team lead requests user outside subtree | Empty member detail or empty snippets. |
+| Signal has no eligible snippets | Member signal card shows no coachable moments. |
+| Snippets endpoint finds none | Snippets modal shows "No coachable snippets found". |
+
+---
+
+## Operational Notes
+
+| Topic | Detail |
+| --- | --- |
+| Overview endpoint | `GET /admin/coaching-insights/overview` |
+| Member detail endpoint | `GET /admin/coaching-insights/member/{userId}` |
+| Snippets endpoint | `GET /admin/coaching-insights/member/{userId}/snippets?signalId={signalId}` |
+| Focus endpoint | `GET`, `PUT`, `DELETE /admin/coaching-insights/member/{userId}/focus` |
+| Overview query key | `coaching-insights-overview` plus filter values |
+| Member query key | `coaching-insights-member` plus user and filter values |
+| Snippet query key | `coaching-insights-snippets` plus user, signal, and filter values |
+| Focus query key | `coaching-insights-focus`, user ID |
+| Default trend window | Last 8 weeks when no `dateFrom` is provided. |
+| Trend weekday filter | Score trend excludes Saturday and Sunday. |
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| Coaching Insights service | `zell-backend-ts/src/services/coachingInsights/index.ts` |
+| Coaching Insights SQL queries | `zell-backend-ts/prisma/queries/coachingInsightsQueries.ts` |
+| Router and permissions | `zell-backend-ts/src/api/admin/coachingInsights/coachingInsightsRouter.ts` |
+| Team-lead subtree scope | `zell-backend-ts/src/api/admin/coachingInsights/filters.ts` |
+| Request schemas | `zell-backend-ts/src/schemas/coachingInsightsSchemas.ts` |
+| Score and coachability formulas | `zell-backend-ts/src/services/callScoring/index.ts` |
+| Coaching Insights tab | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsTab.tsx` |
+| Stats cards | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx` |
+| Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
+| Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
+| Frontend API hooks | `zell-frontend/src/hooks/api-hooks/coaching-insights` |
 
