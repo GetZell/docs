@@ -1,0 +1,100 @@
+---
+title: "Manager Feedback Inbox"
+description: "Help managers follow up on rep replies that still need a response"
+icon: "messages-square"
+---
+
+## Overview
+
+The Manager Feedback Inbox is the follow-up queue for managers and admins. It shows reps who have replied to coaching feedback where no manager or admin has responded after the latest rep reply.
+
+This inbox is separate from the rep-facing [Feedback Inbox](/internal/features/feedback-inbox).
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Pending Reply" icon="reply">
+    A feedback thread becomes pending when a regular user replies and no manager/admin has replied afterward.
+  </Card>
+
+  <Card title="Rep Queue" icon="users">
+    The inbox groups pending snippets by rep, then by call, so managers can work through one teammate at a time.
+  </Card>
+
+  <Card title="Snippet Viewer" icon="panel-right">
+    Managers see transcript context, score, coachability, feedback, replies, and audio when available.
+  </Card>
+
+  <Card title="Skip" icon="circle-slash">
+    Skipping creates an internal manager skip reply instead of deleting the feedback.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+<Steps>
+  <Step title="Open the Home Page">
+    Users with manager roles see the Manager Feedback Inbox instead of the rep-facing inbox.
+  </Step>
+
+  <Step title="Load Pending Replies">
+    The frontend requests `/admin/feedback/pending-replies`.
+  </Step>
+
+  <Step title="Choose a Rep">
+    The left column lists reps with pending snippets. Each row shows the remaining count and related agent names when available.
+  </Step>
+
+  <Step title="Review the Current Snippet">
+    The right side shows the first pending snippet for the selected rep, including transcript context and the feedback thread.
+  </Step>
+
+  <Step title="Reply or Skip">
+    A manager reply removes the snippet from the pending queue after refresh. Skipping also removes it by creating an internal skip reply.
+  </Step>
+</Steps>
+
+---
+
+## Pending Reply Logic
+
+| Rule | Behavior |
+| --- | --- |
+| Tenant scope | Calls must belong to the current tenant. |
+| Team-lead scope | Team leads can be limited to users in their reporting subtree. |
+| User reply required | At least one reply from a regular user must exist. |
+| Manager response missing | No `ADMIN`, `TEAM_LEAD`, or `INTERNAL_TOOL_ADMIN` reply can exist after the latest user reply. |
+| Read status | Read status is returned, but pending status is based on reply order. |
+| Sort order | Calls sort newest first; snippets inside a call sort by transcript position. |
+
+<Note>
+For the full backend selection logic, see [Snippet Selection Logic](/internal/features/backend-snippet-selection).
+</Note>
+
+---
+
+## Available Actions
+
+| Action | What happens |
+| --- | --- |
+| Reply | Adds a manager/admin response and refreshes pending reply data. |
+| Skip | Optimistically removes the snippet and creates an internal `__ZELL_MANAGER_SKIPPED__` reply. |
+| Open call analysis | Opens the call recording tab and anchors to the feedback index when available. |
+| Add to collection | Opens the collection dialog for the current call. |
+| Load transcript context | Expands the visible transcript window above or below the snippet. |
+
+## Empty States
+
+- If there are no pending replies, managers see `No pending replies from your team.`
+- If the selected rep has no current snippet, the viewer shows that all snippets for that rep have been reviewed.
+
+## Operational Notes
+
+- Query key: `['manager-pending-replies']`
+- Load endpoint: `/admin/feedback/pending-replies`
+- Skip endpoint: `/admin/feedback/pending-replies/{feedbackId}/skip`
+- The frontend currently renders this inbox for `ADMIN` and `TEAM_LEAD` session roles.
+- Verify backend route middleware before relying on team-lead access, because the admin feedback router also uses router-level admin middleware.
+

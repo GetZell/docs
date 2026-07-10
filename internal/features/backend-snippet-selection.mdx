@@ -1,0 +1,142 @@
+---
+title: "Snippet Selection Logic"
+description: "Understand how Zell chooses and hydrates coaching snippets for inbox features"
+icon: "list-filter"
+---
+
+## Overview
+
+Snippet selection is the backend logic that decides which coaching moments appear in the rep and manager inboxes. It has two parts:
+
+- **Selection:** SQL and service logic choose eligible feedback rows.
+- **Hydration:** Zell converts those rows into UI-ready snippets with transcript context, replies, localization, votes, reviewer data, and audio URLs.
+
+This page explains the platform behavior behind [Feedback Inbox](/internal/features/feedback-inbox) and [Manager Feedback Inbox](/internal/features/manager-feedback-inbox).
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Candidate Pool" icon="database">
+    The first set of eligible feedback rows, scoped by user, tenant, read state, replies, and time window depending on the feature.
+  </Card>
+
+  <Card title="Daily Plan" icon="calendar">
+    The rep inbox ranks and trims its candidate pool into a stable plan for the current day.
+  </Card>
+
+  <Card title="Hydrated Snippet" icon="message-square-text">
+    The final response object shown in the UI, including transcript window, feedback text, replies, score, coachability, reviewer, and recording URL.
+  </Card>
+
+  <Card title="Pending Reply" icon="reply-all">
+    The manager inbox selects feedback threads where a rep replied and no manager/admin responded afterward.
+  </Card>
+</CardGroup>
+
+---
+
+## Shared Hydration
+
+`buildSnippetsFromRows()` enriches rows after they have already been selected. It does not decide which rows belong in an inbox.
+
+| Hydration behavior | Current logic |
+| --- | --- |
+| Replies | Loads all replies for selected feedback IDs, ordered oldest first. |
+| Localization | Uses the viewer locale when localized feedback text or transcript data exists. |
+| Transcript expansion | Starts at `transcriptIndex`, expands backward through the same speaker turn, then includes surrounding context. |
+| Context window | Adds 5 messages before and 5 messages after the snippet window. |
+| Core indexes | Returns indexes relative to the sliced transcript window. |
+| Audio | Converts `recordingPath` into a playable recording URL. |
+| Vote state | Adds the viewer's vote when present. |
+| Reviewer | Adds reviewer name and image when available. |
+
+---
+
+## Rep Inbox Selection
+
+<Steps>
+  <Step title="Build the candidate pool">
+    Zell selects unread feedback from the current rep's own calls in the last 30 days.
+  </Step>
+
+  <Step title="Exclude weak candidates">
+    Feedback is excluded when the call has no workspace, the feedback has a dislike vote, or the feedback has neither a score nor admin/team-lead input.
+  </Step>
+
+  <Step title="Deduplicate transcript positions">
+    Zell keeps one feedback item per call and transcript position, preferring feedback with a direct reviewer.
+  </Step>
+
+  <Step title="Rank the pool">
+    Coaching-focus signals rank first, then higher coachability, then a stable daily hash.
+  </Step>
+
+  <Step title="Mix positives into the plan">
+    Zell tries to include positive examples as roughly 20% of the daily plan when enough positive candidates exist.
+  </Step>
+
+  <Step title="Show the first unread plan item">
+    The current item is the first feedback ID in today's plan that is still unread.
+  </Step>
+</Steps>
+
+### Rep Inbox Rules
+
+| Rule | Behavior |
+| --- | --- |
+| Time window | Last 30 days. |
+| Pool limit | Up to 300 candidate rows. |
+| Plan limit | Up to 30 plan items. |
+| Positive classification | Score is greater than or equal to the rep's 30-day average snippet score. |
+| Negative classification | Score below the average, or no score comparison match. |
+| Interaction assignment | Seeded by feedback ID and daily plan seed. |
+
+---
+
+## Manager Inbox Selection
+
+<Steps>
+  <Step title="Scope by tenant">
+    Zell only selects calls that belong to the current tenant.
+  </Step>
+
+  <Step title="Apply team-lead scope">
+    When a team-lead subtree is provided, the query only includes calls owned by users in that subtree.
+  </Step>
+
+  <Step title="Find rep replies">
+    A feedback thread is eligible only when at least one reply was written by a regular user.
+  </Step>
+
+  <Step title="Check for manager response">
+    Zell excludes the thread if an admin, team lead, or internal tool admin replied after the latest user reply.
+  </Step>
+
+  <Step title="Hydrate and group">
+    The service hydrates snippets, groups them by rep, groups each rep's snippets by call, and sorts users by latest call date.
+  </Step>
+</Steps>
+
+### Manager Inbox Rules
+
+| Rule | Behavior |
+| --- | --- |
+| Pending status | Based on reply order, not read status. |
+| Required user action | At least one reply by a `USER`. |
+| Closing action | Any later reply by `ADMIN`, `TEAM_LEAD`, or `INTERNAL_TOOL_ADMIN`. |
+| Sort order | Calls newest first, then transcript position ascending. |
+| Skip behavior | Creates an internal manager reply with `__ZELL_MANAGER_SKIPPED__`. |
+
+---
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| Rep inbox service | `zell-backend-ts/src/services/inboxReview/index.ts` |
+| Rep inbox query | `zell-backend-ts/prisma/queries/inboxReviewQueries.ts` |
+| Daily plan ranking | `zell-backend-ts/src/services/inboxReview/planBuilder.ts` |
+| Manager inbox service | `zell-backend-ts/src/services/feedback/index.ts` |
+| Manager inbox query | `zell-backend-ts/prisma/queries/feedbackQueries.ts` |
+| Snippet hydration | `zell-backend-ts/src/services/snippets.ts` |
+
