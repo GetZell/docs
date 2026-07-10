@@ -6,16 +6,17 @@ icon: "chart-line"
 
 ## Overview
 
-Coaching Insights is the manager-facing dashboard for finding coaching opportunities across reps, signals, calls, and coachable snippets. It is used in both simulation reports and real-call reports:
+Coaching Insights supports both the manager-facing dashboard for finding coaching opportunities across reps and the current-user coaching views for an individual rep's own data. The manager dashboard is used in both simulation reports and real-call reports:
 
 - Simulation reports mount the tab with `source=SIMULATION`.
 - Real-call reports mount the tab with `source=REAL_CALL`.
 
-The dashboard answers three main questions:
+Coaching Insights answers four main questions:
 
 - Which reps have the highest coaching potential?
 - Which signals are weakest across the selected team?
 - Which concrete snippets should a manager review with a rep?
+- What coaching opportunities can the current user review for themselves?
 
 ## Key Concepts
 
@@ -73,7 +74,7 @@ When group and user filters are both active, the backend intersects them. If the
 
 ## Permissions And Scope
 
-The Coaching Insights router requires team-lead or admin access.
+The admin Coaching Insights router requires team-lead or admin access.
 
 | Role behavior | Rule |
 | --- | --- |
@@ -81,9 +82,25 @@ The Coaching Insights router requires team-lead or admin access.
 | Team lead | Server-side scope is restricted to the team lead subtree. |
 | Team lead overview | Requested users are intersected with the subtree. If no users are requested, the subtree is used. |
 | Team lead member detail | Returns an empty member detail when the requested user is outside the subtree. |
-| Team lead snippets | Returns no snippets when the requested user is outside the subtree. |
+| Team lead snippets | Returns `{ snippets: [] }` when the requested user is outside the subtree. |
 
 All overview-level team aggregates only include regular users with `role = USER` and `isTestUser = false`.
+
+---
+
+## Current-User Endpoints
+
+The non-admin Coaching Insights router exposes read-only endpoints for the authenticated user's own coaching data.
+
+| Endpoint | Auth | Valid query parameters | Scope behavior |
+| --- | --- | --- | --- |
+| `GET /coaching-insights/overview` | `requireAuth` | `scorecardIds`, `dateFrom`, `dateTo`, `source` | Forces `userIds` to the current user. If the request has workspace context, overview data is also scoped to that workspace. |
+| `GET /coaching-insights/me` | `requireAuth` | `scorecardIds`, `dateFrom`, `dateTo`, `source` | Loads member detail for the current user only. No `userId` path or query parameter is accepted. |
+| `GET /coaching-insights/me/snippets?signalId={signalId}` | `requireAuth` | `signalId`, `scorecardIds`, `dateFrom`, `dateTo`, `source` | Loads snippets for the current user and uses the current user as the snippet viewer. |
+
+Validation is handled by `UserCoachingInsightsOverviewSchema`, `UserCoachingInsightsDetailSchema`, and `UserCoachingInsightsSnippetsSchema`. `signalId` is required and must be a UUID for `/coaching-insights/me/snippets`; invalid values return a bad request before the service layer runs.
+
+Current-user routes intentionally do not expose `groupIds`, `userIds`, `workspaceIds`, member `userId` path parameters, or coaching-focus mutation endpoints. They share the same overview, member-detail, and snippet response schemas as the admin routes.
 
 ---
 
@@ -199,6 +216,16 @@ The snippets modal opens from a member signal card and loads snippets for one us
 | Limit | `50` snippets. |
 | Hydration | Adds transcript context, replies, viewer vote, reviewer, recording URL, and call metadata. |
 
+Snippets endpoints return an object wrapper, not a bare array:
+
+```json
+{
+  "snippets": []
+}
+```
+
+This applies to both `GET /admin/coaching-insights/member/{userId}/snippets` and `GET /coaching-insights/me/snippets`. For admin requests by a team lead, an out-of-subtree member request also returns `{ snippets: [] }` instead of leaking whether the user has coachable moments.
+
 The frontend sorts loaded snippets so snippets with replies appear first. Audio playback is coordinated so only one snippet plays at a time.
 
 <Note>
@@ -249,9 +276,10 @@ Previous-period values are used for deltas on:
 | --- | --- |
 | No users after filter intersection | Empty overview. |
 | No scored valid calls | Stats are `0`, member and trend lists can be empty. |
-| Team lead requests user outside subtree | Empty member detail or empty snippets. |
+| Team lead requests member detail outside subtree | Empty member detail. |
+| Team lead requests snippets outside subtree | `{ snippets: [] }`. |
 | Signal has no eligible snippets | Member signal card shows no coachable moments. |
-| Snippets endpoint finds none | Snippets modal shows "No coachable snippets found". |
+| Snippets endpoint finds none | Response is `{ snippets: [] }`; the snippets modal shows "No coachable snippets found". |
 
 ---
 
@@ -259,10 +287,13 @@ Previous-period values are used for deltas on:
 
 | Topic | Detail |
 | --- | --- |
-| Overview endpoint | `GET /admin/coaching-insights/overview` |
-| Member detail endpoint | `GET /admin/coaching-insights/member/{userId}` |
-| Snippets endpoint | `GET /admin/coaching-insights/member/{userId}/snippets?signalId={signalId}` |
+| Admin overview endpoint | `GET /admin/coaching-insights/overview` |
+| Admin member detail endpoint | `GET /admin/coaching-insights/member/{userId}` |
+| Admin snippets endpoint | `GET /admin/coaching-insights/member/{userId}/snippets?signalId={signalId}` |
 | Focus endpoint | `GET`, `PUT`, `DELETE /admin/coaching-insights/member/{userId}/focus` |
+| Current-user overview endpoint | `GET /coaching-insights/overview` |
+| Current-user detail endpoint | `GET /coaching-insights/me` |
+| Current-user snippets endpoint | `GET /coaching-insights/me/snippets?signalId={signalId}` |
 | Overview query key | `coaching-insights-overview` plus filter values |
 | Member query key | `coaching-insights-member` plus user and filter values |
 | Snippet query key | `coaching-insights-snippets` plus user, signal, and filter values |
@@ -276,7 +307,13 @@ Previous-period values are used for deltas on:
 | --- | --- |
 | Coaching Insights service | `zell-backend-ts/src/services/coachingInsights/index.ts` |
 | Coaching Insights SQL queries | `zell-backend-ts/prisma/queries/coachingInsightsQueries.ts` |
-| Router and permissions | `zell-backend-ts/src/api/admin/coachingInsights/coachingInsightsRouter.ts` |
+| Admin router and permissions | `zell-backend-ts/src/api/admin/coachingInsights/coachingInsightsRouter.ts` |
+| Admin snippets subtree guard | `zell-backend-ts/src/api/admin/coachingInsights/memberSnippets/index.ts` |
+| Current-user router and auth | `zell-backend-ts/src/api/coachingInsights/coachingInsightsRouter.ts` |
+| Current-user overview handler | `zell-backend-ts/src/api/coachingInsights/overview.ts` |
+| Current-user detail handler | `zell-backend-ts/src/api/coachingInsights/detail.ts` |
+| Current-user snippets handler | `zell-backend-ts/src/api/coachingInsights/snippets.ts` |
+| Router mounting | `zell-backend-ts/src/server.ts` |
 | Team-lead subtree scope | `zell-backend-ts/src/api/admin/coachingInsights/filters.ts` |
 | Request schemas | `zell-backend-ts/src/schemas/coachingInsightsSchemas.ts` |
 | Score and coachability formulas | `zell-backend-ts/src/services/callScoring/index.ts` |
@@ -285,4 +322,3 @@ Previous-period values are used for deltas on:
 | Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
 | Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
 | Frontend API hooks | `zell-frontend/src/hooks/api-hooks/coaching-insights` |
-
