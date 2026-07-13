@@ -1,12 +1,12 @@
 ---
 title: "Calls History"
-description: "Review past calls with date, coaching score, comment, source, and scorecard filters"
+description: "Review past calls from the Calls workspace with date, scorecard, and coaching score filters"
 icon: "history"
 ---
 
 ## Overview
 
-Calls History gives users a paginated view of their previous calls. It shows call metadata, agent information, evaluation results, contact information, and feedback counts so users can inspect past conversations and open detailed call analysis.
+Calls History is the table view inside the user Calls workspace. `/calls` now opens the personal Coaching Insights view by default; users switch to the historical table with `/calls?view=list`. The table shows call metadata, agent information, evaluation results, contact information, and feedback counts so users can inspect past conversations and open detailed call analysis.
 
 ## Key Concepts
 
@@ -24,33 +24,45 @@ Calls History gives users a paginated view of their previous calls. It shows cal
   </Card>
 
   <Card title="Persistent Filters" icon="sliders-horizontal">
-    Date range and coaching score filters persist locally for the Calls History view.
+    Date range, scorecard, and coaching score filters persist locally for the table view.
   </Card>
 </CardGroup>
 
 ---
 
+## Calls Workspace Routing
+
+| URL | View | Frontend component | Notes |
+| --- | --- | --- | --- |
+| `/calls` | Coaching Insights | `UserCallsWorkspace` renders `UserCoachingInsightsDisplay`. | Default view. Any `view` value other than `list` falls back here. |
+| `/calls?view=list` | Table view | `UserCallsWorkspace` renders `UserCallsHistoryDisplay`. | Historical Calls table documented on this page. |
+
+The view toggle is client-side and does not change backend permissions. Clicking a Calls History row routes to `/call-analysis/{callId}`.
+
+---
+
 ## Visible Filters
 
-| Filter | Behavior |
-| --- | --- |
-| Date range | Filters calls by `startedAt` between the selected start and end dates. |
-| Coaching score | Filters calls by low, medium, high, or all coaching score ranges. |
+| Label | Frontend hook/component | Request field | Backend endpoint/schema/service | Database fields and scope | Defaults and empty/null behavior | Permissions and edge cases |
+| --- | --- | --- | --- | --- | --- | --- |
+| Scorecard | `UserCallsHistoryDisplay` uses `MultiSelect`; `useUserCallsHistoryViewModel` stores `calls-history-scorecard-ids`; options come from `useScoreCardsUsedByUser`. | `scorecardIds`, comma-separated by `useUserCallHistory`. | `GET /calls/history`; `ListCallsSchema.query.scorecardIds`; `getCallHistory`; `CallService.getUserCalls`. Options load from `GET /score-cards/used-by-user`. | History matches either `Agent.scorecardId` through `Call.agentId` or `Call.metadata.scorecardId`, always scoped to `Call.userId = authenticated user` and `valid = true`. The scorecard option endpoint currently returns scorecards from ended simulation calls with agent scorecards. | Default is `[]`; an empty array omits `scorecardIds`. If no matching agent or metadata scorecards exist, the service returns an empty page. | Requires `requireAuth`. Real-call-only scorecards may not appear in this dropdown because this view uses `/score-cards/used-by-user`, not `/used-by-user-real-calls` or `/used-by-user-all`. |
+| Coaching score | `UserCallsHistoryDisplay` select; `useUserCallsHistoryViewModel`; `getCoachingScoreRange`. | `minCoachingScore`, `maxCoachingScore`. | `GET /calls/history`; `ListCallsSchema`; `getCallHistory`; `CallService.getUserCalls` calls `getCallIdsWithZellScoreRange`. | Filters by stored `CallEvaluation.zellScore` range, then applies the authenticated-user and valid-call scope. | Default is `all`, which omits both fields. `minCoachingScore != null` triggers the range lookup; `maxCoachingScore` can be omitted for the high range. | If the range lookup finds no calls, the response is an empty paginated result. Boundary behavior is service-defined; avoid assuming the UI labels are exclusive without checking `getCallIdsWithZellScoreRange`. |
+| Date range | `UserCallsHistoryDisplay` uses `DateRangeDropdown`; `useDateRangeWithStorage` stores `calls-history-date-range`; `formatDateForApi` serializes dates. | `startDate`, `endDate` as ISO datetime strings without milliseconds. | `GET /calls/history`; `ListCallsSchema.query.startDate/endDate`; `getCallHistory`; `CallService.getUserCalls`. | Filters `Call.startedAt >= startDate` and `Call.startedAt <= endDate`, scoped to the authenticated user's valid calls. | Default is last 7 days. Missing `from` or `to` omits that side of the range. Invalid local-storage JSON is removed and the default range remains. | Future dates are disabled in the dropdown. Custom ranges clamp future end dates to today. |
 
 ### Coaching Score Ranges
 
-| Option | API range |
+| Option | Request fields |
 | --- | --- |
-| All coaching scores | No minimum or maximum. |
-| High coaching | Minimum `4`, no maximum. |
-| Medium coaching | Minimum `2`, maximum `4`. |
-| Low coaching | Minimum `0`, maximum `2`. |
+| All coaching scores | No `minCoachingScore` or `maxCoachingScore`. |
+| High coaching | `minCoachingScore=4`; no maximum. |
+| Medium coaching | `minCoachingScore=2&maxCoachingScore=4`. |
+| Low coaching | `minCoachingScore=0&maxCoachingScore=2`. |
 
 ---
 
 ## API-Supported Filters
 
-Some filters are supported by the API even when they are not currently visible in the Calls History UI.
+Some filters are supported by the API hook or backend even when they are not currently visible in the Calls History table UI.
 
 | Filter | Query parameter | Behavior |
 | --- | --- | --- |
@@ -61,9 +73,9 @@ Some filters are supported by the API even when they are not currently visible i
 | Date to | `endDate` | Filters `startedAt <= endDate`. |
 | Coaching score min | `minCoachingScore` | Filters to calls in the Zell/coachable score range. |
 | Coaching score max | `maxCoachingScore` | Used with the score range filter. |
-| Has comments | `hasComments=true` | Requires at least one feedback comment. |
-| Has unread comments | `hasUnreadComments=true` | Requires unread coachable feedback without a dislike vote. |
-| Source | `source` | Filters by call source. |
+| Has comments | `hasComments=true` | API hook supports this flag, but `ListCallsSchema` in the local backend does not currently declare it in the OpenAPI query schema. Handler reads only the literal string `true`. |
+| Has unread comments | `hasUnreadComments=true` | API hook supports this flag, but `ListCallsSchema` in the local backend does not currently declare it in the OpenAPI query schema. Requires unread coachable feedback without a dislike vote. |
+| Source | `source` | Filters by call source, `SIMULATION` or `REAL_CALL`; not visible in the current table view. |
 
 ---
 
@@ -71,11 +83,11 @@ Some filters are supported by the API even when they are not currently visible i
 
 <Steps>
   <Step title="Choose filters">
-    The user selects a date range and coaching score filter in Calls History.
+    The user switches to `/calls?view=list`, then selects scorecards, a coaching score range, and a date range.
   </Step>
 
   <Step title="Request history">
-    The frontend calls `/calls/history` with page, page size, date range, and coaching score parameters.
+    The frontend calls `/calls/history` with page, page size, scorecard IDs, date range, and coaching score parameters.
   </Step>
 
   <Step title="Scope the query">
@@ -96,17 +108,27 @@ Some filters are supported by the API even when they are not currently visible i
 - Query key starts with `['calls-history']`.
 - Date range is stored under `calls-history-date-range`.
 - Coaching score is stored under `calls-history-coaching-score`.
+- Selected scorecards are stored under `calls-history-scorecard-ids`.
+- Page number persists in module memory, not local storage; changing page size resets the page to `1`.
+- Page size defaults to `10`.
 - Calls are ordered by `startedAt` descending.
 - The route passes `valid: true`, so invalid calls are excluded.
+- If `hide_score` is enabled or unresolved, the frontend hides score display in the table.
 
 ## Source References
 
 | Area | Source |
 | --- | --- |
+| Calls page route | `zell-frontend/src/app/(auth)/calls/page.tsx` |
+| Workspace toggle | `zell-frontend/src/components/dashboard/user/UserCallsWorkspace.tsx` |
 | UI | `zell-frontend/src/components/dashboard/user/UserCallsHistoryDisplay.tsx` |
+| View model | `zell-frontend/src/components/dashboard/user/useUserCallsHistoryViewModel.ts` |
 | Data hook | `zell-frontend/src/hooks/useCallsHistoryData.ts` |
 | API hook | `zell-frontend/src/hooks/api-hooks/calls/queries/useUserCallHistory.ts` |
+| Scorecard option hook | `zell-frontend/src/hooks/api-hooks/score-cards/queries/useScoreCardsUsedByUser.ts` |
 | Score ranges | `zell-frontend/src/constants/coaching.ts` |
 | Backend route | `zell-backend-ts/src/api/call/history/index.ts` |
+| Backend schema | `zell-backend-ts/src/schemas/callSchemas.ts` |
 | Backend service | `zell-backend-ts/src/services/call/index.ts` |
-
+| Scorecard option service | `zell-backend-ts/src/services/scoreCard/index.ts` |
+| Database models | `zell-backend-ts/prisma/schema/calls.prisma` |
