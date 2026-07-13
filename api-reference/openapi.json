@@ -185,16 +185,11 @@
           },
           "expiresInSeconds": {
             "type": "number"
-          },
-          "url": {
-            "type": "string",
-            "format": "uri"
           }
         },
         "required": [
           "token",
-          "expiresInSeconds",
-          "url"
+          "expiresInSeconds"
         ]
       },
       "Course": {
@@ -4939,13 +4934,6 @@
                     "minimum": 0,
                     "exclusiveMinimum": true,
                     "example": 86400
-                  },
-                  "origin": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 64,
-                    "pattern": "^[a-z0-9_-]+$",
-                    "example": "sso-link"
                   }
                 },
                 "required": [
