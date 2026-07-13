@@ -8,6 +8,12 @@ icon: "history"
 
 Calls History is the table view inside the user Calls workspace. `/calls` now opens the personal Coaching Insights view by default; users switch to the historical table with `/calls?view=list`. The table shows call metadata, agent information, evaluation results, contact information, and feedback counts so users can inspect past conversations and open detailed call analysis.
 
+## Call Analysis Navigation
+
+Opening a call from history leads to Call Analysis. If the call cannot be loaded after deletion or missing data, the Call Analysis route redirects admins to team reports and regular users to home.
+
+Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
+
 ## Key Concepts
 
 <CardGroup cols={2}>
