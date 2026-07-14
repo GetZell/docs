@@ -6,13 +6,17 @@ icon: "chart-column"
 
 ## Overview
 
-Real Calls Reports provide manager/admin reporting over real call performance. The feature combines call filters, evaluation data, users, groups, workspaces, and scorecards to support performance analysis.
+Real Calls Reports provide manager/admin reporting over real call performance inside the unified team Reports workspace. The feature combines call filters, evaluation data, users, groups, workspaces, and scorecards to support performance analysis.
+
+The canonical route is `/admin/team/reports?type=real-calls`. The legacy `/admin/team/real-calls-reports` route redirects to the unified Reports page with the real-calls report type selected.
+
+When the real-calls reporting feature is disabled for a tenant, the report-type dropdown only exposes Simulation Reports and attempts to select real calls fall back to simulations.
 
 ## Key Concepts
 
 <CardGroup cols={2}>
   <Card title="Report Filters" icon="filter">
-    Reports can combine user, group, workspace, scorecard, source, and date filters.
+    Reports can combine report type, group, user, scorecard, and date filters.
   </Card>
 
   <Card title="Call Metrics" icon="activity">
@@ -28,7 +32,16 @@ Real Calls Reports provide manager/admin reporting over real call performance. T
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Unified Reports Workspace
 
-This page is a feature placeholder. It should be expanded with report filters, table columns, export behavior, and backend query rules.
+| UI area | Frontend source | Behavior |
+| --- | --- | --- |
+| Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` | Selects Simulation Reports or Real Calls Report. The value is stored in the `type` search parameter. |
+| Global filters | `src/components/teamManagement/reports/reportsGlobalFilters.tsx` | Renders report type, group, user, scorecard, and date filters in one row. Date is the last filter. |
+| View switch | `src/components/teamManagement/reports/reportsSwitch.tsx` | Switches between Coaching Insights and List view. The value is stored in the `view` search parameter. |
+| Route guard | `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Hides Real Calls Report when the feature flag is inactive and normalizes invalid report/view search parameters. |
+| Legacy route | `src/app/(auth)/admin/team/real-calls-reports/page.tsx` | Redirects to `/admin/team/reports?type=real-calls`. |
 
+The Real Calls Report list uses `GET /real-calls-reports`. It receives the unified global filter state and maps scorecard filters to `scorecardIds`, user filters to `userIds`, group filters to `groupIds`, and the selected date range to `dateFrom` and `dateTo`.
+
+The Real Calls Report Coaching Insights view uses the shared Coaching Insights tab with `source=REAL_CALL`. Its summary cards are average performance, average coaching potential, and average engagement. Lower average coaching potential means less remaining coaching need.
