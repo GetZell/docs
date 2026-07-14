@@ -6,10 +6,10 @@ icon: "chart-line"
 
 ## Overview
 
-Coaching Insights supports both the manager-facing dashboard for finding coaching opportunities across reps and the current-user coaching workspace for an individual rep's own data. The personal workspace is the default view at `/calls`; the historical calls table is available at `/calls?view=list`. The manager dashboard is used inside the unified team Reports workspace at `/admin/team/reports`:
+Coaching Insights supports both the manager-facing dashboard for finding coaching opportunities across reps and the current-user coaching workspace for an individual rep's own data. The personal workspace is the default view at `/calls`; the historical calls table is available at `/calls?view=list`. The manager dashboard is used in both simulation reports and real-call reports:
 
-- `type=simulations` mounts the tab with `source=SIMULATION`.
-- `type=real-calls` mounts the tab with `source=REAL_CALL`.
+- Simulation reports mount the tab with `source=SIMULATION`.
+- Real-call reports mount the tab with `source=REAL_CALL`.
 
 Coaching Insights answers four main questions:
 
@@ -23,7 +23,7 @@ Coaching Insights answers four main questions:
 
 <CardGroup cols={2}>
   <Card title="Zell Score" icon="zap">
-    Coaching potential for a call. Higher means there is more coaching need because the call score has room to improve and the moment is coachable.
+    Coaching potential for a call. Higher means there is more coaching ROI because the call score has room to improve and the moment is coachable.
   </Card>
 
   <Card title="Signal Score" icon="signal">
@@ -62,9 +62,9 @@ Coaching Insights combines global report filters with tab-local filters.
 
 | Filter | Where it comes from | Backend behavior |
 | --- | --- | --- |
-| Date range | Unified Reports global filters | Applies to `Call.startedAt`. Previous-period comparisons are only returned when both `dateFrom` and `dateTo` are present. |
-| Source | Unified Reports report type | `SIMULATION` when `type=simulations`, `REAL_CALL` when `type=real-calls`. |
-| Groups | Unified Reports global filters | Intersects the selected group members with any selected users. |
+| Date range | Parent reports page | Applies to `Call.startedAt`. Previous-period comparisons are only returned when both `dateFrom` and `dateTo` are present. |
+| Source | Parent reports page | `SIMULATION` on team reports, `REAL_CALL` on real-call reports. |
+| Groups | Parent reports page | Intersects the selected group members with any selected users. |
 | Users | Coaching Insights tab | Restricts overview results to selected users. |
 | Scorecards | Coaching Insights tab | Matches either the call agent's scorecard or `call.metadata.scorecardId`. |
 | Workspace | Request context | If a workspace context exists, overview is scoped to that workspace's users. |
