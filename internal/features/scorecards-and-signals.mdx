@@ -23,12 +23,19 @@ Scorecards and signals define how Zell evaluates calls and training interactions
     Signals can use LLM rubric, keyword, metric, or semantic detection.
   </Card>
 
+  <Card title="AI-Generated Scorecard" icon="sparkles">
+    Zell AI-generated scorecards are expected to create their scoring signals in the same flow as the scorecard.
+  </Card>
+
   <Card title="Evaluation Result" icon="clipboard-check">
     Scorecard results feed call analysis, coaching insights, snippets, and reports.
   </Card>
 </CardGroup>
 
+## Zell AI Generation
+
+Generated scorecards must contain at least one signal before they are handed to the scorecard creation service. Persisted scorecard metadata can still represent an empty signal list for existing records or intermediate admin edits, but the Zell AI generation path uses a stricter output contract so the model cannot silently create a scorecard without scoring criteria. Structured-output tooling must preserve array shape and item constraints for generated signals, including arrays wrapped in schema defaults.
+
 ## Current Documentation Status
 
 This internal page should eventually add implementation details beyond the public [Scorecards & Signals guide](/guides/scorecards), including evaluation jobs, source tables, score formulas, and migration behavior.
-
