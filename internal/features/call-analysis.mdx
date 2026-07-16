@@ -8,6 +8,31 @@ icon: "waveform"
 
 Call Analysis is the detail view for a single call. It combines recording playback, transcript context, evaluation results, feedback comments, inline coaching, and navigation from snippets or history.
 
+## Real-Call Header Metadata
+
+For real calls, the header displays recipient identity, company, date, duration, language, call type, outcome, and owner assignment when those values exist.
+
+Role behavior:
+
+- `USER`: sees language, call type, and outcome as read-only metadata.
+- `TEAM_LEAD`: can update language, call type, and outcome from inline header controls.
+- `ADMIN` and `INTERNAL_TOOL_ADMIN`: can update language, call type, outcome, title, and owner assignment.
+
+Language, call type, outcome, and owner changes are optimistic in the frontend and only show toast notifications on errors. Successful saves are silent. Title changes still show success and error toasts.
+
+Source references:
+
+- `src/app/(auth)/call-analysis/[callId]/page.tsx`
+- `src/components/analysis/header/RealCallMetadata.tsx`
+- `src/components/analysis/header/CallAnalysisTitle.tsx`
+- `src/components/analysis/header/useCallAnalysisHeaderActions.ts`
+
+## Navigation Behavior
+
+Call Analysis preserves breadcrumb context when opened from call collections or hiring flows. If a call cannot be loaded after deletion or missing data, the route redirects admins to team reports and regular users to home.
+
+Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
+
 ## Key Concepts
 
 <CardGroup cols={2}>
@@ -36,4 +61,3 @@ This page is a feature placeholder. It should be expanded with:
 - How `commentIndex` and recording tabs deep-link into the page.
 - Which actions are available by role.
 - How feedback, replies, votes, and read state behave.
-

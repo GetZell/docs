@@ -26,6 +26,7 @@
             "pages": [
               "guides/workspaces",
               "guides/scorecards",
+              "guides/calls",
               "guides/bots",
               "guides/tasks",
               "guides/courses",

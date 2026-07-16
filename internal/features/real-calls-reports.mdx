@@ -8,6 +8,19 @@ icon: "chart-column"
 
 Real Calls Reports provide manager/admin reporting over real call performance. The feature combines call filters, evaluation data, users, groups, workspaces, and scorecards to support performance analysis.
 
+## Call Detail Drilldown
+
+Rows that open Call Analysis use the real-call header behavior documented in `internal/features/call-analysis.mdx`.
+
+Managers and team leads can correct language, call type, and outcome from the call detail header. Admins can also edit the call title and reassign the call owner. Regular users see those metadata values as read-only.
+
+Successful metadata and assignment saves do not show confirmation toasts; failed saves show destructive error toasts and restore optimistic metadata selections where applicable.
+
+Source references:
+
+- `src/app/(auth)/call-analysis/[callId]/page.tsx`
+- `src/components/analysis/header/useCallAnalysisHeaderActions.ts`
+
 ## Key Concepts
 
 <CardGroup cols={2}>
@@ -31,4 +44,3 @@ Real Calls Reports provide manager/admin reporting over real call performance. T
 ## Current Documentation Status
 
 This page is a feature placeholder. It should be expanded with report filters, table columns, export behavior, and backend query rules.
-
