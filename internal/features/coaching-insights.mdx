@@ -168,6 +168,8 @@ Average coaching potential is the average of member-level `avgZellScore` values 
 
 Engagement measures whether users read the coachable snippets Zell surfaced.
 
+For the full implementation reference, see [Engagement Score](/internal/features/engagement-score).
+
 | Rule | Behavior |
 | --- | --- |
 | Eligible snippet | `SnippetEvaluation.score <= 5` and `coachability > 5`. |
@@ -176,13 +178,17 @@ Engagement measures whether users read the coachable snippets Zell surfaced.
 | Daily cap | At most `10` surfaced snippets per user per day count toward engagement. |
 | Score scale | Engagement is displayed on a 0-10 scale. |
 
-The daily cap is computed as:
+The daily cap is timestamp-based and inclusive of both ends:
 
 ```text
-10 * numberOfDaysInDateRange
+if dateFrom or dateTo is missing:
+  cap = 10
+else:
+  days = max(1, ceil((dateTo - dateFrom) / 1 day) + 1)
+  cap = 10 * days
 ```
 
-If no explicit date range is provided, the cap is `10`.
+A same-calendar-date range with different start and end times counts as two inclusive endpoints, so it caps at `20`. For example, `2026-06-01T00:00:00Z` to `2026-06-01T23:59:59Z` caps at `20`.
 
 Team engagement sums capped snippet counts per user, then computes:
 
@@ -224,7 +230,7 @@ Selecting a member loads that user's detailed signal breakdown.
 | Signal order | Lowest average score first. |
 | Previous signal score | Same signal over the previous period when a full date range exists. |
 
-Member engagement uses the same eligible-snippet and daily-cap rules as team engagement, but only for the selected user.
+Member engagement uses the same snippet score, coachability, dislike, source, date, scorecard, and daily-cap rules as team engagement, but only for the selected user. The member-detail query scopes directly to the selected `userId`; in the normal UI flow that user comes from the overview list, where regular-user and non-test-user filtering has already been applied.
 
 ---
 
