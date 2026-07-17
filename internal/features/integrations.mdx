@@ -77,8 +77,8 @@ Source: `src/hooks/api-hooks/tenants/queries/useGetTldvIntegration.ts`, `src/hoo
 
 | UI label | Frontend state | Request field | Default before status loads | Empty or null behavior | Source |
 | --- | --- | --- | --- | --- | --- |
-| `Include title keywords` | `filters.titleKeywords` | `titleKeywords?: string[]` | `[]` | Empty array is still sent by the frontend. The frontend does not treat it as `null`; backend determines whether this means no include-keyword restriction. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts` |
-| `Exclude title keywords` | `filters.excludeKeywords` | `excludeKeywords?: string[]` | `[]` | Empty array is still sent by the frontend. The frontend does not convert it to `null`. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts` |
+| `Include title keywords` | `filters.titleKeywords` | `titleKeywords?: string[]` | `[]` | Empty array is still sent by the frontend. The frontend does not treat it as `null`; backend determines whether this means no include-keyword restriction. Whitespace-only entries are rejected by request validation. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts`, `integrationSchemas.ts` |
+| `Exclude title keywords` | `filters.excludeKeywords` | `excludeKeywords?: string[]` | `[]` | Empty array is still sent by the frontend. The frontend does not convert it to `null`. Whitespace-only entries are rejected by request validation. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts`, `integrationSchemas.ts` |
 | `Minimum duration` | `filters.minDurationMinutes` | `minCallDurationSeconds?: number` | `5` minutes | Input clamps to `0` through `240` minutes. Payload converts minutes to seconds with `minDurationMinutes * 60`. Existing status converts seconds back to rounded minutes. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `utils.ts` |
 | `Only meetings with external participants` | `filters.onlyExternal` | `onlyExternal?: boolean` | `true` | Boolean switch; no null state in frontend. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts` |
 | `Auto-import matching meetings` | `filters.autoImportEnabled` | `autoImportEnabled?: boolean` | `false` | Boolean switch; no null state in frontend. UI copy says auto-import runs only when enabled. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts`, `src/messages/en.json` |
@@ -119,9 +119,21 @@ Source: `src/app/(auth)/settings/tenant/[tenantId]/tldv/TldvMeetingsList.tsx`, `
 | Auto-import | `tldv-sync-meetings` runs every 15 minutes and imports only matching meetings when `autoImportEnabled` is true. |
 | Retry behavior | Provider failures bubble up. Scheduled sync advances `lastSyncedAt` only when matching meeting imports did not fail. |
 
-Backend defaults are `minCallDurationSeconds = 300`, `onlyExternal = true`, and `autoImportEnabled = false`. Keyword arrays are trimmed, lowercased, and deduplicated before storage.
+Backend defaults are `minCallDurationSeconds = 300`, `onlyExternal = true`, and `autoImportEnabled = false`. Keyword arrays are trimmed, lowercased, and deduplicated before storage. The request schema rejects whitespace-only API keys, title keywords, exclude keywords, and meeting IDs for manual import before the service tries to connect to tl;dv or import a meeting.
 
 Source: `src/services/integration/tldv.ts`, `src/ports/adapters/tldvAdapter.ts`, `src/jobs/workers.ts`, `src/jobs/handlers/scheduled.ts`, `src/jobs/types.ts`, `src/lib/storage/paths.ts`
+
+### tl;dv Defensive Validation
+
+The backend now treats tl;dv provider meeting fields as required where Zell cannot safely recover. Meeting `id`, `name`, and `happenedAt` must be non-empty strings, and `happenedAt` must parse as a real date string. Transcript entries must include non-empty `speaker` and `text` strings plus finite numeric `startTime` and `endTime` values.
+
+If tl;dv returns malformed meeting or transcript data, Zell throws a provider/integration error instead of creating a call with a fallback title, fallback date, missing speaker, blank transcript text, or invented timing. Manual imports record that meeting as `Import failed`; scheduled sync logs the failed meeting, counts it as skipped, and does not advance `lastSyncedAt` when a matching meeting import fails. The 120-minute scheduled-sync overlap is intentionally unchanged, so the next successful sync can retry the overlapped window.
+
+Imported calls now use the tl;dv meeting `name` and `happenedAt` directly. Zell does not synthesize a replacement title or date for imported tl;dv meetings. After the call and optional analysis are written, the service awaits enqueueing the `call-processing` `process` job before reporting that the import succeeded.
+
+The old local helper script `scripts/uploadTldvRecordings.ts` was removed from the app repo. Employee runbooks should not reference it for tl;dv upload or backfill work.
+
+Source: `src/schemas/integrationSchemas.ts`, `src/ports/adapters/tldvAdapter.ts`, `src/ports/tldvPort.ts`, `src/services/integration/tldv.ts`
 
 ### tl;dv Edge Cases for Employee Q&A
 
@@ -133,7 +145,11 @@ Source: `src/services/integration/tldv.ts`, `src/ports/adapters/tldvAdapter.ts`,
 | Does refreshing meetings require saving filters first? | No. The `Refresh` button calls the meetings query refetch. Saving filters separately patches settings and invalidates the meetings query. |
 | Does the frontend pass the tenant ID in tl;dv endpoint URLs? | No. The hooks use tenant ID in React Query keys, but the endpoint paths are `/integrations/tldv...`; tenant scoping is handled outside the visible URL by the app/API context. |
 | What happens after a successful import? | The meetings query is invalidated, the toast reports the imported count returned by the API, and selected meeting IDs are cleared. |
+| Can an admin save a tl;dv API key or keyword that is only spaces? | No. The frontend trims the API key before connect, and backend request validation rejects whitespace-only API keys, title keywords, exclude keywords, and manual import meeting IDs. |
+| What should support infer from `Import failed` for a tl;dv meeting after this cleanup? | It may indicate malformed provider data, not only a network or storage issue. Check backend logs for `Invalid tldv meeting response` or `Invalid tldv transcript response`; Zell no longer silently imports those calls with fallback names, dates, speakers, or timings. |
+| Does auto-import move past a matching meeting that failed because provider data was malformed? | Not as a successful sync. Matching import failures are logged and skipped for that run, and `lastSyncedAt` is not advanced when any matching import fails. |
+| Can employees still use `scripts/uploadTldvRecordings.ts` for manual tl;dv uploads? | No. That local one-off script has been deleted and should not be used in support guidance. |
 
 ## Current Documentation Status
 
-This page now covers the tl;dv settings integration, backend import behavior, and sync failure modes. It should still be expanded with screenshots and customer-specific troubleshooting examples as they emerge.
+This page now covers the tl;dv settings integration, defensive request/provider validation, backend import behavior, and sync failure modes. It should still be expanded with screenshots and customer-specific troubleshooting examples as they emerge.
