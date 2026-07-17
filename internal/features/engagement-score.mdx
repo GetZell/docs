@@ -1,0 +1,194 @@
+---
+title: "Engagement Score"
+description: "Understand how Zell calculates coaching engagement from read coachable snippets"
+icon: "gauge"
+---
+
+## Overview
+
+The engagement score measures whether users read the coachable feedback Zell surfaced for them. It is not a general activity score, login score, call volume score, or performance score.
+
+The score is shown on a `0.0` to `10.0` scale:
+
+- `10.0` means all counted coachable snippets were read.
+- `5.0` means half of the counted coachable snippets were read.
+- `0.0` means none were read, or there were no eligible snippets.
+
+Internal source references:
+
+- `zell-backend-ts/prisma/queries/coachingInsightsQueries.ts`
+- `zell-backend-ts/src/services/coachingInsights/index.ts`
+- `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformancePanel.tsx`
+
+## Where It Appears
+
+| Surface | Value shown |
+| --- | --- |
+| Coaching Insights overview | `stats.avgEngagement`, the team-level engagement score for the current filters. |
+| Member row/detail | `member.engagement`, the selected user's engagement score. |
+| Member detail trend | `previousEngagement`, returned only when the current request includes both `dateFrom` and `dateTo`. |
+| Weekly engagement report | Member engagement values are sorted and summarized in email/Slack reports. |
+
+The frontend formats member engagement with one decimal. Member detail also uses status colors:
+
+| Score range | UI status |
+| --- | --- |
+| `>= 7` | Green |
+| `>= 4` and `< 7` | Amber |
+| `< 4` | Red |
+
+Team performance rows show a critical-engagement warning when a member's engagement is below `3`.
+
+## Eligible Snippets
+
+Only coachable snippets count toward engagement. For team-level engagement and overview member-list engagement, the backend applies the full eligibility set below.
+
+| Rule | Backend condition |
+| --- | --- |
+| Tenant scope | Call workspace belongs to the requested tenant. |
+| Valid call | `Call.valid = true`. |
+| Regular user only | Call owner has `role = USER` and `isTestUser = false`. |
+| Optional user filter | `Call.userId IN filters.userIds`. |
+| Optional scorecard filter | Agent scorecard or call metadata scorecard matches `filters.scorecardIds`. |
+| Optional source filter | `Call.source = filters.source`. |
+| Optional date filter | `Call.startedAt >= dateFrom` and/or `Call.startedAt <= dateTo`. |
+| Coachable score | `SnippetEvaluation.score <= 5`. |
+| High coachability | `SnippetEvaluation.coachability > 5`. |
+| Not disliked | No `EvaluationVote` for the feedback comment with `voteType = DISLIKE`. |
+
+A snippet is counted as read when the same eligible snippet has a feedback comment with `CallComment.readAt IS NOT NULL`.
+
+Member detail uses the same snippet score, coachability, dislike, source, date, and scorecard rules for the selected `userId`. It scopes directly to `Call.userId = userId` and does not repeat the `role = USER` / `isTestUser = false` guard in that query. In the normal UI flow, the selected member comes from the overview list, which already applies the regular-user guard.
+
+## Daily Cap
+
+Engagement intentionally caps the number of surfaced snippets per user so one user with many coachable moments does not dominate the team score.
+
+The constant is:
+
+```ts
+COACHING_DAILY_SURFACED_LIMIT = 10;
+```
+
+The cap is calculated in `dailySurfacedCap()`:
+
+```text
+if dateFrom or dateTo is missing:
+  cap = 10
+else:
+  days = max(1, ceil((dateTo - dateFrom) / 1 day) + 1)
+  cap = 10 * days
+```
+
+Examples:
+
+| Date range | Per-user cap |
+| --- | --- |
+| No full date range | `10` |
+| Exact same timestamp | `10` |
+| Same calendar date with different start/end times | `20` |
+| `2026-06-01T00:00:00Z` to `2026-06-08T00:00:00Z` | `80` |
+
+The cap is applied per user before team totals are aggregated.
+
+## Team Formula
+
+`queryTeamEngagement()` first groups eligible snippets by user, then caps each user's totals:
+
+```text
+cappedTotalSnippets = min(userTotalSnippets, cap)
+cappedTotalRead = min(userTotalRead, cappedTotalSnippets)
+```
+
+The team totals are the sum of those capped per-user values:
+
+```text
+teamTotalSnippets = sum(cappedTotalSnippets)
+teamTotalRead = sum(cappedTotalRead)
+```
+
+The service returns the displayed score:
+
+```text
+avgEngagement =
+  teamTotalSnippets > 0
+    ? round((teamTotalRead / teamTotalSnippets) * 100) / 10
+    : 0
+```
+
+This converts a read ratio into a `0.0` to `10.0` score and rounds to one decimal.
+
+Example:
+
+| User | Eligible snippets | Read snippets | Cap | Counted snippets | Counted read |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A | 12 | 8 | 10 | 10 | 8 |
+| B | 4 | 2 | 10 | 4 | 2 |
+| C | 0 | 0 | 10 | 0 | 0 |
+
+```text
+teamTotalSnippets = 10 + 4 = 14
+teamTotalRead = 8 + 2 = 10
+avgEngagement = round((10 / 14) * 100) / 10 = 7.1
+```
+
+## Member Formula
+
+Member engagement is calculated in two places:
+
+- `queryPerUserEngagement()` calculates the value shown in the overview member list.
+- `getMemberDetail()` calculates the selected user's detail value from signal snippet counts.
+
+Both use the same read-ratio and cap formula:
+
+```text
+totalSnippets = min(eligibleSnippetCount, cap)
+totalRead = min(readEligibleSnippetCount, totalSnippets)
+engagement =
+  totalSnippets > 0
+    ? round((totalRead / totalSnippets) * 100) / 10
+    : 0
+```
+
+`getMemberDetail()` gets snippet and read counts per signal, sums them, applies the cap, and then computes the same ratio. It also computes `previousEngagement` for the immediately preceding period when the request includes both `dateFrom` and `dateTo`.
+
+## Previous Period
+
+Previous-period engagement is only returned when both date boundaries exist.
+
+The previous period is built by subtracting the exact current duration:
+
+```text
+duration = dateTo - dateFrom
+previousDateFrom = dateFrom - duration
+previousDateTo = dateFrom
+```
+
+The same filters, eligibility rules, dislike exclusion, and caps apply to the previous period.
+
+If the previous period has no counted snippets, `previousAvgEngagement` or `previousEngagement` is `null`, not `0`.
+
+## Edge Cases
+
+| Case | Result |
+| --- | --- |
+| No eligible snippets | Engagement is `0` for the current period. |
+| Previous period has no eligible snippets | Previous engagement is `null`. |
+| Only `dateFrom` or only `dateTo` is set | Date filtering still applies, but the cap falls back to `10`. |
+| User has more eligible snippets than the cap | Only up to the cap count toward the denominator. |
+| User has more read snippets than capped total snippets | Read count is capped at the capped denominator. |
+| Feedback has any dislike vote | The snippet is excluded from both denominator and numerator. |
+| Test users/admin-owned calls | Excluded by `role = USER` and `isTestUser = false`. |
+
+## Common Debug Checklist
+
+When a reported engagement score looks wrong, check:
+
+- Whether the feedback comment has `readAt` set.
+- Whether the snippet has `score <= 5` and `coachability > 5`.
+- Whether any `DISLIKE` vote exists for the feedback comment.
+- Whether the call is valid and belongs to the tenant workspace.
+- Whether the call owner is a regular non-test user.
+- Whether active filters exclude the call by user, scorecard, source, or date.
+- Whether the per-user daily cap is reducing the denominator.

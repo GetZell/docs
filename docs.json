@@ -27,6 +27,7 @@
               "guides/workspaces",
               "guides/scorecards",
               "guides/calls",
+              "guides/engagement-score",
               "guides/bots",
               "guides/tasks",
               "guides/courses",
@@ -73,7 +74,8 @@
               "internal/features/feedback-inbox",
               "internal/features/manager-feedback-inbox",
               "internal/features/streaks-and-achievements",
-              "internal/features/coaching-insights"
+              "internal/features/coaching-insights",
+              "internal/features/engagement-score"
             ]
           },
           {
