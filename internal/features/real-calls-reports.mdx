@@ -8,7 +8,7 @@ icon: "chart-column"
 
 Real Calls Reports provide manager/admin reporting over real call performance inside the unified team Reports workspace. The feature combines call filters, evaluation data, users, groups, workspaces, and scorecards to support performance analysis.
 
-The canonical route is `/admin/team/reports?type=real-calls`. The legacy `/admin/team/real-calls-reports` route redirects to the unified Reports page with the real-calls report type selected.
+The canonical explicit route is `/admin/team/reports?type=real-calls`. The legacy `/admin/team/real-calls-reports` route redirects to the unified Reports page with the real-calls report type selected. Without a `type` query parameter, the workspace falls back to the persisted report type in localStorage key `reports-report-type`, then to Simulation Reports.
 
 When the real-calls reporting feature is disabled for a tenant, the report-type dropdown only exposes Simulation Reports and attempts to select real calls fall back to simulations.
 
@@ -49,7 +49,7 @@ Source references:
 
 | UI area | Frontend source | Behavior |
 | --- | --- | --- |
-| Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` | Selects Simulation Reports or Real Calls Report. The value is stored in the `type` search parameter. |
+| Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` and `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Selects Simulation Reports or Real Calls Report. `type=real-calls` selects real calls explicitly; otherwise the UI uses localStorage key `reports-report-type` and defaults to simulations. Changing to Real Calls Report stores `real-calls` and sets `type=real-calls`; changing to Simulation Reports stores `simulations` and removes `type`. Empty, missing, or unrecognized stored values normalize to simulations. |
 | Global filters | `src/components/teamManagement/reports/reportsGlobalFilters.tsx` | Renders report type, group, user, scorecard, and date filters in one row. Date is the last filter. |
 | View switch | `src/components/teamManagement/reports/reportsSwitch.tsx` | Switches between Coaching Insights and List view. The value is stored in the `view` search parameter. |
 | Route guard | `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Hides Real Calls Report when the feature flag is inactive and normalizes invalid report/view search parameters. |
