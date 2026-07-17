@@ -1,6 +1,6 @@
 ---
 title: "Integrations"
-description: "Connect Zell with Gong, Slack, Aircall, HubSpot, and calling providers"
+description: "Connect Zell with Gong, Slack, Aircall, HubSpot, tl;dv, and calling providers"
 icon: "plug"
 ---
 
@@ -26,9 +26,114 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
   <Card title="HubSpot" icon="contact">
     CRM metadata can appear in call titles, contact names, and company context.
   </Card>
+
+  <Card title="tl;dv" icon="video">
+    Imports customer-facing tl;dv recordings into Zell call analysis.
+  </Card>
 </CardGroup>
+
+## tl;dv Integration
+
+The tl;dv settings page lets an admin connect a tenant to tl;dv, tune import filters, review recent meetings, manually import selected meetings into Zell, and optionally enable recurring auto-import.
+
+**Where is it in the app?**
+
+The route is `/settings/tenant/:tenantId/tldv`, built by `appRoutes.toTenantSettingsTldvPage`. The Settings sidebar shows it under `Integrations` with the label `tl;dv`.
+
+Source: `src/appRoutes.ts`, `src/components/layouts/SettingsNav.tsx`
+
+**Who can see it from the frontend?**
+
+The Settings sidebar adds the `Integrations` section only when `session.user.role === UserRole.ADMIN`. Team leads can see the Team settings section, but not the tenant integration links. The tl;dv page component itself does not add an additional role check in the files reviewed; it relies on the app's existing authenticated settings routing and API authorization.
+
+Source: `src/components/layouts/SettingsNav.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/tldv/page.tsx`
+
+**What happens when the tenant is not connected?**
+
+The page shows a `Connect to tl;dv` panel with an API key field and the same import filters used after connection. Clicking `Connect to tl;dv` sends the trimmed API key plus filter payload to `PUT /integrations/tldv`. If the key is empty after trimming, the frontend does not call the API and shows the `Missing API key` toast.
+
+Source: `src/app/(auth)/settings/tenant/[tenantId]/tldv/TldvConnectionPanel.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/tldv/useTldvSettingsViewModel.ts`, `src/hooks/api-hooks/tenants/mutations/useConnectTldv.ts`
+
+**What happens when the tenant is connected?**
+
+The page shows a connected panel, a `Disconnect` action, editable import filters, and a recent meetings section. Meetings are fetched only when `GET /integrations/tldv` returns `connected: true`. Disconnect calls `DELETE /integrations/tldv`.
+
+Source: `src/app/(auth)/settings/tenant/[tenantId]/tldv/TldvSettingsClient.tsx`, `src/hooks/api-hooks/tenants/queries/useGetTldvIntegration.ts`, `src/hooks/api-hooks/tenants/queries/useGetTldvMeetings.ts`, `src/hooks/api-hooks/tenants/mutations/useDisconnectTldvIntegration.ts`
+
+### tl;dv API Calls
+
+| Frontend action | Hook | Method and endpoint | Request body | Notes |
+| --- | --- | --- | --- | --- |
+| Load integration status | `useGetTldvIntegration` | `GET /integrations/tldv` | None | Returns connection state and saved filter settings. |
+| Connect integration | `useConnectTldv` | `PUT /integrations/tldv` | `apiKey` plus filter fields | Invalidates the tl;dv status query on success. |
+| Disconnect integration | `useDisconnectTldvIntegration` | `DELETE /integrations/tldv` | None | Invalidates the tl;dv status query on success. |
+| Save filters after connection | `useUpdateTldvSettings` | `PATCH /integrations/tldv/settings` | Filter fields | Invalidates tl;dv status and meetings queries on success. |
+| Load meetings | `useGetTldvMeetings` | `GET /integrations/tldv/meetings` | None | Enabled only after the tenant is connected. Defaults to an empty array while data is missing. |
+| Import selected meetings | `useImportTldvMeetings` | `POST /integrations/tldv/import-meetings` | `{ meetingIds: string[] }` | Invalidates meetings on success and clears the selection in the view model. |
+
+Source: `src/hooks/api-hooks/tenants/queries/useGetTldvIntegration.ts`, `src/hooks/api-hooks/tenants/queries/useGetTldvMeetings.ts`, `src/hooks/api-hooks/tenants/mutations/useConnectTldv.ts`, `src/hooks/api-hooks/tenants/mutations/useDisconnectTldvIntegration.ts`, `src/hooks/api-hooks/tenants/mutations/useUpdateTldvSettings.ts`, `src/hooks/api-hooks/tenants/mutations/useImportTldvMeetings.ts`
+
+### tl;dv Import Filters
+
+| UI label | Frontend state | Request field | Default before status loads | Empty or null behavior | Source |
+| --- | --- | --- | --- | --- | --- |
+| `Include title keywords` | `filters.titleKeywords` | `titleKeywords?: string[]` | `[]` | Empty array is still sent by the frontend. The frontend does not treat it as `null`; backend determines whether this means no include-keyword restriction. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts` |
+| `Exclude title keywords` | `filters.excludeKeywords` | `excludeKeywords?: string[]` | `[]` | Empty array is still sent by the frontend. The frontend does not convert it to `null`. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts` |
+| `Minimum duration` | `filters.minDurationMinutes` | `minCallDurationSeconds?: number` | `5` minutes | Input clamps to `0` through `240` minutes. Payload converts minutes to seconds with `minDurationMinutes * 60`. Existing status converts seconds back to rounded minutes. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `utils.ts` |
+| `Only meetings with external participants` | `filters.onlyExternal` | `onlyExternal?: boolean` | `true` | Boolean switch; no null state in frontend. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts` |
+| `Auto-import matching meetings` | `filters.autoImportEnabled` | `autoImportEnabled?: boolean` | `false` | Boolean switch; no null state in frontend. UI copy says auto-import runs only when enabled. | `TldvImportFilters.tsx`, `useTldvSettingsViewModel.ts`, `tldvTypes.ts`, `src/messages/en.json` |
+
+When `GET /integrations/tldv` returns status, the view model replaces the default filters with `titleKeywords`, `excludeKeywords`, `Math.round(minCallDurationSeconds / 60)`, `onlyExternal`, and `autoImportEnabled` from the response.
+
+Source: `src/app/(auth)/settings/tenant/[tenantId]/tldv/useTldvSettingsViewModel.ts`
+
+### Recent Meetings Behavior
+
+Recent meetings are shown in a table with meeting name, happened-at date, organizer name/email, duration, and status. Matching meetings are shown by default. The `Show filtered` switch includes filtered-out meetings in the table; those meetings can still be manually imported unless they are already imported.
+
+Filtered meetings display reason badges for known backend reason codes:
+
+| Backend reason | Frontend label |
+| --- | --- |
+| `too_short` | `Too short` |
+| `title_keyword_missing` | `Keyword missing` |
+| `title_excluded` | `Excluded title` |
+| `internal_only` | `Internal only` |
+
+Unknown reason strings are displayed raw. `happenedAt: null`, `duration: null`, `organizerName: null`, and `organizerEmail: null` display as `-`. The meetings hook returns `[]` while data is unavailable, and the UI shows `No matching tl;dv meetings found.` when the visible meeting list is empty.
+
+Source: `src/app/(auth)/settings/tenant/[tenantId]/tldv/TldvMeetingsList.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/tldv/TldvMeetingsSection.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/tldv/utils.ts`, `src/hooks/api-hooks/tenants/queries/useGetTldvMeetings.ts`
+
+### Backend Import And Sync
+
+| Concern | Behavior |
+| --- | --- |
+| API key storage | `PUT /integrations/tldv` validates the key with tl;dv, encrypts it, and stores it under tenant integrations. |
+| Meeting list window | `GET /integrations/tldv/meetings` lists recent meetings from the last 30 days, capped at 50. |
+| Duplicate detection | Imported state is tenant-scoped and checked against real calls where `metadata.tldvMeetingId` matches. |
+| User matching | Manual and automatic imports resolve the organizer to a Zell user by email or name. |
+| Recording storage | Imported recordings are saved as `recordings/real-calls/tldv_<meetingId>.mp4` in tenant-private storage. |
+| Call metadata | Imported calls store `metadata.audioSource = "tldv"`, `metadata.tldvMeetingId`, title, source URL, and speaker names when available. |
+| Transcript handling | Transcript segments are role-assigned before `CallAnalysis` is created. Call and analysis writes happen in one transaction. |
+| Queueing | Each successful import enqueues a `call-processing` `process` job. |
+| Auto-import | `tldv-sync-meetings` runs every 15 minutes and imports only matching meetings when `autoImportEnabled` is true. |
+| Retry behavior | Provider failures bubble up. Scheduled sync advances `lastSyncedAt` only when matching meeting imports did not fail. |
+
+Backend defaults are `minCallDurationSeconds = 300`, `onlyExternal = true`, and `autoImportEnabled = false`. Keyword arrays are trimmed, lowercased, and deduplicated before storage.
+
+Source: `src/services/integration/tldv.ts`, `src/ports/adapters/tldvAdapter.ts`, `src/jobs/workers.ts`, `src/jobs/handlers/scheduled.ts`, `src/jobs/types.ts`, `src/lib/storage/paths.ts`
+
+### tl;dv Edge Cases for Employee Q&A
+
+| Question | Accurate answer |
+| --- | --- |
+| Can an admin import a meeting that does not match the filters? | Yes, if `Show filtered` is enabled and the meeting is not already imported. The copy explicitly says filtered meetings can still be imported manually. |
+| Can already imported meetings be selected again? | No. Row checkboxes for `alreadyImported` meetings are disabled, and bulk select includes only meetings where `alreadyImported` is false. |
+| What does the table header checkbox select? | The header checkbox toggles all currently visible importable meetings. With `Show filtered` off, that means matching visible meetings only. |
+| Does refreshing meetings require saving filters first? | No. The `Refresh` button calls the meetings query refetch. Saving filters separately patches settings and invalidates the meetings query. |
+| Does the frontend pass the tenant ID in tl;dv endpoint URLs? | No. The hooks use tenant ID in React Query keys, but the endpoint paths are `/integrations/tldv...`; tenant scoping is handled outside the visible URL by the app/API context. |
+| What happens after a successful import? | The meetings query is invalidated, the toast reports the imported count returned by the API, and selected meeting IDs are cleared. |
 
 ## Current Documentation Status
 
-This page is a feature placeholder. It should be expanded with setup flows, sync jobs, webhook behavior, provider-specific data mapping, and failure modes.
-
+This page now covers the tl;dv settings integration, backend import behavior, and sync failure modes. It should still be expanded with screenshots and customer-specific troubleshooting examples as they emerge.
