@@ -6,7 +6,7 @@ icon: "history"
 
 ## Overview
 
-Calls History is the table view inside the user Calls workspace. `/calls` now opens the personal Coaching Insights view by default; users switch to the historical table with `/calls?view=list`. The table shows call metadata, agent information, evaluation results, contact information, and feedback counts so users can inspect past conversations and open detailed call analysis.
+Calls History is the table view inside the user Calls workspace. `/calls` now opens the personal Coaching Insights view by default; users switch to the historical table with `/calls?view=list`. The table shows call metadata, agent or contact information, call duration, evaluation results, and feedback counts so users can inspect past conversations and open detailed call analysis.
 
 ## Call Analysis Navigation
 
@@ -44,6 +44,20 @@ Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
 | `/calls?view=list` | Table view | `UserCallsWorkspace` renders `UserCallsHistoryDisplay`. | Historical Calls table documented on this page. |
 
 The view toggle is client-side and does not change backend permissions. Clicking a Calls History row routes to `/call-analysis/{callId}`.
+
+---
+
+## Visible Columns
+
+| Column | Behavior |
+| --- | --- |
+| Date | Shows `startedAt` formatted with date and time. |
+| Target | Shows contact details for real calls and agent details for simulations. |
+| Duration | Standalone visible column computed from `startedAt` and `endedAt`. It is display-only and has no exposed column filter. |
+| Scorecard categories | One column per processed scorecard category. |
+| Score | Hidden when `hide_score` is enabled or unresolved. |
+| Coaching potential | Displays the call's Zell Score. |
+| Comments | Shows unread feedback count when present. |
 
 ---
 
