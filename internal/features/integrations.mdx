@@ -30,7 +30,64 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
   <Card title="tl;dv" icon="video">
     Imports customer-facing tl;dv recordings into Zell call analysis.
   </Card>
+
+  <Card title="Microsoft Teams" icon="video">
+    Imports Teams meeting recordings through Microsoft Graph recording subscriptions.
+  </Card>
 </CardGroup>
+
+## Microsoft Teams Integration
+
+The Teams integration connects an individual Zell user to Microsoft Graph, subscribes to that user's Teams recording notifications, and imports recordings as real calls when Graph sends webhook events.
+
+**Connection and subscription state**
+
+Teams OAuth is considered connected once Zell has exchanged the Microsoft authorization code and stored the access token, refresh token, expiry, and webhook token on the user integration record. Subscription creation is attempted during the same callback, but a subscription failure does not roll back the saved tokens. The OAuth callback can therefore redirect as a successful Teams connection even when Graph subscription creation failed.
+
+`GET /integrations/teams` reports connection and subscription state separately:
+
+| Status field | Meaning for support |
+| --- | --- |
+| `connected: false` | The user has no stored Teams access token. They need to connect Teams again. |
+| `connected: true` and `subscriptionActive: true` | Zell has stored Teams tokens and a Microsoft Graph subscription ID. Recording webhooks should be active until `subscriptionExpiresAt`. |
+| `connected: true` and `subscriptionActive: false` | Zell has stored Teams tokens but no active Graph subscription ID. This is a partial connection, not a failed OAuth connection. Renewal should retry subscription creation. |
+
+Source: `src/services/integration/teams.ts`, `src/schemas/integrationSchemas.ts`, `src/api/integration/teamsCallback/index.ts`, `src/tests/services/teamsIntegration.test.ts`
+
+**Subscription renewal and recovery**
+
+The renewal job runs `TeamsIntegrationService.renewSubscriptions()` for users with stored Teams access tokens. For users with an existing `subscriptionId`, renewal patches the Microsoft Graph subscription expiry. For connected users missing a `subscriptionId`, renewal creates a new recording subscription using the saved webhook token, or generates one if the old record does not have it.
+
+In production, the scheduled Teams renewal job is configured for midnight every two days. A Microsoft lifecycle notification with `reauthorizationRequired` also triggers `renewSubscriptionForUser(userId)` asynchronously.
+
+Source: `src/services/integration/teams.ts`, `src/jobs/workers.ts`, `src/jobs/handlers/scheduled.ts`, `src/api/webhook/teams/index.ts`
+
+**Microsoft Graph and consent caveats**
+
+Microsoft Graph subscription creation can fail even after OAuth token exchange succeeds. One known cause is that the connected Microsoft account does not have a valid Office 365 or Teams license for the online meeting recording subscription resource. In that case Zell can show `connected: true` with `subscriptionActive: false`, but no Teams recording imports will arrive until Graph accepts subscription creation.
+
+The Teams OAuth scope currently includes `OnlineMeetingRecording.Read.All`, `OnlineMeetingArtifact.Read.All`, `OnlineMeetings.Read`, `User.Read`, and `offline_access`. `OnlineMeetings.Read` is required for the `GET /users/{userId}/onlineMeetings/{meetingId}` meeting-details lookup that Zell uses to fetch the Microsoft meeting subject for imported call titles; `OnlineMeetingArtifact.Read.All` alone is not sufficient for that endpoint. Existing Teams connections created before `OnlineMeetingArtifact.Read.All` or `OnlineMeetings.Read` was requested may need the user to reconnect, and some tenants may need a Microsoft admin to grant consent for the added permissions before meeting details or artifacts are available.
+
+Source: `src/ports/teamsPort.ts`, `src/ports/adapters/teamsAdapter.ts`, `src/services/integration/teams.ts`
+
+**Imported recording behavior**
+
+When Zell receives a Teams recording webhook, it parses the Microsoft user ID, online meeting ID, and recording ID from the Graph resource path. Zell refreshes the user's Teams access token when needed, fetches meeting details, downloads the recording, stores it in tenant-private storage, creates a real call, and queues call processing.
+
+Imported calls store `metadata.audioSource = "teams"`. The call title uses the Microsoft meeting subject when Graph returns a non-empty subject. If meeting details are unavailable or the subject is empty, Zell falls back to `Teams - <meetingId>`.
+
+Source: `src/services/integration/teams.ts`, `src/ports/adapters/teamsAdapter.ts`, `src/tests/services/teamsIntegration.test.ts`
+
+### Teams Edge Cases for Employee Q&A
+
+| Question | Accurate answer |
+| --- | --- |
+| Can Teams show as connected when recording webhooks are not active? | Yes. If OAuth succeeded but Graph subscription creation failed, Zell stores the tokens and reports `connected: true`, `subscriptionActive: false`, and `subscriptionExpiresAt: null`. |
+| Should support ask the user to reconnect immediately when `subscriptionActive` is false? | Not always. Renewal recreates missing subscriptions for connected users, so first check whether the renewal job or `reauthorizationRequired` lifecycle handling can recover it. If Graph keeps rejecting subscription creation, investigate Microsoft licensing and consent. |
+| What Microsoft-side issue commonly blocks subscription creation? | The connected Microsoft account may lack a valid Office 365 or Teams license for the Graph online meeting recording subscription resource. |
+| What permission change can affect existing Teams connections? | Existing connections may need reconnect or Microsoft admin consent for `OnlineMeetingArtifact.Read.All` and `OnlineMeetings.Read`. `OnlineMeetings.Read` is the permission needed for the meeting-title lookup endpoint; artifact scope alone is not enough. |
+| How are imported Teams calls titled? | Zell uses the Microsoft meeting subject when available. Otherwise it falls back to `Teams - <meetingId>`. |
+| Does a Teams subscription failure delete OAuth tokens? | No. The tokens remain stored so renewal can retry subscription creation later. |
 
 ## tl;dv Integration
 
