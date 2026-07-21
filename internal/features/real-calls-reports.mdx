@@ -50,11 +50,13 @@ Source references:
 | UI area | Frontend source | Behavior |
 | --- | --- | --- |
 | Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` and `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Selects Simulation Reports or Real Calls Report. `type=real-calls` selects real calls explicitly; otherwise the UI uses localStorage key `reports-report-type` and defaults to simulations. Changing to Real Calls Report stores `real-calls` and sets `type=real-calls`; changing to Simulation Reports stores `simulations` and removes `type`. Empty, missing, or unrecognized stored values normalize to simulations. |
-| Global filters | `src/components/teamManagement/reports/reportsGlobalFilters.tsx` | Renders report type, group, user, scorecard, and date filters in one row. Date is the last filter. |
+| Filter layout | `src/components/teamManagement/reports/reportsExpandableFilters.tsx`, `src/components/teamManagement/reports/reportsFilters.tsx`, `src/components/teamManagement/realCallsReports/realCallsFilters.tsx`, and `src/components/teamManagement/coachingInsights/CoachingInsightsTab.tsx` | Keeps report type, group, primary entity filter, and date visible. Less frequently changed filters render behind the `View more` toggle. The toggle shows the number of active hidden filters while collapsed. |
 | View switch | `src/components/teamManagement/reports/reportsSwitch.tsx` | Switches between Coaching Insights and List view. The value is stored in the `view` search parameter. |
 | Route guard | `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Hides Real Calls Report when the feature flag is inactive and normalizes invalid report/view search parameters. |
 | Legacy route | `src/app/(auth)/admin/team/real-calls-reports/page.tsx` | Redirects to `/admin/team/reports?type=real-calls`. |
 
 The Real Calls Report list uses `GET /real-calls-reports`. It receives the unified global filter state and maps scorecard filters to `scorecardIds`, user filters to `userIds`, group filters to `groupIds`, and the selected date range to `dateFrom` and `dateTo`.
+
+The list view keeps user and date filters visible. Scorecard, call type, call outcome, and coaching potential filters are in the expandable filter row. Collapsing the row only hides the controls; selected values remain active and continue to be sent to the backend.
 
 The Real Calls Report Coaching Insights view uses the shared Coaching Insights tab with `source=REAL_CALL`. Its summary cards are average performance, average coaching potential, and average engagement. Lower average coaching potential means less remaining coaching need.
