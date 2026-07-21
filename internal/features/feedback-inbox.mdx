@@ -74,7 +74,7 @@ The inbox does not expose manual filters. Zell selects items automatically.
 | Daily goal | The frontend progress goal is 10 completed items. |
 
 <Note>
-For the deeper backend algorithm, see [Snippet Selection Logic](/internal/features/backend-snippet-selection).
+For the complete Daily Review card filtering rules, see [Daily Review Card Filtering](/internal/features/daily-review-card-filtering). For shared backend snippet hydration, see [Snippet Selection Logic](/internal/features/backend-snippet-selection).
 </Note>
 
 ---
@@ -107,4 +107,3 @@ The inbox is empty when there are no eligible unread feedback snippets or when a
 - Answer endpoint: `/calls/inbox-snippets/{feedbackId}/answer`
 - Answering intentionally does not immediately invalidate the inbox query, so the reveal state remains visible until continue.
 - Extra reps are tracked locally with `zell:extra-reps:{yyyy-mm-dd}` after the daily progress goal is reached.
-

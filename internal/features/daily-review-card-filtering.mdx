@@ -1,0 +1,231 @@
+---
+title: "Daily Review Card Filtering"
+description: "Explain which feedback cards appear in the rep daily review and why"
+icon: "filter"
+---
+
+## Overview
+
+Daily Review is the card-by-card experience inside the rep [Feedback Inbox](/internal/features/feedback-inbox). The frontend does not expose manual filters and does not choose cards itself. The backend builds a daily plan from eligible unread feedback, stores that plan for the UTC day, and returns the first plan item that is still unread.
+
+The selection pipeline has four distinct stages:
+
+1. Build the candidate pool.
+2. Rank and trim the pool into today's plan.
+3. Pick the first unread item from that plan.
+4. Render the item as a passive, score estimate, or multiple-choice card.
+
+---
+
+## Quick Answer
+
+Zell shows a Daily Review card when the feedback belongs to the current rep, is unread, was created in the last 30 days, belongs to a call with a workspace, was not disliked, and either has a snippet score or manager/team-lead input. From that eligible pool, Zell prioritizes coaching-focus items, then higher coachability, then a stable daily hash. The plan can contain up to 30 items, tries to include positive examples as about 20% of the plan when available, and shows the first unread item in the stored daily order.
+
+---
+
+## Where Cards Appear
+
+| Surface | Behavior |
+| --- | --- |
+| Home page for regular users | Renders `FeedbackInbox`. |
+| Admin and team-lead home page | Does not render this rep Daily Review inbox. Managers use the separate manager inbox. |
+| Empty state | Shown when today's plan has no items, or when all items in today's plan are read. |
+| Extra reps | After 10 completed items, frontend shows an extra-reps gate before continuing through additional backend plan items. |
+
+The visible daily progress target is 10 cards. The backend plan can hold up to 30 cards, so items 11-30 are possible after the rep chooses to continue into extra reps.
+
+---
+
+## Candidate Pool Filters
+
+`queryInboxPool(userId, focusSignalIds)` decides which feedback rows are eligible before ranking.
+
+| Filter | Included when | Excluded when |
+| --- | --- | --- |
+| Owner | The call's `userId` is the current rep. | The feedback belongs to another user, even in the same tenant. |
+| Workspace | The call has a non-null `workspaceId`. | The call has no workspace. |
+| Read status | The feedback `readAt` is null. | The feedback was already read or completed. |
+| Time window | The feedback was created in the last 30 days. | The feedback is older than 30 days. |
+| Dislike vote | No `DISLIKE` vote exists for the feedback. | Any dislike vote exists for that feedback. |
+| Quality/input | The feedback has a snippet score, or admin/team-lead input. | The feedback has no score and no admin/team-lead input. |
+
+Admin/team-lead input means either the feedback has a direct `reviewerId`, or it has a reply authored by a user with role `ADMIN` or `TEAM_LEAD`.
+
+<Note>
+The pool query returns at most 300 rows before the daily plan builder trims the final plan.
+</Note>
+
+---
+
+## Deduplication
+
+Daily Review shows at most one feedback card for a specific call and transcript position in the candidate pool.
+
+The query uses one surviving row per `(callId, transcriptIndex)`. If multiple feedback rows point to the same call and transcript index, feedback with a direct reviewer is preferred over AI-only feedback. After deduplication, pool rows are ordered by feedback creation date descending before the pool limit is applied.
+
+This prevents a rep from seeing several cards about the same exact transcript moment in the same generated pool.
+
+---
+
+## Positive And Negative Labels
+
+Each candidate is labeled `positive` or `negative` before planning.
+
+| Label | Rule |
+| --- | --- |
+| Positive | The snippet score is greater than or equal to the rep's average snippet score from the same 30-day window. |
+| Negative | The snippet score is below that moving average, or the score comparison does not evaluate as true. |
+
+The threshold is personal and moving. A score of 8 can be negative for a rep whose recent average is higher, while a score of 7 can be positive for a rep whose recent average is lower.
+
+Positive cards use the positive feedback presentation in the UI. Negative cards use either reviewer attribution, when a reviewer exists, or the Flare tip presentation for AI feedback.
+
+---
+
+## Daily Plan Ranking
+
+If no plan exists for the current UTC date, `InboxReviewService` builds one using seed `userId:yyyy-mm-dd`.
+
+| Step | Behavior |
+| --- | --- |
+| Focus first | Items matching the rep's current coaching focus signal IDs rank before non-focus items. |
+| Coachability next | Within focus and non-focus groups, higher `coachability` ranks earlier. |
+| Stable tiebreak | Remaining ties use a hash of `feedbackId` and the daily seed. |
+| Plan cap | The plan contains at most 30 items. |
+| Positive mix | Zell targets a minimum positive share of 20% when enough positive candidates exist. |
+| Distribution | Positive items are spread through the negative items rather than appended at the end. |
+| Scarcity handling | If positives are scarce, negatives fill the remaining slots. If negatives are scarce, positives can fill the remaining slots. |
+
+The plan is deterministic for the same user, date, and pool. A refresh on the same day returns the same first unread item instead of reshuffling the review.
+
+---
+
+## Daily Plan Freezing
+
+The daily plan is stored by user and UTC date.
+
+| Situation | Behavior |
+| --- | --- |
+| New eligible feedback arrives after today's plan was created | It does not enter today's existing plan. It can appear in a future day's plan if still eligible and unread. |
+| User refreshes the page | The same stored plan is reused. |
+| User completes a card | The feedback is marked read, so the next request skips it and returns the next unread plan item. |
+| UTC day changes | Zell builds a fresh plan for the new date. |
+| An item was left unread yesterday | It can resurface in the next day's plan if it is still eligible. |
+| An item was completed yesterday | It does not resurface because `readAt` is no longer null. |
+
+---
+
+## Current Card Selection
+
+When `/calls/inbox-snippets` is requested:
+
+<Steps>
+  <Step title="Resolve today's plan">
+    Read the stored plan for the current UTC date, or build and store a new one.
+  </Step>
+
+  <Step title="Check read state">
+    Query the plan's feedback IDs and keep only IDs whose `readAt` is still null.
+  </Step>
+
+  <Step title="Calculate progress">
+    `completed` is `total - unreadCount`. `total` is the size of today's stored plan.
+  </Step>
+
+  <Step title="Return the first unread item">
+    Zell returns the first feedback ID in plan order that is still unread.
+  </Step>
+
+  <Step title="Return done when none remain">
+    If every plan item is read, the response has `item: null` and `done: true`.
+  </Step>
+</Steps>
+
+The frontend does not fetch a list and choose from it. It renders the single `item` returned by the backend.
+
+---
+
+## Card Type Assignment
+
+Each plan item receives one interaction type using a seeded hash. The hash picks from the interactions that the item supports.
+
+| Card type | Eligible when | What the user sees |
+| --- | --- | --- |
+| Passive | Always eligible. | The rep reads feedback and continues. |
+| Score estimate | The feedback has a snippet score. | The score is hidden on GET; after submitting a guess, the API returns the AI score and whether the guess was within 1 point. |
+| Multiple choice | The item is negative, has a transcript index, and the flagged transcript row is a rep line with role `caller`. | The rep picks the best coached response from three shuffled options. |
+
+Multiple choice options are generated lazily when the card is fetched. Options include the coached answer, the rep's original line, and a plausible wrong answer. The correct index and original-line index are not sent on GET; they are returned only after the answer is submitted.
+
+Because assignment is seeded by feedback ID and daily seed, an item's card type is stable inside the daily plan.
+
+---
+
+## What The Card Displays
+
+The returned item is a hydrated snippet. Hydration happens after selection and adds display data without changing which card was chosen.
+
+| Display data | Source/behavior |
+| --- | --- |
+| Feedback text | The selected feedback row, localized when localized text exists. |
+| Transcript context | `buildSnippetsFromRows()` expands around the feedback transcript position and returns relative indexes for highlighting. |
+| Signal badge | Evaluation category name, returned as `signalName`. |
+| Call title | Contact recipient name from call metadata, falling back to agent name. |
+| Call source badge | Real call vs simulation from `callSource`. |
+| Date | Call date from the hydrated snippet. |
+| Audio | Recording URL when `recordingPath` can be resolved. |
+| Reviewer | Reviewer name/image when the feedback has a reviewer. |
+| Replies and votes | Existing feedback replies and viewer vote state. |
+
+For score-estimate cards, the backend intentionally removes `score` from the GET response so the answer cannot be leaked before the user guesses.
+
+---
+
+## Completion And XP
+
+Submitting an answer goes to `/calls/inbox-snippets/{feedbackId}/answer`.
+
+| Interaction | Required request body | Correctness |
+| --- | --- | --- |
+| Passive | No `guess` or `choiceIndex` required. | Always correct. |
+| Score estimate | `guess` | Correct when the guess is within 1 point of the snippet score. |
+| Multiple choice | `choiceIndex` | Correct when the chosen option index matches the cached correct index. |
+
+If the feedback was unread, submission marks it read. Correct non-passive answers receive the interaction bonus XP in addition to the standard feedback-read XP. Re-answering the same already-read item does not award XP again.
+
+<Note>
+The answer mutation intentionally does not immediately invalidate the inbox query. This keeps the reveal/coaching state visible until the rep clicks continue.
+</Note>
+
+---
+
+## Common Support Answers
+
+| Question | Answer |
+| --- | --- |
+| Why did this new feedback not appear today? | Today's plan may already have been created. New eligible unread feedback can appear in a future daily plan. |
+| Why did an old unread item appear again? | Unread items can carry forward across UTC days while they remain within the 30-day window. |
+| Why did the rep not see a disliked card? | Any disliked feedback is excluded from the candidate pool. |
+| Why are strong examples shown? | The plan tries to include positives as about 20% of the daily plan when positive candidates exist. |
+| Why is the same call moment not repeated? | The pool deduplicates by call and transcript index, preferring direct reviewer feedback. |
+| Why is multiple choice unavailable for some feedback? | It only applies to negative snippets on a flagged rep transcript line. |
+| Why does progress stop at 10 when more cards exist? | 10 is the visible daily goal. The backend plan can include up to 30 items, and extra reps unlock the remaining items. |
+
+---
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| Home page routing | `zell-frontend/src/app/(auth)/page.tsx` |
+| Frontend inbox shell | `zell-frontend/src/components/dashboard/user/FeedbackInbox/FeedbackInbox.tsx` |
+| Frontend item model | `zell-frontend/src/models/InboxReview.ts` |
+| Card display shell | `zell-frontend/src/components/dashboard/user/FeedbackInbox/cards/CardShell.tsx` |
+| API route | `zell-backend-ts/src/api/call/callRouter.ts` |
+| Inbox service | `zell-backend-ts/src/services/inboxReview/index.ts` |
+| Pool query | `zell-backend-ts/prisma/queries/inboxReviewQueries.ts` |
+| Plan builder | `zell-backend-ts/src/services/inboxReview/planBuilder.ts` |
+| Multiple choice generation | `zell-backend-ts/src/services/inboxReview/mcGenerator.ts` |
+| Snippet hydration | `zell-backend-ts/src/services/snippets.ts` |
+| Route tests | `zell-backend-ts/src/tests/routes/inboxReview.test.ts` |
+| Plan tests | `zell-backend-ts/src/tests/services/inboxReviewPlan.test.ts` |

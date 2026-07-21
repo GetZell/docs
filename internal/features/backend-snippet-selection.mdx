@@ -11,7 +11,7 @@ Snippet selection is the backend logic that decides which coaching moments appea
 - **Selection:** SQL and service logic choose eligible feedback rows.
 - **Hydration:** Zell converts those rows into UI-ready snippets with transcript context, replies, localization, votes, reviewer data, and audio URLs.
 
-This page explains the platform behavior behind [Feedback Inbox](/internal/features/feedback-inbox) and [Manager Feedback Inbox](/internal/features/manager-feedback-inbox).
+This page explains the shared platform behavior behind [Feedback Inbox](/internal/features/feedback-inbox) and [Manager Feedback Inbox](/internal/features/manager-feedback-inbox). For the end-to-end rep Daily Review card filtering rules, see [Daily Review Card Filtering](/internal/features/daily-review-card-filtering).
 
 ## Key Concepts
 
@@ -139,4 +139,3 @@ This page explains the platform behavior behind [Feedback Inbox](/internal/featu
 | Manager inbox service | `zell-backend-ts/src/services/feedback/index.ts` |
 | Manager inbox query | `zell-backend-ts/prisma/queries/feedbackQueries.ts` |
 | Snippet hydration | `zell-backend-ts/src/services/snippets.ts` |
-
