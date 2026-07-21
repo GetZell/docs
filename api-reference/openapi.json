@@ -12644,6 +12644,9 @@
                               "callCount": {
                                 "type": "number"
                               },
+                              "currentStreak": {
+                                "type": "number"
+                              },
                               "engagement": {
                                 "type": "number"
                               }
@@ -12656,6 +12659,7 @@
                               "avgZellScore",
                               "avgScore",
                               "callCount",
+                              "currentStreak",
                               "engagement"
                             ]
                           }
@@ -36513,6 +36517,9 @@
                               "callCount": {
                                 "type": "number"
                               },
+                              "currentStreak": {
+                                "type": "number"
+                              },
                               "engagement": {
                                 "type": "number"
                               }
@@ -36525,6 +36532,7 @@
                               "avgZellScore",
                               "avgScore",
                               "callCount",
+                              "currentStreak",
                               "engagement"
                             ]
                           }

@@ -48,8 +48,8 @@ Coaching Insights answers four main questions:
 | Stats cards | Average performance, average coaching potential, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
 | Weak signals | Lowest-performing signals for the selected scope. | Evaluation categories grouped by signal. |
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
-| Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
-| Member detail | Selected rep's signal breakdown and engagement. | Per-signal scores, snippet counts, and read counts. |
+| Team performance | Reps ordered by average Zell Score, with call count and current streak. | Per-user call evaluation aggregates joined to `UserProgress.currentStreak`. |
+| Member detail | Selected rep's signal breakdown, current streak, and engagement. | Per-signal scores, snippet counts, read counts, and the selected member's overview row. |
 | Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
 | Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
 | Personal skill gaps layout | The current user's focus areas and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
@@ -237,6 +237,7 @@ Selecting a member loads that user's detailed signal breakdown.
 | Field | Behavior |
 | --- | --- |
 | Call count | Count of valid calls with a non-null total score for that user. |
+| Current streak | Copied from the selected member overview row. The overview SQL reads `UserProgress.currentStreak` and returns it as `members[].currentStreak`; member detail does not issue a separate user-stats request. |
 | Signal average | Average `EvaluationCategory.score`, rounded to one decimal. |
 | Snippet count | Count of eligible coachable snippets for that signal. |
 | Read count | Count of eligible coachable snippets with `readAt` set. |
