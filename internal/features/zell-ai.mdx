@@ -36,6 +36,20 @@ Zell AI is the assistant experience inside the platform. It helps users ask ques
 
 When Zell AI creates a scorecard, the generated structured output must include at least one scoring signal. The backend validates generated scorecard output with a stricter schema than persisted scorecard metadata, so a model response with an empty signal list is rejected instead of creating a scorecard that cannot score calls. The Anthropic structured-output schema conversion must unwrap defaulted arrays so `signals` is exposed to the model as an array with `minItems`, not as a generic string field.
 
+## Model Picker Defaults
+
+When the Zell AI chat model list loads, the frontend preselects an Opus model when one is available. This is a frontend picker default only; it does not change the backend model list or the backend-declared default.
+
+The fallback order is:
+
+1. First model from `GET /admin/zell-ai/models` whose id includes `opus`
+2. Backend-declared default model from the same response
+3. First model returned by `GET /admin/zell-ai/models`
+
+Once a user explicitly picks a model in the Zell AI chat, the frontend does not clobber that choice when model data reloads. Support should treat unexpected initial picker values as a model-list ordering/default issue first, and unexpected changes after selection as a frontend state issue.
+
+Source: `src/hooks/zell-ai/modelSelection.ts`, `src/hooks/zell-ai/useZellAiChat.ts`
+
 ## Current Documentation Status
 
 This page is a feature placeholder. It should be expanded with chat lifecycle, available tools, access-control rules, query limitations, and common support cases.

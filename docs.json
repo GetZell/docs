@@ -39,6 +39,8 @@
             "public": true,
             "pages": [
               "guides/gong-integration",
+              "guides/teams-integration",
+              "guides/tldv-integration",
               "guides/slack-integration"
             ]
           },

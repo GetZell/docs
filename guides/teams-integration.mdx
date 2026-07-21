@@ -1,0 +1,53 @@
+---
+title: "Connect Microsoft Teams"
+description: "Import Microsoft Teams recordings into Zell for automatic call analysis"
+icon: "video"
+---
+
+## Overview
+
+The Microsoft Teams integration lets you bring Teams meeting recordings into Zell for call analysis. After connecting Teams, Zell imports eligible recordings and adds them to your call history as real calls.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    From anywhere in the app, click your avatar and select **Tenant Settings**.
+  </Step>
+
+  <Step title="Find Microsoft Teams">
+    In Settings, go to **Integrations** and open **Microsoft Teams**.
+  </Step>
+
+  <Step title="Connect Teams">
+    Click **Connect Microsoft Teams**. You'll be redirected to Microsoft to review and approve the requested permissions.
+  </Step>
+
+  <Step title="Approve Permissions">
+    Sign in with the Microsoft account you want to connect, then approve the permissions Zell uses to read Teams meeting titles and meeting artifacts, such as recordings.
+
+    <Warning>Depending on your Microsoft organization settings, an admin may need to approve the Zell permissions before the connection can be completed.</Warning>
+  </Step>
+
+  <Step title="Confirm the Connection">
+    After authorization, you'll return to Zell and Teams will appear as connected.
+  </Step>
+</Steps>
+
+## Imported Call Titles
+
+When Zell imports a Teams recording, it uses the Microsoft meeting title as the call title whenever that title is available. This makes imported Teams calls easier to recognize in your call history and call analysis pages.
+
+If Zell cannot read the meeting title, the imported call still appears in Zell using the fallback title **Teams - meeting id**.
+
+## Existing Teams Connections
+
+Existing Teams connections may need to be reconnected before Zell can use the updated Microsoft permissions needed to read meeting titles and meeting artifacts, such as recordings. If Teams calls continue to appear with the fallback title, disconnect and reconnect the Teams integration.
+
+If your Microsoft organization requires admin approval, ask your Microsoft admin to approve the latest Zell permissions during reconnect.
+
+## Disconnect Microsoft Teams
+
+To stop importing Teams recordings, open **Settings** -> **Integrations** -> **Microsoft Teams** and click **Disconnect**.
+
+Disconnecting stops Zell from using the saved Teams connection. You can reconnect later from the same integration page.

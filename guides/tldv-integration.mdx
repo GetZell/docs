@@ -1,0 +1,87 @@
+---
+title: "Connect tl;dv"
+description: "Import tl;dv meetings into Zell for automatic call analysis"
+icon: "video"
+---
+
+## Overview
+
+The tl;dv integration lets you bring customer-facing meeting recordings from tl;dv into Zell. After connecting your account, you can review recent meetings, import selected recordings manually, and optionally enable auto-import for meetings that match your filters.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    From anywhere in the app, click your avatar and select **Tenant Settings**.
+  </Step>
+
+  <Step title="Find tl;dv Integration">
+    In Settings, go to **Integrations** and open **tl;dv**.
+  </Step>
+
+  <Step title="Enter Your API Key">
+    Paste your tl;dv API key into the **API key** field.
+
+    You can use the visibility button next to the field to show or hide the key while entering it.
+  </Step>
+
+  <Step title="Choose Import Filters">
+    Set the filters Zell should use to decide which tl;dv meetings are eligible for import:
+
+    - **Include title keywords**: only include meetings whose title contains one of these keywords.
+    - **Exclude title keywords**: filter out meetings whose title contains one of these keywords.
+    - **Minimum duration**: filter out meetings shorter than the selected number of minutes.
+    - **Only meetings with external participants**: filter out internal-only meetings.
+    - **Auto-import matching meetings**: allow Zell to import matching meetings automatically after the integration is connected.
+  </Step>
+
+  <Step title="Connect to tl;dv">
+    Click **Connect to tl;dv**. Zell saves the API key and import filters, then shows the integration as connected.
+  </Step>
+</Steps>
+
+## Review Recent Meetings
+
+Once connected, the tl;dv page shows **Recent meetings**. Matching meetings are shown by default, and each row includes the meeting name, date, organizer, duration, and status.
+
+Statuses help you decide what to import:
+
+- **Matches**: the meeting matches your current filters and can be selected for import.
+- **Filtered**: the meeting does not match one or more filters.
+- **Imported**: the meeting has already been imported into Zell and cannot be selected again.
+
+Use **Refresh** to reload the recent meetings list.
+
+## Show Filtered Meetings
+
+Turn on **Show filtered** to include meetings that did not match your filters. Zell shows why a meeting was filtered, such as being too short, missing an include keyword, matching an excluded title keyword, or being internal only.
+
+Filtered meetings can still be imported manually if you decide they belong in Zell.
+
+## Import Selected Meetings
+
+To import meetings manually:
+
+1. Select one or more meetings from the recent meetings list.
+2. Use the header checkbox to select or clear all visible importable meetings.
+3. Click **Import**.
+
+Imported meetings are added to Zell for call analysis. After import, their status changes to **Imported**.
+
+## Update Import Filters
+
+After connecting tl;dv, you can update your filters from the same page. Change the filters and click **Save filters**.
+
+Your saved filters control which meetings are shown by default, which meetings are treated as matching in the review table, and which meetings are eligible for auto-import when auto-import is enabled.
+
+## Auto-Import
+
+When **Auto-import matching meetings** is enabled, Zell can automatically import tl;dv meetings that match your saved filters. Meetings that are filtered out are not auto-imported, but they can still be reviewed with **Show filtered** and imported manually.
+
+Leave auto-import turned off if you prefer to review and select meetings yourself.
+
+## Disconnect tl;dv
+
+To stop using the integration, open **Settings** → **Integrations** → **tl;dv** and click **Disconnect**.
+
+Disconnecting stops Zell from using the saved tl;dv connection. You can reconnect later by entering an API key again.
