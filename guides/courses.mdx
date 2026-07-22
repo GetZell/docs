@@ -6,7 +6,7 @@ icon: "graduation-cap"
 
 ## Overview
 
-Courses provide structured learning paths for your team with multiple modules, text content, and agent practice sessions. Each course has an **intensity preset** that controls the number of practice calls required and the minimum score a call must reach to count.
+Courses provide structured learning paths for your team with multiple modules, text content, and agent practice sessions. Each course has an **intensity preset** that provides the default number of practice calls required and the minimum score a call must reach to count.
 
 ## Intensity Presets
 
@@ -18,7 +18,7 @@ When creating a course, you select one of three intensity presets that define th
 | **Standard** | 5 calls | ≥7/10 | Ongoing training, skill building |
 | **Intensive** | 10 calls | ≥8/10 | New hire onboarding, certification programs |
 
-<Note>Intensity presets are locked—you select a preset and cannot customize individual values. This ensures consistent training standards across your organization.</Note>
+<Note>Intensity presets set the default call requirement and score threshold for agent call steps. Admins can override the required calls or pass threshold on an individual agent call step when a specific exercise needs different requirements.</Note>
 
 ## Creating a Course
 
@@ -96,8 +96,10 @@ Course creation is a 2-step process: first configure the course details, then bu
     **Agent Call Step:** Practice sessions with AI agents
     - **Title:** Name of the practice session
     - **Agent:** Select which bot learners will practice with (filtered by target groups if selected)
+    - **Calls Required:** Optional override for this practice step. If left empty, the course intensity preset is used.
+    - **Pass Threshold:** Optional score threshold for this practice step. If unchanged, the course intensity preset is used.
 
-    <Info>The number of calls required is automatically set by your course's intensity preset. For example, a **Standard** course requires 5 calls per agent step.</Info>
+    <Info>When no step-level override is set, the required calls come from the course's intensity preset. For example, a **Standard** course requires 5 calls per agent step.</Info>
 
     <Tip>Alternate between text steps (learning) and agent call steps (practice) for better retention.</Tip>
   </Step>
@@ -127,15 +129,17 @@ Text steps deliver written educational content to learners.
 
 ### Agent Call Step
 
-Agent call steps require learners to complete practice conversations with AI bots. The number of calls and the minimum score per call are determined by the course's intensity preset.
+Agent call steps require learners to complete practice conversations with AI bots. The number of calls and the minimum score per call use the course's intensity preset by default, unless an admin sets step-specific requirements.
 
 **Fields:**
 - **Title:** Name of the practice session (required, minimum 3 characters)
 - **Agent:** Select which bot learners will practice with (required)
+- **Calls Required:** Optional step-specific number of passing calls
+- **Pass Threshold:** Optional step-specific minimum score from 0 to 10
 
 **Pass Criteria:**
-- Each call must score at or above the preset's minimum (≥6/10, ≥7/10, or ≥8/10) to count toward completion
-- Accumulate the required number of passing calls (2, 5, or 10 depending on preset)
+- Each call must score at or above the step's threshold to count toward completion
+- Accumulate the required number of passing calls for the step
 
 **Use Cases:**
 - Applying learned techniques
@@ -233,7 +237,7 @@ To update an existing course:
    - Intensity preset
 3. Save your changes
 
-<Note>Changes to intensity preset affect the call requirements and minimum score per call for all steps going forward. User enrollment is managed directly on course cards.</Note>
+<Note>Changes to the intensity preset affect agent call steps that do not have step-specific call requirements or pass thresholds. User enrollment is managed directly on course cards.</Note>
 
 ### Tracking Progress
 
