@@ -33,11 +33,46 @@ Call Analysis preserves breadcrumb context when opened from call collections or 
 
 Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
 
+## Recording Playback and Timestamp Navigation
+
+Summary timestamps and play chips seek to the matching moment in the recording and start playback when the current page already has an in-page audio player.
+
+There are two supported paths:
+
+| Page shape | Behavior |
+| --- | --- |
+| Course call feedback with the sticky summary player | `CallAnalysisFeedback` renders `WaveformPlayer` above the summary. Summary timestamp clicks call `onSummarySeek`, which queues the requested seconds until the waveform player exposes its seek function. Once ready, the player seeks to the timestamp and starts playback without navigating through `commentIndex`. |
+| Standard Call Analysis tabs with the conversation player | `AnalysisTabs` switches to the recording tab and passes a pending seek request into `Conversation`. `Conversation` uses its internal `WaveformPlayer` when `bucketUrl` is present, consumes the pending request once seeking is ready, and plays from that timestamp. |
+
+If there is no in-page player for the current path, timestamp navigation falls back to the older URL-driven behavior: the page switches to `tab=recording` and, when a transcript index is available, writes `commentIndex` so the conversation can scroll to the referenced transcript line.
+
+Pending seeks are intentionally request-based, not just a stored timestamp. Each click gets a request id, so repeated clicks on the same timestamp can still be handled. `usePendingSeekRequest` keeps the request until the relevant `WaveformPlayer` reports that metadata is loaded and a seek function is ready, then marks that request handled.
+
+Waveform and compact audio controls stop click propagation from their play, seek, marker, speed, and volume controls. This prevents audio controls inside clickable parent rows or transcript/snippet containers from also triggering the parent row action.
+
+Employee Q&A:
+
+| Question | Answer |
+| --- | --- |
+| Does clicking a summary timestamp open the transcript line first? | Not when the page has an in-page player. It should seek and play the recording directly. |
+| Why might the seek happen after a short delay? | The seek is queued until the audio element has loaded enough metadata for the player to expose a safe seek function. |
+| Should support expect `commentIndex` in the URL after a summary timestamp click? | Only on fallback paths without an in-page player. In the player-backed path, the click should not use URL `commentIndex` navigation. |
+| What should happen if a user clicks a play button inside a clickable row? | The audio control should handle the click itself. The parent row should not open or navigate because the control stops propagation. |
+
+Source references:
+
+- `src/components/aiFeedback/CallAnalysisFeedback.tsx`
+- `src/components/analysis/tabs/AnalysisTabs.tsx`
+- `src/components/analysis/transcript/Conversation.tsx`
+- `src/components/analysis/transcript/usePendingSeekRequest.ts`
+- `src/components/analysis/WaveformPlayer.tsx`
+- `src/components/ui/audioPlayer.tsx`
+
 ## Key Concepts
 
 <CardGroup cols={2}>
   <Card title="Recording" icon="audio-lines">
-    Audio playback is available when the backend can resolve a recording URL.
+    Audio playback is available when the backend can resolve a recording URL. Summary timestamps can seek and play the in-page player when one is present.
   </Card>
 
   <Card title="Transcript" icon="file-text">
@@ -55,9 +90,8 @@ Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
 
 ## Current Documentation Status
 
-This page is a feature placeholder. It should be expanded with:
+This page is still a partial feature map. Remaining areas to expand:
 
 - Tabs and sections available in the call analysis route.
-- How `commentIndex` and recording tabs deep-link into the page.
 - Which actions are available by role.
 - How feedback, replies, votes, and read state behave.
