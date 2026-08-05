@@ -42,10 +42,14 @@ The AI judges the transcript against a rubric you define. Best for nuanced, qual
 
 | Field | Description |
 |-------|-------------|
-| **Description** | What the signal checks (e.g., "Did the rep handle the objection?") |
-| **Evaluation Guide** | Instructions for reviewers on what good/bad performance looks like |
-| **Rubric** | Structured scoring criteria with examples |
+| **Description** | The real-call evaluation criteria. Define what the signal checks, when it applies, and any routing, exclusion, exception, or opportunity/null rules. |
+| **User Guidelines** | User-facing guidance about what good performance looks like. This also guides simulated personas, but is not used to score real calls. |
+| **Rubric** | Observable scoring criteria and examples for real-call evaluation. Include any scoring-critical exceptions in the relevant bands. |
 | **Mode** | `YES_NO` (binary pass/fail) or `RANGE` (0–10 scale) |
+
+<Note>
+  For real calls, the AI receives the signal name, Description, and Rubric. It does not receive User Guidelines. Keep every rule that could change which moments belong to the signal, whether an opportunity existed, whether the result should be null, or which score applies in the Description or Rubric.
+</Note>
 
 ### Keyword
 
@@ -98,7 +102,7 @@ Embedding similarity match against example phrases. Useful for detecting intent 
   <Step title="Configure the Signal">
     Fill in the configuration fields for your chosen method. Be specific in descriptions and provide examples where possible.
 
-    <Tip>For LLM Rubric signals, writing a clear evaluation guide significantly improves scoring consistency.</Tip>
+    <Tip>For LLM Rubric signals, make the Description and Rubric complete enough to evaluate a real call without relying on User Guidelines. Use User Guidelines to explain and practice what good execution looks like.</Tip>
   </Step>
 
   <Step title="Set Status">

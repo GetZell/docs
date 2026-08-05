@@ -36,6 +36,60 @@ Scorecards and signals define how Zell evaluates calls and training interactions
 
 Generated scorecards must contain at least one signal before they are handed to the scorecard creation service. Persisted scorecard metadata can still represent an empty signal list for existing records or intermediate admin edits, but the Zell AI generation path uses a stricter output contract so the model cannot silently create a scorecard without scoring criteria. Structured-output tooling must preserve array shape and item constraints for generated signals, including arrays wrapped in schema defaults.
 
+Generation is not persistence. Zell AI first gathers the scorecard scope and presents a summary for review. The user must confirm that proposal in a prior turn before Zell AI calls `create_scorecard`. The returned `scorecardData` is a reviewable draft in the scorecard form; it is not live until the user separately reviews the generated fields and explicitly saves the form.
+
+For customer-supplied criteria, pass all approved criteria as one complete verbatim block. Generation creates exactly one signal for each supplied category and preserves category order. Any merge, split, rename, or reorder requires user approval before generation.
+
+## Real-Call Evaluation Pipeline
+
+Real-call feedback follows this sequence:
+
+```text
+scanAndAnnotate -> evaluateAnnotations -> deriveScores
+```
+
+For `LLM_RUBRIC` signals, the real-call scoring prompt receives only these signal fields:
+
+| Field | Real-call use |
+| --- | --- |
+| `name` | Routes an annotation to a signal by exact signal-name match. |
+| `description` | Appears as **Evaluation Criteria** and defines applicability, exclusions, context overrides, acceptable alternatives, and reasonable-opportunity rules. |
+| `rubric` | Anchors the holistic category score in observable behavior. |
+| `evaluationGuide` | Not included in real-call feedback or scoring. |
+
+The fields move through the pipeline as follows:
+
+| Stage | Behavior |
+| --- | --- |
+| `scanAndAnnotate` | Scans the transcript for a notable moment and attaches it to exactly one signal using that signal's exact `name`. Signal names therefore need to be distinct and stable; aliases or approximate-name routing are not supported. |
+| `evaluateAnnotations` | Reviews each annotation and either keeps, rewrites, re-categorizes, or drops it. Decision context is applied in this order: manager corrections, manager examples, scorecard criteria, then the customer playbook. |
+| `deriveScores` | Uses only the surviving evidence to assign a holistic score for each category from its rubric. If a category has no surviving evidence or the rep had no reasonable opportunity to demonstrate it, the result is `null`, not a failing score. |
+
+<Warning>
+Do not put any routing rule, context exception, exclusion, opportunity rule, or scoring-critical behavior only in `evaluationGuide`. Removing `evaluationGuide` must not change which signal owns a moment, whether the feedback is valid, whether the category should be `null`, or which rubric band applies.
+</Warning>
+
+`evaluationGuide` remains useful outside real-call scoring. The frontend labels it **User Guidelines**, displays it with `description` as fallback, and simulated persona calls use it as **What good looks like**.
+
+## Signal Design Implications
+
+- Keep names short, distinct, and in one language so exact-name routing remains unambiguous.
+- Put real-call decision boundaries and reasonable-opportunity behavior in `description`, with scoring exceptions reinforced in `rubric` where needed.
+- Treat a stage that was never reached as `null`. Score a reached stage poorly only when a reasonable opportunity existed and the rep missed the expected behavior.
+- Keep neighboring signals mutually exclusive so one notable moment has one best owner.
+- Use manager corrections and examples to override more general scorecard or playbook guidance; do not let a general playbook reverse a manager correction.
+
+## Implementation References
+
+- `zell-backend-ts/src/services/feedback/inputBuilder.ts` constructs real-call categories without `evaluationGuide`.
+- `zell-backend-ts/src/services/feedback/utils.ts` renders `name`, `description`, and `rubric` into scorecard markdown.
+- `zell-backend-ts/src/tests/services/scorecardToMarkdown.test.ts` verifies that `evaluationGuide` is excluded.
+- `zell-frontend/src/components/signals/SignalForm.tsx` labels `evaluationGuide` as **User Guidelines**.
+- `zell-frontend/src/components/course/components/ScoreCardDisplay.tsx` displays `evaluationGuide || description`.
+- `zell-backend-ts/src/services/personaChat/cooperationEngine.ts` uses `evaluationGuide` for simulated persona behavior.
+
+This field-flow contract was verified on August 5, 2026. If observed product behavior differs, treat that as a contract regression and investigate before changing scorecard guidance.
+
 ## Current Documentation Status
 
-This internal page should eventually add implementation details beyond the public [Scorecards & Signals guide](/guides/scorecards), including evaluation jobs, source tables, score formulas, and migration behavior.
+This internal page should eventually add source tables, score formulas, and migration behavior beyond the public [Scorecards & Signals guide](/guides/scorecards).
