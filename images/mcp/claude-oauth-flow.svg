@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="940" viewBox="0 0 1600 940" role="img" aria-labelledby="title description">
+  <title id="title">Authorize Zell from Claude Code</title>
+  <desc id="description">Four illustrated steps show the MCP menu, Zell selection, browser authorization, and connected status.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 10 5 0 10z" fill="#93C5FD"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="940" rx="28" fill="#F5F7FB"/>
+  <text x="80" y="74" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="34" font-weight="700">Finish OAuth inside Claude Code</text>
+  <text x="80" y="112" fill="#64748B" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20">Open the MCP menu, choose Zell, and approve access in your browser.</text>
+
+  <line x1="760" y1="305" x2="838" y2="305" stroke="#93C5FD" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <line x1="800" y1="450" x2="800" y2="522" stroke="#93C5FD" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+  <line x1="840" y1="680" x2="762" y2="680" stroke="#93C5FD" stroke-width="5" stroke-linecap="round" marker-end="url(#arrow)"/>
+
+  <rect x="80" y="150" width="680" height="300" rx="22" fill="#111827"/>
+  <path d="M80 172a22 22 0 0 1 22-22h636a22 22 0 0 1 22 22v48H80z" fill="#1F2937"/>
+  <circle cx="116" cy="185" r="7" fill="#FB7185"/>
+  <circle cx="140" cy="185" r="7" fill="#FBBF24"/>
+  <circle cx="164" cy="185" r="7" fill="#34D399"/>
+  <rect x="100" y="238" width="46" height="46" rx="23" fill="#2563EB"/>
+  <text x="123" y="269" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="22" font-weight="700">1</text>
+  <text x="170" y="267" fill="#93C5FD" font-family="Inter, sans-serif" font-size="20" font-weight="700">Open the MCP menu</text>
+  <text x="120" y="345" fill="#60A5FA" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="25" font-weight="700">›</text>
+  <text x="152" y="345" fill="#F8FAFC" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="25">/mcp</text>
+  <text x="120" y="402" fill="#94A3B8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">Manage MCP servers</text>
+
+  <rect x="840" y="150" width="680" height="300" rx="22" fill="#111827"/>
+  <path d="M840 172a22 22 0 0 1 22-22h636a22 22 0 0 1 22 22v48H840z" fill="#1F2937"/>
+  <text x="880" y="191" fill="#CBD5E1" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">Claude Code · MCP servers</text>
+  <rect x="860" y="238" width="46" height="46" rx="23" fill="#2563EB"/>
+  <text x="883" y="269" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="22" font-weight="700">2</text>
+  <text x="930" y="267" fill="#93C5FD" font-family="Inter, sans-serif" font-size="20" font-weight="700">Choose Zell</text>
+  <rect x="880" y="310" width="600" height="86" rx="14" fill="#1F2937" stroke="#3B82F6" stroke-width="2"/>
+  <text x="912" y="346" fill="#F8FAFC" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">› zell</text>
+  <text x="912" y="376" fill="#FBBF24" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="16">Needs authentication · press Enter</text>
+
+  <rect x="840" y="530" width="680" height="300" rx="22" fill="#FFFFFF" stroke="#DCE3EE" stroke-width="2"/>
+  <path d="M840 552a22 22 0 0 1 22-22h636a22 22 0 0 1 22 22v48H840z" fill="#E8EDF5"/>
+  <circle cx="876" cy="565" r="7" fill="#FB7185"/>
+  <circle cx="900" cy="565" r="7" fill="#FBBF24"/>
+  <circle cx="924" cy="565" r="7" fill="#34D399"/>
+  <rect x="976" y="548" width="500" height="34" rx="17" fill="#FFFFFF"/>
+  <text x="995" y="571" fill="#64748B" font-family="Inter, sans-serif" font-size="14">api.getzell.com</text>
+  <rect x="860" y="618" width="46" height="46" rx="23" fill="#2563EB"/>
+  <text x="883" y="649" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="22" font-weight="700">3</text>
+  <text x="930" y="647" fill="#1E3A8A" font-family="Inter, sans-serif" font-size="20" font-weight="700">Authorize in your browser</text>
+  <text x="930" y="692" fill="#334155" font-family="Inter, sans-serif" font-size="18">Sign in to Zell and approve the connection.</text>
+  <rect x="930" y="728" width="178" height="48" rx="10" fill="#2563EB"/>
+  <text x="1019" y="759" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="17" font-weight="700">Authorize</text>
+
+  <rect x="80" y="530" width="680" height="300" rx="22" fill="#111827"/>
+  <path d="M80 552a22 22 0 0 1 22-22h636a22 22 0 0 1 22 22v48H80z" fill="#1F2937"/>
+  <text x="120" y="571" fill="#CBD5E1" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">Claude Code · MCP servers</text>
+  <rect x="100" y="618" width="46" height="46" rx="23" fill="#2563EB"/>
+  <text x="123" y="649" text-anchor="middle" fill="#FFFFFF" font-family="Inter, sans-serif" font-size="22" font-weight="700">4</text>
+  <text x="170" y="647" fill="#93C5FD" font-family="Inter, sans-serif" font-size="20" font-weight="700">Return to Claude Code</text>
+  <rect x="120" y="696" width="600" height="86" rx="14" fill="#1F2937"/>
+  <circle cx="154" cy="732" r="9" fill="#22C55E"/>
+  <text x="180" y="740" fill="#F8FAFC" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">zell · Connected</text>
+  <text x="80" y="890" fill="#64748B" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="16">Illustrated flow — labels may vary slightly by Claude Code version.</text>
+</svg>

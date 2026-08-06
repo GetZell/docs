@@ -34,7 +34,33 @@ Zell AI is the assistant experience inside the platform. It helps users ask ques
 
 ## Scorecard Creation
 
-When Zell AI creates a scorecard, the generated structured output must include at least one scoring signal. The backend validates generated scorecard output with a stricter schema than persisted scorecard metadata, so a model response with an empty signal list is rejected instead of creating a scorecard that cannot score calls. The Anthropic structured-output schema conversion must unwrap defaulted arrays so `signals` is exposed to the model as an array with `minItems`, not as a generic string field.
+Scorecard creation is a review-and-confirm workflow, not a one-step write:
+
+<Steps>
+  <Step title="Gather and summarize scope">
+    Zell AI establishes the workspace, language, call type, scorecard purpose, and approved criteria, then shows the proposed scorecard structure to the user.
+  </Step>
+
+  <Step title="Confirm before generation">
+    The user must confirm the proposal in a prior turn. Only that confirmation authorizes Zell AI to call `create_scorecard`; asking for analysis or optimization does not.
+  </Step>
+
+  <Step title="Generate a reviewable draft">
+    Zell AI generates `scorecardData` and passes it to the scorecard form. The generated structured output must include at least one scoring signal. Customer-supplied categories are passed as one complete verbatim criteria block and become one signal per category in the same order.
+  </Step>
+
+  <Step title="Review and explicitly save">
+    The user reviews the complete generated draft, including signal count, order, names, language, descriptions, guidelines, rubrics, methods, weights, call type, and workspace. Saving is a separate explicit action; generating the draft does not persist or activate it.
+  </Step>
+</Steps>
+
+<Warning>
+Confirmation to generate a draft is not confirmation to save it. Never describe a generated scorecard as created, updated, saved, or live until the separate save action succeeds.
+</Warning>
+
+The backend validates generated scorecard output with a stricter schema than persisted scorecard metadata, so a model response with an empty signal list is rejected instead of creating a scorecard that cannot score calls. The Anthropic structured-output schema conversion must unwrap defaulted arrays so `signals` is exposed to the model as an array with `minItems`, not as a generic string field.
+
+For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
 ## Model Picker Defaults
 

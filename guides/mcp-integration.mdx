@@ -1,0 +1,163 @@
+---
+title: "Connect to the Zell MCP"
+description: "Set up the Zell MCP in Claude Desktop, Claude Code, or Codex"
+icon: "plug"
+---
+
+The Zell MCP connects Claude or Codex to your Zell workspace. All clients use this remote MCP endpoint:
+
+```text
+https://api.getzell.com/mcp
+```
+
+Authentication uses OAuth, so you do not need to create or copy an API key.
+
+## Which client are you using?
+
+<CardGroup cols={3}>
+  <Card title="Claude Desktop" icon="desktop" href="#claude-desktop">
+    Add Zell as a custom connector in the Claude app.
+  </Card>
+
+  <Card title="Claude Code" icon="terminal" href="#claude-code">
+    Install Zell from your terminal and authorize it in a session.
+  </Card>
+
+  <Card title="Codex" icon="code" href="#codex">
+    Add and authorize Zell with the Codex CLI.
+  </Card>
+</CardGroup>
+
+## Claude Desktop
+
+<Steps>
+  <Step title="Choose your setup path">
+    <Tabs>
+      <Tab title="Individual plan">
+        Open the Claude desktop app and go to **Settings** → **Connectors**. Click **Add** in the upper-right corner, then select **Add custom connector**.
+
+        <img
+          src="/images/mcp/claude-connectors-zell-connected.png"
+          alt="Claude desktop app Connectors settings with the Add custom connector menu open and Zell shown as connected"
+          style={{ borderRadius: '0.75rem' }}
+        />
+      </Tab>
+
+      <Tab title="Team or Enterprise owner">
+        An **Owner** or **Primary Owner** must first add Zell for the organization. Go to **Organization settings** → **Connectors**, click **Add**, then select **Custom** → **Web**.
+      </Tab>
+
+      <Tab title="Team or Enterprise member">
+        Ask an **Owner** or **Primary Owner** to add Zell for your organization. After they add it, go to **Customize** → **Connectors**, find **Zell** with the **Custom** label, and click **Connect**.
+
+        Skip the next step because your organization owner has already entered the server URL.
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Enter the Zell details">
+    If you are using an individual plan or adding Zell as an organization owner, use **Zell** as the connector name and enter this URL as the remote MCP server URL:
+
+    ```text
+    https://api.getzell.com/mcp
+    ```
+
+    Save or connect the custom connector.
+  </Step>
+
+  <Step title="Authorize Zell">
+    On Team and Enterprise plans, every user—including the owner who added Zell—must go to **Customize** → **Connectors**, find **Zell**, and click **Connect**.
+
+    Sign in to Zell in the browser window that opens and approve the connection.
+  </Step>
+
+  <Step title="Confirm the connection">
+    Return to the connector list: **Settings** → **Connectors** on an individual plan or **Customize** → **Connectors** on a Team or Enterprise plan. Zell should appear as a custom web connector with a connected status.
+
+    <Check>Zell is now ready to use in Claude Desktop.</Check>
+  </Step>
+</Steps>
+
+For more information about plan permissions, see [Anthropic's custom connector guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+
+## Claude Code
+
+<Steps>
+  <Step title="Add the Zell MCP server">
+    Run this command in your terminal:
+
+    ```bash
+    claude mcp add --transport http zell https://api.getzell.com/mcp
+    ```
+
+    This saves Zell as an HTTP MCP server named `zell` in Claude Code.
+
+    <img
+      src="/images/mcp/claude-add-zell.svg"
+      alt="Terminal showing the command that adds the Zell MCP server to Claude Code"
+      style={{ borderRadius: '0.75rem' }}
+    />
+  </Step>
+
+  <Step title="Open Claude Code">
+    Start a new Claude Code session, or return to one that is already running.
+  </Step>
+
+  <Step title="Start OAuth from the MCP menu">
+    Enter the following slash command inside the Claude Code session:
+
+    ```text
+    /mcp
+    ```
+
+    Select **zell** and follow the authentication prompt. Claude Code opens your browser so you can sign in to Zell and authorize the connection.
+
+    <img
+      src="/images/mcp/claude-oauth-flow.svg"
+      alt="Illustrated Claude Code flow: enter slash mcp, select Zell, authorize in the browser, and return connected"
+      style={{ borderRadius: '0.75rem' }}
+    />
+  </Step>
+
+  <Step title="Confirm the connection">
+    Return to Claude Code after authorization. Open `/mcp` again and confirm that **zell** is connected.
+
+    <Check>Zell is now ready to use in Claude Code.</Check>
+  </Step>
+</Steps>
+
+## Codex
+
+Add the Zell MCP server:
+
+```bash
+codex mcp add zell --url https://api.getzell.com/mcp
+```
+
+Then start OAuth login:
+
+```bash
+codex mcp login zell
+```
+
+Complete the authorization in the browser window that opens. When you return to Codex, the Zell MCP server is ready to use.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Zell does not appear in Claude Desktop">
+    On an individual plan, add the custom connector again and confirm that the URL is exactly `https://api.getzell.com/mcp`. On Team and Enterprise plans, ask an Owner or Primary Owner to check that Zell is present under **Organization settings** → **Connectors**. After it is added there, users can find Zell under **Customize** → **Connectors**.
+  </Accordion>
+
+  <Accordion title="Claude Code does not show Zell in /mcp">
+    Run the `claude mcp add` command again and check that the server name is `zell`. Then restart your Claude Code session and open `/mcp`.
+  </Accordion>
+
+  <Accordion title="The browser did not open">
+    Open Zell from the Claude Desktop connector list or `/mcp` in Claude Code and start the connection again. In Codex, rerun `codex mcp login zell`. Follow any authorization URL displayed if the browser still does not open automatically.
+  </Accordion>
+
+  <Accordion title="Authorization expired or was revoked">
+    Start the OAuth flow again from the Claude Desktop connector list, `/mcp` in Claude Code, or `codex mcp login zell` in Codex.
+  </Accordion>
+</AccordionGroup>

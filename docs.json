@@ -38,6 +38,7 @@
             "group": "Integrations",
             "public": true,
             "pages": [
+              "guides/mcp-integration",
               "guides/gong-integration",
               "guides/teams-integration",
               "guides/tldv-integration",
