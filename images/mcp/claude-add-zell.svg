@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720" role="img" aria-labelledby="title description">
+  <title id="title">Add Zell to Claude Code</title>
+  <desc id="description">A terminal window showing the Claude MCP add command and a success message.</desc>
+  <rect width="1400" height="720" rx="28" fill="#F5F7FB"/>
+  <text x="90" y="84" fill="#111827" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="34" font-weight="700">Add Zell to Claude Code</text>
+  <text x="90" y="122" fill="#64748B" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="20">Run this command once in your terminal.</text>
+
+  <rect x="90" y="160" width="1220" height="450" rx="20" fill="#111827"/>
+  <path d="M90 180a20 20 0 0 1 20-20h1180a20 20 0 0 1 20 20v54H90z" fill="#1F2937"/>
+  <circle cx="130" cy="197" r="8" fill="#FB7185"/>
+  <circle cx="158" cy="197" r="8" fill="#FBBF24"/>
+  <circle cx="186" cy="197" r="8" fill="#34D399"/>
+  <text x="700" y="204" text-anchor="middle" fill="#94A3B8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="16">Terminal</text>
+
+  <text x="128" y="302" fill="#60A5FA" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20" font-weight="700">$</text>
+  <text x="157" y="302" fill="#F8FAFC" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="20">claude mcp add --transport http zell https://api.getzell.com/mcp</text>
+
+  <circle cx="139" cy="382" r="13" fill="#22C55E"/>
+  <path d="m133 382 4 4 8-9" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="169" y="389" fill="#CBD5E1" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="19">Zell MCP server added</text>
+  <text x="169" y="430" fill="#94A3B8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">Name       zell</text>
+  <text x="169" y="465" fill="#94A3B8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">Transport  HTTP</text>
+  <text x="169" y="500" fill="#94A3B8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">URL        https://api.getzell.com/mcp</text>
+
+  <rect x="90" y="638" width="210" height="42" rx="21" fill="#DBEAFE"/>
+  <circle cx="116" cy="659" r="8" fill="#2563EB"/>
+  <text x="136" y="666" fill="#1D4ED8" font-family="Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17" font-weight="600">Next: open Claude</text>
+</svg>
