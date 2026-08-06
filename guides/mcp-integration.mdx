@@ -1,10 +1,10 @@
 ---
 title: "Connect to the Zell MCP"
-description: "Set up the Zell MCP in Claude Desktop, Claude Code, or Codex"
+description: "Set up the Zell MCP in Claude, ChatGPT, or Codex"
 icon: "plug"
 ---
 
-The Zell MCP connects Claude or Codex to your Zell workspace. All clients use this remote MCP endpoint:
+The Zell MCP connects Claude, ChatGPT, or Codex to your Zell workspace. All clients use this remote MCP endpoint:
 
 ```text
 https://api.getzell.com/mcp
@@ -14,9 +14,13 @@ Authentication uses OAuth, so you do not need to create or copy an API key.
 
 ## Which client are you using?
 
-<CardGroup cols={3}>
+<CardGroup cols={2}>
   <Card title="Claude Desktop" icon="desktop" href="#claude-desktop">
     Add Zell as a custom connector in the Claude app.
+  </Card>
+
+  <Card title="ChatGPT" icon="sparkles" href="#chatgpt">
+    Add Zell as a custom app in ChatGPT Developer Mode.
   </Card>
 
   <Card title="Claude Code" icon="terminal" href="#claude-code">
@@ -79,6 +83,44 @@ Authentication uses OAuth, so you do not need to create or copy an API key.
 </Steps>
 
 For more information about plan permissions, see [Anthropic's custom connector guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+
+## ChatGPT
+
+<Info>
+  ChatGPT Developer Mode is available on the web for Plus, Pro, Business, Enterprise, and Education accounts. Managed workspaces may restrict who can create or publish custom apps.
+</Info>
+
+<Steps>
+  <Step title="Enable Developer Mode">
+    Open ChatGPT on the web, go to **Settings** → **Security and login**, and turn on **Developer mode**.
+  </Step>
+
+  <Step title="Create the Zell app">
+    Open [ChatGPT Plugins](https://chatgpt.com/plugins), click the **plus** button, and create a Developer Mode app with these details:
+
+    | Field | Value |
+    | --- | --- |
+    | Name | `Zell` |
+    | MCP server URL | `https://api.getzell.com/mcp` |
+    | Authentication | OAuth |
+  </Step>
+
+  <Step title="Authorize Zell">
+    Create the app and complete the OAuth prompt. Sign in to Zell and approve the connection. The finished app appears under **Drafts** in your ChatGPT app settings.
+  </Step>
+
+  <Step title="Test Zell in a chat">
+    Start a new chat, open the **plus** menu, choose **Developer mode**, and select **Zell** for the conversation. Ask ChatGPT to use Zell in your prompt and review tool calls before approving them.
+
+    <Check>Zell is now ready to use in ChatGPT.</Check>
+  </Step>
+
+  <Step title="Publish for your workspace (optional)">
+    In a managed workspace, an admin or owner can review the draft and publish Zell for other members. Each member connects their own Zell account before first use.
+  </Step>
+</Steps>
+
+For current availability and security guidance, see [OpenAI's ChatGPT Developer Mode guide](https://developers.openai.com/api/docs/guides/developer-mode).
 
 ## Claude Code
 
@@ -145,6 +187,14 @@ Complete the authorization in the browser window that opens. When you return to 
 ## Troubleshooting
 
 <AccordionGroup>
+  <Accordion title="ChatGPT does not show Developer Mode or Create">
+    Confirm that you are using ChatGPT web with a Plus, Pro, Business, Enterprise, or Education account. In a managed workspace, ask your workspace admin whether Developer Mode or custom app creation is restricted.
+  </Accordion>
+
+  <Accordion title="ChatGPT cannot scan the Zell tools">
+    Confirm that the MCP server URL is exactly `https://api.getzell.com/mcp`, refresh the Zell app from its settings, and complete the OAuth prompt again. If authorization expired, reconnect or recreate the app.
+  </Accordion>
+
   <Accordion title="Zell does not appear in Claude Desktop">
     On an individual plan, add the custom connector again and confirm that the URL is exactly `https://api.getzell.com/mcp`. On Team and Enterprise plans, ask an Owner or Primary Owner to check that Zell is present under **Organization settings** → **Connectors**. After it is added there, users can find Zell under **Customize** → **Connectors**.
   </Accordion>
