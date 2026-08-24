@@ -28,7 +28,61 @@ Personas define reusable personalities and behavior patterns for simulated conve
   </Card>
 </CardGroup>
 
+## Admin Simulation Persona Selector
+
+The **Create simulation** form requires a workspace before the persona controls
+are enabled. Its persona selector shows each persona name alongside the names of
+the groups assigned to that persona.
+
+### Workspace and data flow
+
+1. The form passes its selected `workspaceId` to `AdminPersonaCombobox`.
+2. `AdminPersonaCombobox` requests lightweight group records from
+   `GET /admin/groups?workspaceId=<workspaceId>`. The request is disabled until
+   a workspace is selected, and the TanStack Query key includes the workspace
+   ID (`["admin-groups", workspaceId]`) so changing workspaces uses the correct
+   cache entry and refetches when necessary.
+3. Personas are loaded from `GET /admin/personas` with `page=1` and
+   `pageSize=100`, then filtered to the workspace selected in the form.
+4. `PersonaCombobox` builds an ID-to-name map from the returned groups and
+   resolves each value in `persona.groupIds` against that map.
+
+Changing the workspace clears the selected persona and other
+workspace-dependent form fields. This prevents a persona from one workspace
+remaining selected after the form moves to another workspace.
+
+### Display and edge cases
+
+- A persona with one assigned group shows one secondary group badge.
+- A persona with multiple assigned groups shows a badge for every resolved
+  group, in the order of `persona.groupIds`.
+- If `groupIds` is absent or empty, the persona remains selectable and no group
+  badge is shown.
+- If a group ID is not present in the workspace-scoped group response, that ID
+  is omitted from the display. The UI does not render a placeholder or expose
+  the raw ID.
+- Long persona names are truncated in both the open option list and the closed
+  selector. The full persona name is available through the native hover
+  tooltip.
+- Group badges are constrained to a maximum width and truncate long group
+  names. Each badge exposes the full group name through its native hover
+  tooltip. When several badges exceed the row width, the row clips the overflow
+  rather than wrapping or expanding the selector.
+- Search and selection continue to use the persona name; group names are
+  supporting metadata rather than separate selectable values.
+
+### Source ownership
+
+| Responsibility | Frontend source |
+| --- | --- |
+| Workspace selection, persona filtering, and reset behavior | `src/components/admin/simulations/CreateSimulationForm.tsx` |
+| Workspace-scoped group query adapter | `src/components/admin/simulations/AdminPersonaCombobox.tsx` |
+| Persona/group layout, ID-to-name mapping, truncation, and selection | `src/components/admin/simulations/PersonaCombobox.tsx` |
+| `GET /admin/groups` query parameters, cache key, and enabled state | `src/hooks/api-hooks/groups/queries/useGetAdminGroups.ts` |
+| Persona list request | `src/hooks/api-hooks/personas/queries/useGetPersonas.ts` |
+
 ## Current Documentation Status
 
-This page is a feature placeholder. It should be expanded with persona creation, sharing, assignment, and simulation behavior rules.
-
+The admin simulation selector is documented above. Persona creation, sharing,
+assignment management, and broader simulation behavior still need additional
+implementation documentation.
