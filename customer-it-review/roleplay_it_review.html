@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zell – Roleplay IT & Compliance Review</title>
+<style>
+  @page { size: Letter; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #dfe3e8; color: #202938; font-family: Arial, Helvetica, sans-serif; }
+  .page { width: 8.5in; height: 11in; margin: 0 auto 18px; padding: .46in .68in .42in; background: #fff; position: relative; page-break-after: always; overflow: hidden; }
+  .page:last-child { page-break-after: auto; }
+  .header { height: .3in; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e3e8ef; padding-bottom: 8px; }
+  .logo { color: #146ef5; font-weight: 800; font-size: 12px; letter-spacing: .08em; }
+  .headmeta { color: #667085; font-weight: 700; font-size: 8px; letter-spacing: .09em; }
+  .content { padding-top: .24in; padding-bottom: .35in; }
+  .footer { position: absolute; bottom: .22in; left: .68in; right: .68in; display: flex; justify-content: space-between; color: #667085; font-size: 7.5px; letter-spacing: .04em; border-top: 1px solid #e3e8ef; padding-top: 7px; }
+  .kicker { color: #146ef5; font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; margin: 0 0 8px; }
+  h1 { color: #13213c; font-size: 25px; line-height: 1.06; letter-spacing: -.03em; margin: 0 0 12px; }
+  h2 { color: #13213c; font-size: 16px; line-height: 1.18; margin: 18px 0 8px; }
+  h3 { color: #13213c; font-size: 11px; line-height: 1.2; margin: 12px 0 5px; }
+  p { font-size: 9.3px; line-height: 1.42; margin: 0 0 8px; }
+  .subtitle { color: #667085; font-size: 11px; margin-bottom: 16px; }
+  .callout { border-radius: 7px; padding: 12px 14px; margin: 11px 0; background: #eef4ff; border-left: 4px solid #146ef5; }
+  .callout.green { background: #ecfdf3; border-color: #067647; }
+  .callout.amber { background: #fffaeb; border-color: #b54708; }
+  .callout strong { display: block; color: #146ef5; font-size: 9.5px; margin-bottom: 4px; }
+  .callout.green strong { color: #067647; }
+  .callout.amber strong { color: #b54708; }
+  .callout p { margin: 0; font-size: 9px; line-height: 1.38; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 6px 0 12px; }
+  .fact { min-height: 54px; padding: 10px 11px; background: #f7f9fc; border-radius: 5px; }
+  .fact:nth-child(4n+2), .fact:nth-child(4n+3) { background: #eef4ff; }
+  .fact .label { color: #667085; font-size: 7.2px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+  .fact .value { color: #13213c; font-size: 10px; font-weight: 750; line-height: 1.22; }
+  .steps { margin-top: 4px; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start; margin-bottom: 8px; }
+  .step .num { width: 27px; height: 27px; border-radius: 4px; background: #146ef5; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 9px; }
+  .step p { margin: 1px 0 0; font-size: 9px; line-height: 1.36; }
+  .step b { color: #13213c; }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 7px 0 10px; }
+  th { background: #13213c; color: #fff; font-size: 7.1px; line-height: 1.25; text-transform: uppercase; letter-spacing: .045em; text-align: left; padding: 7px 7px; border: 1px solid #13213c; }
+  td { font-size: 7.8px; line-height: 1.31; padding: 7px 7px; vertical-align: top; border: 1px solid #d0d5dd; }
+  tr:nth-child(odd) td { background: #f7f9fc; }
+  td:first-child { color: #13213c; font-weight: 700; }
+  .compact td { font-size: 7.25px; line-height: 1.24; padding: 5.5px 6px; }
+  .compact th { font-size: 6.75px; padding: 6px; }
+  .faq h3 { margin-top: 11px; }
+  .faq p { font-size: 8.8px; line-height: 1.38; margin-bottom: 7px; }
+  .check { display: flex; gap: 9px; margin: 0 0 9px; align-items: flex-start; }
+  .box { color: #146ef5; font-size: 15px; line-height: 1; font-weight: 700; }
+  .check p { margin: 0; font-size: 9.2px; }
+  .refs { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #d0d5dd; border-radius: 5px; overflow: hidden; margin: 7px 0 13px; }
+  .refs a { color: #146ef5; text-decoration: none; font-size: 8.3px; padding: 8px 10px; background: #fff; border-bottom: 1px solid #e3e8ef; }
+  .refs a:nth-child(4n+1), .refs a:nth-child(4n+2) { background: #f7f9fc; }
+  .refs a:nth-child(odd) { border-right: 1px solid #e3e8ef; }
+  .contact { display: grid; grid-template-columns: 58px 1fr auto; gap: 14px; align-items: center; background: #13213c; color: #fff; border-radius: 7px; padding: 11px 14px; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; object-position: 50% 26%; border: 2px solid #8eb7ff; background: #146ef5; }
+  .contact p { margin: 0; color: #fff; font-size: 8.5px; }
+  .contact strong { font-size: 11px; }
+  .contact .role { color: #bdcbe0; font-size: 8.4px; margin-top: 3px; }
+  .contact .details { display: flex; flex-direction: column; gap: 5px; text-align: right; }
+  .contact a { color: #8eb7ff; font-size: 8.8px; text-decoration: none; }
+  a { color: #146ef5; }
+  .small { color: #667085; font-size: 7.8px; }
+  @media print {
+    html, body { background: #fff; }
+    .page { margin: 0; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="header"><span class="logo">ZELL</span><span class="headmeta">/ CUSTOMER IT REVIEW / ROLEPLAY ONLY</span></div>
+  <main class="content">
+    <div class="kicker">Security & privacy brief</div>
+    <h1>Roleplay IT &amp;<br>Compliance Review</h1>
+    <p class="subtitle">Voice roleplays only &nbsp;•&nbsp; Version 1.0 &nbsp;•&nbsp; 3 September 2026</p>
+
+    <div class="callout">
+      <strong>Scope of this review</strong>
+      <p>This document covers only Zell’s browser-based voice roleplay: scenario setup, the simulated conversation, recording and transcription, post-roleplay scoring, feedback, and authorised review. It does not describe or approve any other Zell feature or customer-enabled integration.</p>
+    </div>
+
+    <h2>Decision summary</h2>
+    <div class="facts">
+      <div class="fact"><div class="label">Primary application</div><div class="value">AWS Milan (eu-south-1)</div></div>
+      <div class="fact"><div class="label">Recording storage</div><div class="value">Google Cloud Storage — EU</div></div>
+      <div class="fact"><div class="label">Voice processing</div><div class="value">ElevenLabs EU-isolated</div></div>
+      <div class="fact"><div class="label">Feedback AI</div><div class="value">AWS Bedrock — EU geography</div></div>
+      <div class="fact"><div class="label">Audio recording</div><div class="value">Stored for review and feedback</div></div>
+      <div class="fact"><div class="label">Customer data training</div><div class="value">Not permitted without written approval</div></div>
+      <div class="fact"><div class="label">Roleplay content</div><div class="value">Synthetic scenario; no prospect call required</div></div>
+      <div class="fact"><div class="label">Contractual framework</div><div class="value">DPA + subprocessor disclosures</div></div>
+    </div>
+
+    <h3>What Zell provides in this scope</h3>
+    <p>Zell provides an AI-supported training environment in which an authorised participant speaks with a simulated persona. Zell records and transcribes the roleplay, evaluates the transcript against the configured scorecard, and returns coaching feedback to authorised users.</p>
+
+    <div class="callout green">
+      <strong>GDPR position</strong>
+      <p>Zell operates as the customer’s processor for roleplay personal data. The controls, EU processing configuration, DPA commitments, and subprocessor safeguards described here support a GDPR-compliant deployment. The customer remains responsible for its lawful basis, participant notices, access decisions, and use of results.</p>
+    </div>
+  </main>
+  <div class="footer"><span>CONFIDENTIAL • CURRENT-STATE REVIEW • 3 SEPTEMBER 2026</span><span>Page 1</span></div>
+</section>
+
+<section class="page">
+  <div class="header"><span class="logo">ZELL</span><span class="headmeta">/ CUSTOMER IT REVIEW / ROLEPLAY ONLY</span></div>
+  <main class="content">
+    <div class="kicker">01 / Architecture</div>
+    <h2>Roleplay data flow</h2>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><p><b>Access.</b> An authorised participant signs in and selects a customer-configured scenario, persona, and scorecard.</p></div>
+      <div class="step"><div class="num">2</div><p><b>Live simulation.</b> The browser establishes a secure session with the ElevenLabs EU-isolated environment. Participant audio is processed for speech recognition; synthetic voice is returned for the simulated persona.</p></div>
+      <div class="step"><div class="num">3</div><p><b>Conversation output.</b> At the end of the session, the roleplay transcript and session metadata are returned to Zell. Zell retrieves the roleplay recording for customer review.</p></div>
+      <div class="step"><div class="num">4</div><p><b>Private storage.</b> Application and relational data are stored in AWS Milan. Recordings and roleplay files are stored in private Google Cloud Storage buckets configured for the EU.</p></div>
+      <div class="step"><div class="num">5</div><p><b>Scoring and feedback.</b> The transcript, scorecard, and relevant scenario context are processed by EU-hosted AI services to generate scores, explanations, and coaching feedback.</p></div>
+      <div class="step"><div class="num">6</div><p><b>Authorised review.</b> The participant and permitted customer reviewers access the recording, transcript, scores, and feedback through tenant-scoped application controls.</p></div>
+    </div>
+
+    <h3>Personal data and content in scope</h3>
+    <table>
+      <colgroup><col style="width:18%"><col style="width:45%"><col style="width:37%"></colgroup>
+      <thead><tr><th>Category</th><th>Examples</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Account data</td><td>Name, work email, role, tenant/workspace</td><td>Authentication, access and administration</td></tr>
+        <tr><td>Roleplay inputs</td><td>Scenario, persona instructions, scorecard, optional training context</td><td>Configure the simulated conversation and evaluation</td></tr>
+        <tr><td>Voice data</td><td>Live audio and the resulting recording</td><td>Run, replay and review the roleplay</td></tr>
+        <tr><td>Transcript</td><td>Speaker-labelled roleplay dialogue</td><td>Scoring, feedback and authorised review</td></tr>
+        <tr><td>Evaluation data</td><td>Scores, explanations, snippets and coaching feedback</td><td>Training and performance development</td></tr>
+        <tr><td>Technical data</td><td>Session, security, diagnostic and audit metadata</td><td>Operate, protect and troubleshoot the service</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Data minimisation</strong>
+      <p>The roleplay can use a fictional persona and synthetic business scenario. Zell does not require recordings or personal data from real prospects or customers for this use case.</p>
+    </div>
+  </main>
+  <div class="footer"><span>CONFIDENTIAL • CURRENT-STATE REVIEW • 3 SEPTEMBER 2026</span><span>Page 2</span></div>
+</section>
+
+<section class="page">
+  <div class="header"><span class="logo">ZELL</span><span class="headmeta">/ CUSTOMER IT REVIEW / ROLEPLAY ONLY</span></div>
+  <main class="content">
+    <div class="kicker">02 / Hosting & subprocessors</div>
+    <h2>Roleplay processing locations</h2>
+    <p>The following providers are relevant to the roleplay service itself or its supporting security and operational functions.</p>
+    <table class="compact">
+      <colgroup><col style="width:17%"><col style="width:30%"><col style="width:31%"><col style="width:22%"></colgroup>
+      <thead><tr><th>Provider / service</th><th>Role in this use case</th><th>Data involved</th><th>Processing location</th></tr></thead>
+      <tbody>
+        <tr><td>Amazon Web Services</td><td>Frontend, backend, PostgreSQL database and application infrastructure</td><td>Account, configuration, transcript, scores, feedback, metadata</td><td>Milan, Italy (eu-south-1)</td></tr>
+        <tr><td>AWS Bedrock</td><td>Post-roleplay AI scoring and feedback</td><td>Transcript, scorecard and relevant scenario context</td><td>EU geographic inference profile</td></tr>
+        <tr><td>Google Cloud Storage</td><td>Private object storage for recordings and roleplay files</td><td>Audio recordings and customer-provided files</td><td>European Union multi-region</td></tr>
+        <tr><td>ElevenLabs</td><td>Real-time speech recognition, synthetic voice and conversational orchestration</td><td>Live audio, transcript and roleplay context</td><td>EU-isolated environment</td></tr>
+        <tr><td>Microsoft Azure</td><td>EU-hosted semantic embeddings used in feedback analysis</td><td>Short feedback phrases / derived text</td><td>European Union deployment</td></tr>
+        <tr><td>Cloudflare</td><td>DNS, web delivery and security controls</td><td>IP address, request and security metadata</td><td>Global edge network; nearest data centre</td></tr>
+        <tr><td>Langfuse</td><td>AI quality, prompt and trace monitoring</td><td>Prompt/response content and technical trace metadata</td><td>European Union</td></tr>
+        <tr><td>PostHog</td><td>Product usage analytics</td><td>Usage and device metadata; audio is not intentionally sent</td><td>Frankfurt, Germany / EU</td></tr>
+        <tr><td>Sentry</td><td>Error and performance diagnostics</td><td>Diagnostic and technical metadata; audio is not intentionally sent</td><td>Germany / EU region</td></tr>
+        <tr><td>Resend</td><td>Transactional service email</td><td>Recipient address and message metadata</td><td>Ireland (eu-west-1)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout green">
+      <strong>EU processing configuration</strong>
+      <p>Core application data, recordings, voice processing, and AI feedback processing are configured for European locations. Cloudflare’s edge security service is globally distributed; its role is limited to web traffic delivery and protection rather than storage of roleplay recordings.</p>
+    </div>
+  </main>
+  <div class="footer"><span>CONFIDENTIAL • CURRENT-STATE REVIEW • 3 SEPTEMBER 2026</span><span>Page 3</span></div>
+</section>
+
+<section class="page">
+  <div class="header"><span class="logo">ZELL</span><span class="headmeta">/ CUSTOMER IT REVIEW / ROLEPLAY ONLY</span></div>
+  <main class="content">
+    <div class="kicker">03 / Security & lifecycle</div>
+    <h2>How roleplay data is protected</h2>
+    <table>
+      <colgroup><col style="width:22%"><col style="width:78%"></colgroup>
+      <thead><tr><th>Control area</th><th>Current measure</th></tr></thead>
+      <tbody>
+        <tr><td>Access control</td><td>Authenticated access, role-based permissions, and tenant/workspace scoping restrict customer data to authorised users.</td></tr>
+        <tr><td>Transport security</td><td>Roleplay and application traffic is encrypted in transit using TLS-protected provider endpoints.</td></tr>
+        <tr><td>Recording storage</td><td>Recordings are held in a private EU storage bucket. Playback access is provided through time-limited signed URLs.</td></tr>
+        <tr><td>Secrets and credentials</td><td>Service credentials are kept outside customer-facing application content and access is limited by operational need.</td></tr>
+        <tr><td>Monitoring</td><td>Security, application, error, and AI trace monitoring support detection and investigation of abnormal behaviour or failures.</td></tr>
+        <tr><td>Isolation</td><td>Application queries and access checks are scoped to the customer tenant; users cannot intentionally browse another tenant’s roleplays.</td></tr>
+        <tr><td>Personnel</td><td>Personnel and authorised contractors with access are bound by confidentiality obligations and least-privilege expectations.</td></tr>
+        <tr><td>Incident response</td><td>Zell maintains incident handling procedures and will notify the customer without undue delay after becoming aware of a personal-data breach affecting the service.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Retention, deletion and return</h3>
+    <p><b>Is the audio recording retained?</b> Yes. Recording is part of the requested roleplay use case and is stored so authorised users can replay and review the exercise.</p>
+    <p><b>How long is data retained?</b> Roleplay data is retained for the customer’s contract term or a shorter period agreed with the customer. The customer should define its required operational retention period during implementation.</p>
+    <p><b>What happens when a roleplay is deleted?</b> Deletion removes the application record and related relational data and queues deletion of the corresponding private recording. Provider backups age out through ordinary backup-retention cycles.</p>
+    <p><b>What happens at termination?</b> At the customer’s choice and subject to the DPA, Zell returns or deletes personal data after the services end, except where applicable law requires limited retention.</p>
+  </main>
+  <div class="footer"><span>CONFIDENTIAL • CURRENT-STATE REVIEW • 3 SEPTEMBER 2026</span><span>Page 4</span></div>
+</section>
+
+<section class="page">
+  <div class="header"><span class="logo">ZELL</span><span class="headmeta">/ CUSTOMER IT REVIEW / ROLEPLAY ONLY</span></div>
+  <main class="content faq">
+    <div class="kicker">04 / Privacy & AI governance</div>
+    <h2>Roleplay compliance FAQ</h2>
+
+    <h3>Who is controller and who is processor?</h3>
+    <p>The customer is the controller for participant data and decides why the roleplay is used, who participates, and who may review results. Zell acts as processor and processes the data only to provide the contracted roleplay service and on documented instructions.</p>
+
+    <h3>Is customer data used to train general-purpose AI models?</h3>
+    <p>No. Zell’s DPA prohibits use of customer personal data to train or improve general-purpose AI models unless the customer gives express written authorisation. Providers are configured and contracted for service processing, not customer-data model training.</p>
+
+    <h3>Does the roleplay make employment decisions?</h3>
+    <p>No autonomous employment decision is required or intended. Scores and feedback are training aids. Customers should retain meaningful human review and should not use a roleplay score as the sole basis for a decision with legal or similarly significant effects.</p>
+
+    <h3>How are data-subject requests handled?</h3>
+    <p>The customer remains the primary contact for participants. Zell assists with access, correction, deletion, restriction, portability, objection, and other requests where the relevant data is held in the service.</p>
+
+    <h3>Does Zell support DPIAs and audits?</h3>
+    <p>Yes. Zell provides information reasonably required for the customer’s data-protection impact assessment and makes compliance information available under the DPA. Audits are handled subject to confidentiality, security, scope, and reasonable-frequency safeguards.</p>
+
+    <h3>How are subprocessors governed?</h3>
+    <p>Zell contractually requires subprocessors to protect personal data to standards consistent with Zell’s processor obligations. Zell remains responsible for their performance within the limits of the DPA and provides notice of material changes through its subprocessor disclosure process.</p>
+
+    <div class="callout">
+      <strong>Customer-side requirements</strong>
+      <p>Before launch, the customer should document its lawful basis, give participants an appropriate privacy notice, define retention and reviewer access, avoid unnecessary special-category data, and retain human oversight over the use of scores.</p>
+    </div>
+
+    <h3>Contact</h3>
+    <div class="contact">
+      <img class="avatar" src="./avatar.png" alt="Moritz Beck">
+      <p><strong>Moritz Beck</strong><br><span class="role">CTO &amp; Co-Founder</span></p>
+      <div class="details">
+        <a href="mailto:moritz@getzell.com">moritz@getzell.com</a>
+        <a href="tel:+4915204506322">+49 152 04506322</a>
+      </div>
+    </div>
+  </main>
+  <div class="footer"><span>CONFIDENTIAL • CURRENT-STATE REVIEW • 3 SEPTEMBER 2026</span><span>Page 5</span></div>
+</section>
+
+</body>
+</html>

@@ -33,11 +33,26 @@ Call Analysis preserves breadcrumb context when opened from call collections or 
 
 Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
 
+## Recording Playback
+
+When a call includes video, Call Analysis displays the recording in a floating player alongside the shared waveform controls. Users can drag the player by its top grip and resize it from the lower-left resize handle. The player starts at 320 pixels wide and is constrained between 240 and 640 pixels, or the available viewport width when that is smaller. With the resize handle focused, the left and right arrow keys change the width in 20-pixel steps.
+
+Hovering over or focusing the video reveals controls to rewind 10 seconds, play or pause, and move forward 10 seconds. Clicking the video also toggles playback. Rewind and forward actions stop at the beginning or end of the recording and preserve the current playing or paused state.
+
+The waveform controls remain available for video and audio recordings. They show the current time and duration and provide playback speed, volume, waveform seeking, and play or pause controls.
+
+Source references:
+
+- `src/components/analysis/FloatingVideoPlayer.tsx`
+- `src/components/analysis/BarWaveformPlayer.tsx`
+- `src/components/analysis/useFloatingVideoResize.ts`
+- `src/components/analysis/useWaveformPlayer.ts`
+
 ## Key Concepts
 
 <CardGroup cols={2}>
   <Card title="Recording" icon="audio-lines">
-    Audio playback is available when the backend can resolve a recording URL.
+    Audio or video playback is available when the backend can resolve a recording URL.
   </Card>
 
   <Card title="Transcript" icon="file-text">
