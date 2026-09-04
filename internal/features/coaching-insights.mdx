@@ -13,7 +13,7 @@ Coaching Insights supports both the manager-facing dashboard for finding coachin
 
 Coaching Insights answers four main questions:
 
-- Which reps have the highest coaching potential?
+- Which reps have the greatest coaching need?
 - Which signals are weakest across the selected team?
 - Which concrete snippets should a manager review with a rep?
 - What coaching opportunities can the current user review for themselves?
@@ -23,7 +23,7 @@ Coaching Insights answers four main questions:
 
 <CardGroup cols={2}>
   <Card title="Zell Score" icon="zap">
-    Coaching potential for a call. Higher means there is more coaching need because the call score has room to improve and the moment is coachable.
+    Coaching need for a call. Higher means there is more coaching need because the call score has room to improve and the moment is coachable.
   </Card>
 
   <Card title="Signal Score" icon="signal">
@@ -45,7 +45,7 @@ Coaching Insights answers four main questions:
 
 | Section | What it shows | Source data |
 | --- | --- | --- |
-| Stats cards | Average performance, average coaching potential, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
+| Stats cards | Average performance, average coaching need, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
 | Weak signals | Lowest-performing signals for the selected scope. | Evaluation categories grouped by signal. |
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
 | Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
@@ -158,9 +158,9 @@ Snippets with a perfect score do not contribute because their score gap is `0`.
 
 Average performance uses `CallEvaluation.totalScore` from valid calls with non-null total score. The overview stats card computes the displayed team average from the daily trend values and rounds it to one decimal.
 
-### Average Coaching Potential
+### Average Coaching Need
 
-Average coaching potential is the average of member-level `avgZellScore` values in the current result set. Each member's value is rounded to two decimals.
+Average coaching need is the average of member-level `avgZellScore` values in the current result set. Each member's value is rounded to two decimals.
 
 ---
 
@@ -295,7 +295,7 @@ When both `dateFrom` and `dateTo` exist, Coaching Insights compares the selected
 Previous-period values are used for deltas on:
 
 - average performance,
-- average coaching potential,
+- average coaching need,
 - average engagement,
 - weak signal average score,
 - member signal average score,
