@@ -56,6 +56,19 @@ Coaching Insights answers four main questions:
 
 ---
 
+### Score Trend Visualization
+
+The Score trend chart is a frontend display of existing daily trend metrics. It does not change how average performance or average coaching potential are calculated.
+
+| Element | Display behavior |
+| --- | --- |
+| Avg. Score line | Uses a focused left Y-axis so changes in average performance remain visible even when values are clustered. |
+| Avg. Coaching Potential line | Uses a separate right Y-axis so coaching potential can be read independently from the Avg. Score scale. |
+| Axis ticks | Generated from each visible axis domain and kept readable for the chart's current range. |
+| Start-score reference | Shows a subtle dashed horizontal reference line at the first Avg. Score value in the trend. |
+
+---
+
 ## Filters
 
 Coaching Insights combines global report filters with tab-local filters.
@@ -366,6 +379,9 @@ Previous-period values are used for deltas on:
 | Calls workspace toggle | `zell-frontend/src/components/dashboard/user/UserCallsWorkspace.tsx` |
 | Personal Coaching Insights view | `zell-frontend/src/components/dashboard/user/UserCoachingInsightsDisplay.tsx` |
 | Personal Coaching Insights view model | `zell-frontend/src/components/dashboard/user/useUserCoachingInsightsViewModel.ts` |
+| Score trend chart | `zell-frontend/src/components/teamManagement/coachingInsights/ScoreTrendChart.tsx` |
+| Score trend chart display helpers | `zell-frontend/src/components/teamManagement/coachingInsights/scoreTrendChartUtils.ts` |
+| Score trend chart tests | `zell-frontend/src/components/teamManagement/coachingInsights/ScoreTrendChart.test.tsx` |
 | Personal workspace summary | `zell-frontend/src/components/dashboard/user/UserCoachingWorkspaceSummary.tsx` |
 | Personal skill gaps layout | `zell-frontend/src/components/dashboard/user/coachingInsightsLearningLayouts.tsx` |
 | Personal detail hook | `zell-frontend/src/hooks/api-hooks/coaching-insights/queries/useUserCoachingInsightsDetail.ts` |
