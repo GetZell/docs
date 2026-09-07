@@ -1,0 +1,92 @@
+---
+title: "Connect HubSpot"
+description: "Sync recorded conversations between HubSpot and Zell"
+icon: "hubspot"
+---
+
+## Overview
+
+The HubSpot integration supports two conversation workflows:
+
+- Import completed HubSpot calls with recordings into Zell for analysis.
+- Send meetings recorded by Zell's meeting notetaker to HubSpot with an AI recap, recording, and full transcript.
+
+Both workflows are optional and controlled by tenant admins.
+
+## Setup
+
+<Steps>
+  <Step title="Open HubSpot settings">
+    Open **Tenant Settings** → **Integrations** → **HubSpot**.
+  </Step>
+
+  <Step title="Connect HubSpot">
+    Select **Connect** and approve Zell's requested access to contacts, deals, owners, and calling transcripts.
+
+    <Warning>Existing HubSpot connections may need to be disconnected and reconnected before transcript export or automatic call import can be enabled. Reconnecting grants the latest owner and Calling Transcripts permissions.</Warning>
+  </Step>
+
+  <Step title="Choose your workflows">
+    Enable the workflows your team wants to use:
+
+    - **Call import** brings eligible HubSpot call recordings into Zell. You can set a minimum call duration.
+    - **Meeting-summary export** sends eligible meetings recorded by Zell to HubSpot.
+  </Step>
+
+  <Step title="Match users to HubSpot owners">
+    Use the same email address for each Zell user and their HubSpot owner. This lets Zell assign imported and exported activities to the correct person.
+  </Step>
+</Steps>
+
+## Import HubSpot calls into Zell
+
+When call import is enabled, Zell checks for completed HubSpot calls that have recordings and meet your minimum duration. Eligible calls are added to Zell as real calls and processed for transcription, analysis, and coaching.
+
+Zell assigns a call to the Zell user who matches its HubSpot owner. Calls without a matching user, without an available recording, or below the configured duration are not imported.
+
+Zell remembers imported calls and checks for recordings already received through another connected source. This prevents the same conversation from appearing more than once, including companion Calls that Zell created in HubSpot during meeting export.
+
+## Send Zell meetings to HubSpot
+
+Meeting-summary export applies to meetings captured by Zell's meeting notetaker. Once the recording has been imported and transcribed, Zell maintains two related activities in HubSpot:
+
+- A **Meeting** with a concise AI summary, key notes, topics discussed, explicitly agreed next steps, and a link back to the recording in Zell.
+- A companion **Call** with the recording available in HubSpot and the full transcript in HubSpot's native transcript viewer.
+
+<Note>The full transcript is sent to HubSpot. HubSpot's public API for third-party transcripts attaches transcripts to Calls, so Zell keeps the recap on the Meeting and adds the recording and transcript to a companion Call.</Note>
+
+The transcript uses the language detected during Zell's transcription process. Export starts when the transcript is ready and does not need to wait for coaching feedback to be generated.
+
+## Meetings, contacts, and deals
+
+Zell first looks for a HubSpot Meeting owned by the matched user that overlaps the recorded meeting time.
+
+- If a matching Meeting exists, Zell adds the recap while preserving its existing notes.
+- If no matching Meeting exists, Zell creates one named **Zell summary**.
+- If the Zell recap is already present, Zell does not add it again.
+
+Existing HubSpot contacts whose email addresses match external meeting attendees are associated with the companion Call and with a newly created Meeting. Internal attendees are excluded, and Zell does not create missing contacts.
+
+If Zell has already matched the conversation to a HubSpot deal, both the Meeting and companion Call are associated with that deal.
+
+## Duplicate prevention and retries
+
+Zell identifies the exported Meeting, companion Call, and transcript so retries do not create duplicate activities or notes. If a recap was sent before native transcript support was available, Zell can add the missing Call and transcript without regenerating the existing recap.
+
+Temporary export failures are retried automatically. HubSpot call imports also retain an overlap between syncs so calls are not missed when HubSpot updates several records at the same time.
+
+## Troubleshooting
+
+If a HubSpot call is not appearing in Zell, confirm that:
+
+- Call import is enabled.
+- The call is completed, has an available recording, and meets the minimum duration.
+- The HubSpot owner matches a Zell user.
+- HubSpot has been reconnected with the latest owner permissions.
+
+If a Zell meeting is not appearing in HubSpot, confirm that:
+
+- Meeting-summary export is enabled.
+- The meeting was recorded through Zell's meeting notetaker and has finished transcription.
+- The Zell user matches a HubSpot owner. If the account has only one owner, Zell can use that owner automatically.
+- HubSpot has been reconnected with the latest contact and Calling Transcripts permissions.

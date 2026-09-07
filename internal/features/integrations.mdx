@@ -36,6 +36,62 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
   </Card>
 </CardGroup>
 
+## HubSpot Integration
+
+HubSpot supports two tenant-level workflows: importing recorded HubSpot calls into Zell and exporting Recall-recorded Zell meetings back to HubSpot. Tenant admins configure both workflows from HubSpot integration settings.
+
+**Native transcript export**
+
+After a Recall recording has been transcribed, call processing queues a deterministic `hubspotExportRecall` job. The export creates or updates:
+
+- A HubSpot Meeting containing Zell's recap and recording link.
+- A companion HubSpot Call containing HubSpot's native transcript and authenticated recording review.
+
+HubSpot's transcript API attaches third-party transcripts to Calls, so the Meeting and companion Call are intentionally separate activities. Transcript utterances use the language detected by Zell, falling back to `en-US`.
+
+The export job registers the authenticated recording callback against the connected HubSpot app when needed. Existing connections may need to reconnect for `crm.extensions_calling_transcripts.write`, contact write access, and owner read access.
+
+Source: `src/services/callProcessing/index.ts`, `src/services/integration/hubspotMeetingExport.ts`, `src/ports/adapters/hubspotAdapter.ts`
+
+**Export and CRM enrichment ordering**
+
+HubSpot export and CRM enrichment use separate jobs, each with five attempts and exponential backoff. They are deliberately sequenced:
+
+1. `hubspotExportRecall` creates or recovers the Meeting, companion Call, and transcript, then persists their HubSpot IDs on the Zell call.
+2. Only after export succeeds does its handler enqueue `fillHsCrm`.
+3. CRM enrichment selects the deal, persists `metadata.hubspot.dealId`, updates configured deal properties, and associates the already-exported Meeting and companion Call.
+
+This ordering prevents both workers from reading stale metadata at the same time. A retry with an existing `hubspotMeetingId` also reattempts the Meeting-to-deal association, so a failure after creating the Meeting does not leave the association permanently missing.
+
+Source: `src/jobs/handlers/webhookProcessing.ts`, `src/services/integration/hubspotMeetingExport.ts`, `src/services/integration/hubspot.ts`
+
+**Duplicate and retry behavior**
+
+Deterministic queue IDs prevent duplicate active export and enrichment jobs for the same Zell call. Export metadata stores `hubspotMeetingId`, `hubspotTranscriptCallId`, and `hubspotTranscriptId`. When local transcript-call metadata is missing, Zell searches HubSpot by the Zell call ID stored as `hs_call_external_id`; transcript conflicts are treated as an already-created transcript.
+
+Meeting recovery searches the matched owner's meetings around the call interval. Zell updates an overlapping Meeting instead of creating another activity and uses the Zell recap marker or recording URL to avoid appending the same notes twice.
+
+Source: `src/services/callProcessing/index.ts`, `src/services/integration/hubspotMeetingExport.ts`, `src/ports/adapters/hubspotAdapter.ts`
+
+**HubSpot call import**
+
+The scheduled `hubspot-sync-calls` job runs every 15 minutes for tenants that enabled call import. It pages through completed calls with recordings, imports at most ten new calls per tenant per run, and retains a ten-minute watermark overlap. A failed tenant import makes the scheduled job fail so its configured retry policy can run without advancing that tenant's watermark.
+
+Imports skip calls already identified by `metadata.hubspotCallId`, companion Calls whose `hs_call_external_id` is a Zell call UUID, calls identified by another provider's external ID, and same-user calls within the deduplication interval. This prevents Zell-created companion Calls from returning to Zell through HubSpot import.
+
+Source: `src/services/integration/hubspotCallImport.ts`, `src/ports/adapters/hubspotAdapter.ts`, `src/jobs/workers.ts`
+
+### HubSpot Edge Cases for Employee Q&A
+
+| Question | Accurate answer |
+| --- | --- |
+| Why does one Zell meeting create both a Meeting and a Call in HubSpot? | HubSpot requires third-party native transcripts and recording review to attach to a Call. Zell keeps the recap on the Meeting and creates a companion Call for Conversation Intelligence. |
+| Does transcript export wait for coaching feedback? | No. Export is queued after transcription is available, before feedback eligibility or generation can stop the remaining analysis flow. |
+| Why can CRM enrichment run after the activities appear? | It is intentionally queued after export so it can reliably associate the stored Meeting and companion Call IDs with the selected deal. |
+| What happens if Meeting-to-deal association fails after Meeting creation? | The stored Meeting ID sends the retry through the existing-meeting path, which reattempts the deal association. |
+| Can Zell re-import its own companion Call from HubSpot? | The importer recognizes the Zell call UUID in `hs_call_external_id` and skips it. |
+| What should support check when recording review fails? | Confirm meeting-summary export is enabled, HubSpot was reconnected with current Calling Transcripts scopes, and the authenticated recording callback was registered for the connected HubSpot app. |
+
 ## Microsoft Teams Integration
 
 The Teams integration connects an individual Zell user to Microsoft Graph, subscribes to that user's Teams recording notifications, and imports recordings as real calls when Graph sends webhook events.

@@ -39,6 +39,7 @@
             "public": true,
             "pages": [
               "guides/mcp-integration",
+              "guides/hubspot-integration",
               "guides/gong-integration",
               "guides/teams-integration",
               "guides/tldv-integration",
