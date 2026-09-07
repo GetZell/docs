@@ -36,6 +36,56 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
   </Card>
 </CardGroup>
 
+## PostHog MCP Analytics
+
+Zell instruments each authenticated MCP server instance with `@posthog/mcp` `0.13.1`. MCP events are attributed to the authenticated Zell user with `distinct_id = userId`, include the user's `role`, and use the PostHog group `organization = tenantId`. This lets employees analyze tool usage per user and tenant without storing tool inputs or results.
+
+Source: `package.json`, `src/services/mcp/index.ts`, `src/ports/analyticsPort.ts`, `src/ports/adapters/posthogAdapter.ts`
+
+### Enable and Verify Events
+
+| Setting | Operational behavior |
+| --- | --- |
+| `POSTHOG_API_KEY` | Required. When it is empty, the analytics adapter intentionally does nothing. Use the project API key for the PostHog project where the events should appear. |
+| `POSTHOG_HOST` | Must match the key's PostHog region. Zell defaults to the EU ingestion host, `https://eu.i.posthog.com`; use the host shown in the target PostHog project's settings if it differs. |
+| `NODE_ENV` | In `development`, PostHog flushes each event immediately. Staging and production batch up to 20 events with a 10-second flush interval. Automated route tests use the fake analytics adapter and do not send events to PostHog. |
+
+Local MCP analytics are not blocked. The backend needs outbound network access to the configured PostHog host, and the MCP client must be able to reach the local `/mcp` endpoint. A cloud-hosted MCP client cannot reach `localhost` without a tunnel or deployed environment.
+
+To verify delivery:
+
+1. Start the backend outside `NODE_ENV=test` with the correct PostHog key and host.
+2. Connect an MCP client to `/mcp` with a valid MCP bearer token and ask it to invoke a Zell tool.
+3. In PostHog Live Events, filter for `$mcp_tool_call`.
+4. Confirm `$mcp_tool_name`, `$mcp_intent`, and `$mcp_intent_source`, plus the authenticated user, `role`, and `organization` group attribution.
+
+The route test `src/tests/routes/mcpRouter.test.ts` verifies user, role, and tenant attribution with `FakeAnalyticsAdapter`. It does not prove network delivery; use the Live Events check for an end-to-end test.
+
+Source: `src/common/utils/envConfig.ts`, `src/ports/adapters/posthogAdapter.ts`, `src/ports/fakes/fakeAnalyticsAdapter.ts`, `src/tests/routes/mcpRouter.test.ts`
+
+### Prompt Intent and Privacy
+
+The SDK injects a `context` parameter into advertised MCP tools. Zell asks the client agent to copy the user's original message verbatim into that parameter. When supplied, it becomes `$mcp_intent` with `$mcp_intent_source = "context_parameter"`. If the client omits `context`, Zell falls back to a string in the tool call's `intent` argument and records the source as `inferred`. If neither value exists, the event has no intent.
+
+Do not treat `$mcp_intent` as a guaranteed byte-for-byte transcript. The MCP client agent generates the `context` value and may fail to follow the instruction. In addition, `@posthog/mcp` trims the value, redacts recognizable email addresses, phone numbers, IP addresses, payment-card numbers, and US Social Security numbers, and caps it at 2,048 characters.
+
+Before delivery, Zell removes these properties from every MCP analytics event:
+
+- `$mcp_parameters`
+- `$mcp_response`
+- `$mcp_tool_description`
+- `$mcp_error_message`
+
+Exception autocapture is also disabled. PostHog therefore retains usage metadata and prompt intent for analysis, but not tool arguments, tool results, descriptions, or error messages. Never rely on PostHog to troubleshoot the exact MCP payload or response.
+
+Source: `src/ports/adapters/posthogAdapter.ts`, `node_modules/@posthog/mcp/src/extensions/intent.ts`, `node_modules/@posthog/mcp/src/extensions/sanitization.ts`, `node_modules/@posthog/mcp/src/extensions/truncation.ts`
+
+### Shutdown and Missing Events
+
+On `SIGINT` or `SIGTERM`, the backend drains connections and awaits `analytics.shutdown()` before exiting, which flushes pending PostHog events. When testing locally, allow the normal Ctrl-C shutdown path to complete. If events are missing, check the API key first, then the host/region, outbound connectivity, whether a real tool call occurred, and whether the process exited without graceful shutdown.
+
+Source: `src/index.ts`, `src/ports/adapters/posthogAdapter.ts`
+
 ## Microsoft Teams Integration
 
 The Teams integration connects an individual Zell user to Microsoft Graph, subscribes to that user's Teams recording notifications, and imports recordings as real calls when Graph sends webhook events.

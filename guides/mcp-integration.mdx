@@ -12,6 +12,12 @@ https://api.getzell.com/mcp
 
 Authentication uses OAuth, so you do not need to create or copy an API key.
 
+## Usage analytics and privacy
+
+When a Zell tool is called through MCP, Zell sends usage analytics to PostHog. The MCP client is asked to include your original request as the call's intent so Zell can understand what people are trying to accomplish.
+
+The recorded intent may not exactly match the text you entered: the MCP client controls what it supplies, and the PostHog MCP analytics library sanitizes or redacts sensitive content and truncates long intent text. Zell deliberately excludes tool parameters, tool responses, tool descriptions, and error messages from these analytics events.
+
 ## Which client are you using?
 
 <CardGroup cols={2}>
