@@ -49,22 +49,17 @@ After a Recall recording has been transcribed, call processing queues a determin
 
 HubSpot's transcript API attaches third-party transcripts to Calls, so the Meeting and companion Call are intentionally separate activities. Transcript utterances use the language detected by Zell, falling back to `en-US`.
 
-The export job registers the authenticated recording callback against the connected HubSpot app when needed. Existing connections may need to reconnect for `crm.extensions_calling_transcripts.write`, contact write access, and owner read access.
+The authenticated recording callback is configured once for the Zell HubSpot app. Existing connections may need to reconnect for `crm.extensions_calling_transcripts.write`, contact write access, and owner read access.
 
 Source: `src/services/callProcessing/index.ts`, `src/services/integration/hubspotMeetingExport.ts`, `src/ports/adapters/hubspotAdapter.ts`
 
 **Recording callback authentication**
 
-Tenant authentication and callback registration use separate HubSpot credentials:
+Each tenant connects through HubSpot OAuth. Zell uses that tenant's access token for CRM records, transcripts, associations, and other tenant-scoped operations.
 
-- Each tenant still connects to HubSpot through OAuth. Zell uses that tenant's OAuth access token for CRM records, transcripts, associations, and other tenant-scoped operations.
-- The authenticated recording callback is an app-level HubSpot setting. Zell registers it with `HUBSPOT_DEVELOPER_API_KEY`, the developer API key for the same HubSpot app used for tenant OAuth. Zell reads that app's ID from the tenant OAuth token metadata. This key is deployment configuration, not a credential supplied by the tenant.
+The authenticated recording callback is an app-global HubSpot setting configured once as `https://api.getzell.com/integrations/hubspot/authenticated-recordings/%s`. Backend tenant and runtime flows never register or mutate this setting, and no `HUBSPOT_DEVELOPER_API_KEY` is required.
 
-Set `HUBSPOT_DEVELOPER_API_KEY` in every environment that can save HubSpot meeting-summary export settings, then restart or redeploy the backend so the environment variable is loaded. Store it only in the deployment secret manager or local untracked environment file; never paste a real key into source code, logs, tickets, or documentation.
-
-If saving meeting-summary export fails with HubSpot `401 INVALID_AUTHENTICATION` and `Authentication credentials not found`, first confirm that `HUBSPOT_DEVELOPER_API_KEY` is present in the running backend process. Also confirm that the key belongs to the same HubSpot developer app used for tenant OAuth. Adding the variable without restarting the process does not update an already-running backend. Tenant OAuth reconnects do not fix this specific app-level authentication failure.
-
-Source: `.env.template`, `src/common/utils/envConfig.ts`, `src/services/integration/hubspotMeetingExport.ts`, `src/ports/adapters/hubspotAdapter.ts`
+Source: `src/services/integration/hubspotMeetingExport.ts`, `src/routes/hubspotRouter.ts`
 
 **Export and CRM enrichment ordering**
 
@@ -103,8 +98,7 @@ Source: `src/services/integration/hubspotCallImport.ts`, `src/ports/adapters/hub
 | Why can CRM enrichment run after the activities appear? | It is intentionally queued after export so it can reliably associate the stored Meeting and companion Call IDs with the selected deal. |
 | What happens if Meeting-to-deal association fails after Meeting creation? | The stored Meeting ID sends the retry through the existing-meeting path, which reattempts the deal association. |
 | Can Zell re-import its own companion Call from HubSpot? | The importer recognizes the Zell call UUID in `hs_call_external_id` and skips it. |
-| What should support check when recording review fails? | Confirm meeting-summary export is enabled, HubSpot was reconnected with current Calling Transcripts scopes, and the authenticated recording callback was registered for the connected HubSpot app. |
-| Why can callback registration fail even though the tenant's HubSpot OAuth connection works? | The tenant OAuth token and app-level callback credential serve different purposes. Callback registration requires the deployment's `HUBSPOT_DEVELOPER_API_KEY`; verify it is loaded and belongs to the same app used for tenant OAuth. |
+| What should support check when recording review fails? | Confirm meeting-summary export is enabled, HubSpot was reconnected with current Calling Transcripts scopes, and the Zell HubSpot app's authenticated recording callback is set to the production URL documented above. |
 
 ## Microsoft Teams Integration
 
