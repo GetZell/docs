@@ -28,7 +28,55 @@ Notifications keep users informed about coaching, streaks, training, and platfor
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Onboarding Call Email
 
-This page is a feature placeholder. It should be expanded with notification templates, delivery jobs, channels, read state, and retry behavior.
+The `onboardingCall` template sends a short, personal welcome email that invites a newly verified user to book a 15-minute call. It is an email-only notification. The lifecycle trigger and recipient rules are documented in [Users & Teams](/internal/features/users-and-teams#verified-user-onboarding).
 
+The message uses a plain Gmail-like layout and includes:
+
+- The recipient's first name, falling back to `there` when no usable name exists
+- Role-specific onboarding copy
+- A direct calendar URL
+- Moritz's name and photo
+- A reply-to address that routes responses to Moritz
+
+Standard users and team leads also see a short customer result attributed to an SDR from Pack. Admin and internal-tool admin recipients instead receive copy focused on setting up the team's structure and tailoring Zell.
+
+### Configuration
+
+| Environment variable | Purpose | Default |
+| --- | --- | --- |
+| `ONBOARDING_CALL_URL` | Calendar link shown in the email | `https://cal.com/moritz-beck-vxr9vh/15min` |
+| `ONBOARDING_SENDER_EMAIL` | Email `Reply-To` value | `moritz@getzell.com` |
+| `ONBOARDING_SENDER_IMAGE_URL` | Public image URL for Moritz's photo | Zell's public storage URL |
+| `EMAIL_FROM` | Envelope/from address used by the shared email service | `noreply@getzell.com` |
+
+Defaults and validation live in `src/common/utils/envConfig.ts`; deploy-specific values should be supplied through the normal environment configuration. The image URL must remain publicly accessible to email clients.
+
+<Note>
+  `ONBOARDING_SENDER_EMAIL` controls replies, not the shared sender address. Delivery still uses `EMAIL_FROM` through the email service.
+</Note>
+
+### Delivery Path
+
+```text
+User verification callback
+  -> notify("onboardingCall", [EMAIL], ..., { jobId })
+  -> notification-delivery queue
+  -> notificationDeliveryHandler
+  -> onboardingCallTemplate
+  -> EmailService.send
+```
+
+The callback uses `onboarding-call-<userId>` as the queue job ID. This stable ID prevents the same user's onboarding notification from being enqueued as a second job when both supported lifecycle paths are encountered.
+
+The delivery handler resolves the registered template, renders its React email, evaluates its optional reply-to function, and sends through the shared email service. Because this template supports only email, a tenant's default Slack preference does not move this notification to Slack.
+
+### Source References
+
+- Trigger and queue job ID: `prisma/callbacks/user.ts`
+- Queue API: `src/notifications/index.ts`
+- Template registration and reply-to: `src/notifications/templates/onboardingCall.ts`
+- Email content: `src/emails/OnboardingCall.tsx`
+- Delivery worker: `src/jobs/handlers/notificationDelivery.ts`
+- Template types: `src/notifications/types.ts`

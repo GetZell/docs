@@ -28,7 +28,45 @@ Users & Teams covers user management, invited users, manager relationships, role
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Verified User Onboarding
 
-This page is a feature placeholder. It should be expanded with user table behavior, invitation lifecycle, role changes, manager assignment, and deletion/deactivation rules.
+Every eligible user receives an onboarding-call email once their email is verified. The backend supports both creation paths:
 
+1. A user created with `emailVerifiedAt` already set is queued immediately after creation.
+2. An existing user is queued when `emailVerifiedAt` changes from empty to set.
+
+Both paths call the same helper in `prisma/callbacks/user.ts` and use the stable queue job ID `onboarding-call-<userId>` to avoid duplicate jobs for the same user.
+
+### Recipient Rules
+
+The email is not queued when any of the following is true:
+
+- `isTestUser` is enabled for the user
+- The user has the `HIRING_ASSESSMENT_CANDIDATE` role
+- The user's tenant has `isDemo` enabled
+
+These checks apply to both the already-verified creation path and the later verification path.
+
+### Role-Specific Message
+
+| User role | Message focus |
+| --- | --- |
+| `ADMIN`, `INTERNAL_TOOL_ADMIN` | Help setting up the team structure and tailoring Zell to the conversations the team wants to improve |
+| `USER`, `TEAM_LEAD` | Show the recipient how to review calls, identify improvements, and use Zell for self-coaching; includes the SDR from Pack result |
+
+Role grouping uses `isAdminRole` from `src/common/utils/roles.ts`. Any non-excluded role that is not classified as an admin receives the standard-user version.
+
+For email content, delivery behavior, reply-to handling, and environment settings, see [Notifications](/internal/features/notifications#onboarding-call-email).
+
+### Operational Checks
+
+If a newly verified user does not receive the email, verify:
+
+1. The user is not a test user or hiring-assessment candidate.
+2. The tenant is not a demo tenant.
+3. The user's `emailVerifiedAt` was either present at creation or changed from empty to set.
+4. The `notification-delivery` worker is running.
+5. The email provider or local Mailpit configuration is available.
+6. A job with ID `onboarding-call-<userId>` has not already been created.
+
+The primary implementation is in `prisma/callbacks/user.ts`; notification delivery is handled by `src/jobs/handlers/notificationDelivery.ts`.
