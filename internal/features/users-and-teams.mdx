@@ -28,7 +28,67 @@ Users & Teams covers user management, invited users, manager relationships, role
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Full Seats
 
-This page is a feature placeholder. It should be expanded with user table behavior, invitation lifecycle, role changes, manager assignment, and deletion/deactivation rules.
+User Management and the tenant usage surfaces display the backend's `currentSeats`. This is a tenant-wide count, independent of the number of rows currently visible in the user or membership table.
 
+`TenantService.computeCurrentSeats(tenantId)` adds:
+
+- Users whose primary `tenantId` matches, whose `role` is `USER`, and whose `isTestUser` is `false`.
+- Invitations for that tenant whose `acceptedAt` is `null` and whose `role` is `USER`.
+
+Admins, team leads, internal-tool admins, assessment candidates, and test users do not contribute to the user portion of this count. Pending regular-user invitations still reserve a seat. The invitation query does not apply an expiry filter. Two admins and one regular non-test user, with no pending regular-user invitations and a limit of five, therefore show **1/5 Full Seats**.
+
+`TenantService.getUserUsage` returns `{ currentSeats, seatsLimit }`; an absent seat limit is returned as `null`. The frontend reads this result rather than counting admins or other rows locally.
+
+## Internal Membership Role Edits
+
+`PATCH /internal-tools/memberships/{membershipId}` accepts a `role` and requires authentication and internal-admin access. `MembershipService.updateRole` updates the membership inside a transaction. It also updates the user's role when both the user ID and the membership tenant match the user's primary tenant.
+
+For a primary-tenant membership, changing `USER` to `ADMIN` removes that non-test user's contribution to full seats; changing `ADMIN` to `USER` adds it. Editing a membership in another tenant updates only that membership: it does not overwrite the primary user's role or change the primary tenant's seat count. Other memberships retain their existing roles.
+
+This synchronization runs when a role edit succeeds. There is no historical backfill of previously inconsistent user and membership roles.
+
+## Usage Refresh
+
+The shared `invalidateTenantUserUsage` helper invalidates both query prefixes after successful mutations:
+
+| Surface | Query key | Request |
+| --- | --- | --- |
+| Tenant User Management and usage | `['tenant-user-usage', tenantId]` | `GET /tenant/user-usage` |
+| Internal tenant settings | `['internal-tenant-user-usage', tenantId]` | `GET /internal-tools/tenants/{tenantId}/user-usage` |
+
+Both queries are enabled only when a tenant ID is available. Active matching queries refetch after invalidation; inactive cached queries become stale for their next use.
+
+| Successful mutation | Refresh trigger |
+| --- | --- |
+| User role edit | `useUpdateUserRole` |
+| Internal membership role edit | `useUpdateMembership` |
+| Internal user creation | `useCreateUser` |
+| User deletion | `useDeleteUser` |
+| Internal test-user toggle | `useToggleTestUser` |
+
+Membership role edits also invalidate `tenantMemberships`, `allTenantUsers`, and `users` so the displayed roles refresh alongside usage. Refreshes update usage data; they do not recalculate or repair roles in the frontend.
+
+## Troubleshooting a Seat Disagreement
+
+Check the backend usage response, pending regular-user invitations, and the user's primary `tenantId`, `role`, and `isTestUser`. A membership table can include users whose primary tenant is elsewhere, so its row count is not a seat count.
+
+If a primary-tenant membership displays Admin while its user record still has `USER`, the disagreement may predate role synchronization. Confirm the intended role before applying a membership role edit through internal tools; that edit synchronizes the matching primary user. A frontend refresh alone does not repair stored role disagreement. Do not use a secondary-tenant role edit to repair a primary-tenant role.
+
+## Source References
+
+| Responsibility | Source |
+| --- | --- |
+| Seat formula and usage response | `zell-backend-ts/src/services/tenant/index.ts` (`computeCurrentSeats`, `getUserUsage`) |
+| Regular-user predicate | `zell-backend-ts/prisma/models/User.ts` (`regularUsers`) |
+| Membership synchronization | `zell-backend-ts/src/services/membership/index.ts` (`updateRole`) |
+| Membership endpoint and authorization | `zell-backend-ts/src/api/internalTools/membership/membershipRouter.ts` |
+| Membership request validation | `zell-backend-ts/src/schemas/membershipSchemas.ts` |
+| Tenant usage query | `zell-frontend/src/hooks/api-hooks/tenants/queries/useTenantUserUsage.ts` |
+| Internal usage query | `zell-frontend/src/hooks/api-hooks/internal-tools/queries/useTenantUserUsage.ts` |
+| Shared usage invalidation | `zell-frontend/src/hooks/api-hooks/tenants/invalidateTenantUserUsage.ts` |
+| User mutation refreshes | `zell-frontend/src/hooks/api-hooks/users/mutations/useUpdateUserRole.ts`, `useDeleteUser.ts` |
+| Internal mutation refreshes | `zell-frontend/src/hooks/api-hooks/internal-tools/mutations/useUpdateMembership.ts`, `useCreateUser.ts`, `useToggleTestUser.ts` |
+| Usage refresh regression tests | `zell-frontend/src/hooks/api-hooks/users/mutations/useUpdateUserRole.test.ts` |
+| Role and cross-tenant regression tests | `zell-backend-ts/src/tests/routes/internalMembershipRouter.test.ts` |

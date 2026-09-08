@@ -56,6 +56,7 @@
             "group": "Settings",
             "public": true,
             "pages": [
+              "guides/users-and-seats",
               "guides/custom-call-types-outcomes",
               "guides/language-settings"
             ]
