@@ -48,6 +48,18 @@ Source references:
 - `src/components/analysis/useFloatingVideoResize.ts`
 - `src/components/analysis/useWaveformPlayer.ts`
 
+## Transcript Feedback Visibility
+
+Existing feedback stays visible when a user clicks a transcript message, selects messages, or clears the selection. Selection does not remove feedback cards from the coaching rail. Permissions to create or edit feedback are separate and unchanged.
+
+Regression coverage verifies feedback visibility for `USER`, `TEAM_LEAD`, and `ADMIN`, including clearing a selection with Escape. It also checks that selecting messages opens the feedback editor for admins and does not open it for regular users or team leads.
+
+Source references:
+
+- `src/components/analysis/transcript/CoachingRail.tsx`
+- `src/components/analysis/transcript/Conversation.tsx`
+- `src/components/analysis/transcript/Conversation.test.tsx`
+
 ## Key Concepts
 
 <CardGroup cols={2}>
