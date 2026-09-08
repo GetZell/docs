@@ -48,6 +48,19 @@ Source references:
 - `src/components/analysis/useFloatingVideoResize.ts`
 - `src/components/analysis/useWaveformPlayer.ts`
 
+## Summary and Feedback Formatting
+
+The Summary tab and category feedback explanations render literal newline escapes (`\n`, `\r\n`, and `\r`) as normal line breaks. Existing line breaks and blank lines remain visible, while repeated spaces collapse normally. Transcript references continue to display clickable timestamps when their transcript positions can be resolved.
+
+For support cases involving visible newline escapes, the correction applies when the frontend renders the text. Previously saved summaries benefit without regenerating the analysis or migrating stored data. Timestamp navigation remains unchanged.
+
+Source references:
+
+- `src/components/aiFeedback/analysis/components/explanationText.tsx`
+- `src/components/aiFeedback/analysis/components/explanationText.test.tsx`
+- `src/components/aiFeedback/analysis/summary.tsx`
+- `src/components/aiFeedback/analysis/components/feedbackCard.tsx`
+
 ## Key Concepts
 
 <CardGroup cols={2}>
