@@ -89,6 +89,58 @@ Source: `src/services/integration/teams.ts`, `src/ports/adapters/teamsAdapter.ts
 | How are imported Teams calls titled? | Zell uses the Microsoft meeting subject when available. Otherwise it falls back to `Teams - <meetingId>`. |
 | Does a Teams subscription failure delete OAuth tokens? | No. The tokens remain stored so renewal can retry subscription creation later. |
 
+## Aircall Integration
+
+The Aircall tenant settings page lets an admin connect or disconnect Aircall, manually import recent recordings, set the minimum call duration, inspect user-to-number connections, and map Aircall tags to Zell call types and outcomes.
+
+**Where is it in the app?**
+
+The route is `/settings/tenant/:tenantId/aircall`. The Settings sidebar lists Aircall under `Integrations`, which is visible to `ADMIN` users.
+
+Source: `src/components/layouts/SettingsNav.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/aircall/page.tsx`, `AircallSettingsClient.tsx`
+
+### Aircall API Calls
+
+| Frontend action | Hook | Method and endpoint | Request | Notes |
+| --- | --- | --- | --- | --- |
+| Load integration status | `useGetAircallIntegration` | `GET /integrations/aircall` | None | Returns connection state, company, minimum duration, tags, and mappings. |
+| Load recent calls | `useGetAircallCalls` | `GET /integrations/aircall/calls` | None | Returns calls with filter reasons and imported state. The query runs only in the connected settings view. |
+| Import selected calls | `useImportAircallCalls` | `POST /integrations/aircall/calls` | `{ callIds: string[] }` | Invalidates the call list for complete and partial results. Failed result IDs remain selected for retry. |
+| Save minimum duration | `useUpdateAircallSettings` | `PATCH /integrations/aircall/settings` | `{ minCallDurationSeconds }` | The UI clamps input to `0` through `600` seconds. |
+| Load user connections | `useGetAircallUserConnections` | `GET /integrations/aircall/user-connections` | Optional `bust=true` for **Test Connection** | Matches Zell users to Aircall users and connected numbers. |
+| Refresh tags | `useRefreshAircallTags` | `POST /integrations/aircall/refresh-tags` | None | Invalidates Aircall status so available tags reload. |
+| Save call-type mappings | `useUpdateAircallTagMappings` | `PATCH /integrations/aircall/tag-mappings` | `{ mappings: { aircallTag, callType }[] }` | Saves tag-to-call-type mappings. |
+| Save outcome mappings | `useUpdateAircallOutcomeMapping` | `PUT /integrations/aircall/outcome-mapping` | `{ mapping: Record<string, string \| null> }` | Saves tag-to-outcome mappings. |
+
+Source: `src/hooks/api-hooks/tenants/queries/useGetAircallIntegration.ts`, `useGetAircallCalls.ts`, `useGetAircallUserConnections.ts`, `src/hooks/api-hooks/tenants/mutations/useImportAircallCalls.ts`, `useUpdateAircallSettings.ts`, `useRefreshAircallTags.ts`, `useUpdateAircallTagMappings.ts`, `useUpdateAircallOutcomeMapping.ts`
+
+### Recent Calls And Selection Behavior
+
+Matching calls are visible by default. **Show excluded calls** also displays calls where `matchesFilter` is false. The frontend recognizes these filter reasons:
+
+| Backend reason | Frontend label |
+| --- | --- |
+| `too_short` | `Too short` |
+| Any other current reason | `No recording` |
+
+Already imported calls remain visible with the `Imported` status, but their row checkboxes are disabled. The header checkbox selects or clears all currently visible calls where `alreadyImported` is false. Changing the excluded-calls switch changes the visible bulk-selection scope.
+
+The import response contains `imported`, `total`, and one result per processed Aircall call. When every result succeeds, Zell clears the selection and reports the imported count. When any result contains `error`, Zell shows an error result; successful calls refresh to `Imported`, while failed Aircall call IDs remain selected so the admin can retry them. A failed HTTP request leaves the existing selection unchanged.
+
+The tenant ID is part of React Query keys but is not included in these endpoint URLs. Tenant scoping therefore depends on the authenticated API context.
+
+Source: `src/app/(auth)/settings/tenant/[tenantId]/aircall/AircallCallsList.tsx`, `AircallCallsSection.tsx`, `useAircallCallsViewModel.ts`, `src/hooks/api-hooks/tenants/queries/useGetAircallCalls.ts`, `src/hooks/api-hooks/tenants/mutations/useImportAircallCalls.ts`
+
+### Aircall Edge Cases For Employee Q&A
+
+| Question | Accurate answer |
+| --- | --- |
+| Can an excluded call be imported manually? | Yes. Enable **Show excluded calls**, then select it unless it is already imported. |
+| Can an imported call be selected again? | No. Its checkbox is disabled and bulk select excludes it. |
+| What happens when only some selected calls import? | The list refreshes, imported calls show as `Imported`, and failed call IDs remain selected for retry. |
+| What does **Test Connection** do? | It requests user connections with `bust=true`, refetches the cached query, and reports matched users and users with connected numbers. |
+| Does the frontend put the tenant ID in Aircall endpoint URLs? | No. It uses tenant-specific query keys; API context supplies tenant scoping. |
+
 ## tl;dv Integration
 
 The tl;dv settings page lets an admin connect a tenant to tl;dv, tune import filters, review recent meetings, manually import selected meetings into Zell, and optionally enable recurring auto-import.

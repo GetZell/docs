@@ -1,0 +1,97 @@
+---
+title: "Connect Aircall"
+description: "Review and import Aircall recordings into Zell for call analysis"
+icon: "phone"
+---
+
+## Overview
+
+The Aircall integration lets you review recent Aircall recordings and import selected calls into Zell for analysis. You can also control which calls appear by default, check which Zell users have connected Aircall numbers, and map Aircall tags to Zell call types and outcomes.
+
+## Connect Aircall
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    From Zell, open **Tenant Settings**.
+  </Step>
+
+  <Step title="Open the Aircall Integration">
+    Go to **Integrations** and select **Aircall**.
+  </Step>
+
+  <Step title="Start the Connection">
+    Click **Connect to Aircall** and complete the Aircall authorization flow.
+  </Step>
+
+  <Step title="Confirm the Connection">
+    After authorization, return to Zell. The page shows **Connected to Aircall** and, when available, the connected Aircall company name.
+  </Step>
+</Steps>
+
+## Review Recent Calls
+
+Open **Import Aircall calls** on the connected integration page. Each call can show its date and direction, user, Aircall number, duration, tags, and import status.
+
+Calls that meet the current requirements appear by default:
+
+- **Available**: The call meets the filters and has not been imported.
+- **Imported**: The call is already in Zell and cannot be selected again.
+- **Too short**: The call is shorter than your minimum call duration.
+- **No recording**: The call does not have a recording available.
+
+Use **Refresh** to reload the calls from Aircall. Turn on **Show excluded calls** to include calls marked **Too short** or **No recording** in the list.
+
+## Import Selected Calls
+
+<Steps>
+  <Step title="Choose Calls">
+    Select one or more calls in the list. The checkbox in the table header selects or clears all visible calls that have not already been imported.
+  </Step>
+
+  <Step title="Import the Selection">
+    Click **Import selected**. The button shows how many calls are currently selected.
+  </Step>
+
+  <Step title="Confirm the Result">
+    Zell reports how many Aircall calls were imported, refreshes the list, and marks completed imports as **Imported**.
+
+    If only part of the selection imports successfully, Zell reports the partial result and keeps the failed calls selected so you can retry them.
+  </Step>
+</Steps>
+
+<Note>
+  Calls that have already been imported cannot be selected again.
+</Note>
+
+## Set the Minimum Call Duration
+
+Open **Minimum Call Duration**, enter a value from **0 to 600 seconds**, and click **Save**.
+
+Calls shorter than this threshold are excluded from analysis by default and do not consume analysis minutes. You can display them in the call list by turning on **Show excluded calls**.
+
+## Check Connected Numbers
+
+Open **Connected Numbers** to review how Zell users are connected to Aircall users and phone numbers for this integration. The summary shows how many Zell users have connected numbers.
+
+The table uses these statuses:
+
+- **Connected**: The Zell user has a matching Aircall user and a connected number.
+- **No connected numbers**: An Aircall user was found, but no number connected to this integration is assigned.
+- **Not found**: No matching Aircall user was found.
+
+Click **Test Connection** to refresh the check. Zell then reports how many users matched and how many have connected numbers.
+
+## Map Aircall Tags
+
+Open **Aircall Tag Mapping** to map each Aircall tag to a Zell call type, outcome, or both. Calls with mapped tags use those configured values instead of AI classification.
+
+1. Click **Refresh Tags** to fetch the latest tags from Aircall.
+2. Choose a call type, outcome, or both for each tag.
+3. Optionally click **Auto Map** to generate suggestions, then review them.
+4. Click **Save Mappings**.
+
+See [Custom Call Types & Outcomes](/guides/custom-call-types-outcomes) for more about the values available in these mappings.
+
+## Disconnect Aircall
+
+To stop using the integration, open **Tenant Settings** → **Integrations** → **Aircall** and click **Disconnect**. You can connect an Aircall account again later.
