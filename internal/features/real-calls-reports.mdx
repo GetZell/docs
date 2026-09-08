@@ -49,12 +49,46 @@ Source references:
 
 | UI area | Frontend source | Behavior |
 | --- | --- | --- |
-| Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` and `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Selects Simulation Reports or Real Calls Report. `type=real-calls` selects real calls explicitly; otherwise the UI uses localStorage key `reports-report-type` and defaults to simulations. Changing to Real Calls Report stores `real-calls` and sets `type=real-calls`; changing to Simulation Reports stores `simulations` and removes `type`. Empty, missing, or unrecognized stored values normalize to simulations. |
-| Global filters | `src/components/teamManagement/reports/reportsGlobalFilters.tsx` | Renders report type, group, user, scorecard, and date filters in one row. Date is the last filter. |
-| View switch | `src/components/teamManagement/reports/reportsSwitch.tsx` | Switches between Coaching Insights and List view. The value is stored in the `view` search parameter. |
-| Route guard | `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Hides Real Calls Report when the feature flag is inactive and normalizes invalid report/view search parameters. |
+| Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` and `src/components/teamManagement/reports/useReportTypeRouting.ts` | Selects Simulation Reports or Real Calls Report. `type=real-calls` selects real calls explicitly; otherwise the UI uses localStorage key `reports-report-type` and defaults to simulations. Changing to Real Calls Report stores `real-calls` and sets `type=real-calls`; changing to Simulation Reports stores `simulations` and removes `type`. Empty, missing, or unrecognized stored values normalize to simulations. |
+| Filter composition | `src/components/teamManagement/reports/RealCallsReportsContent.tsx`, `ReportCoachingInsightsSection.tsx`, and `reportsExpandableFilters.tsx` | List and Coaching Insights views render their own filter controls. In Coaching Insights, report type, user, scorecard, Call Type, and date are primary; group and Call Outcome are under **View more**. |
+| View switch | `src/components/teamManagement/reports/ReportViewSwitch.tsx` | Switches between Coaching Insights and List view. `activeTab` is persisted with the Real Calls filter object in localStorage key `real-calls-reports-filters`; it is not a URL search parameter. |
+| Route guard | `src/components/teamManagement/reports/useReportTypeRouting.ts` | Hides Real Calls Report when the feature flag is inactive and normalizes invalid report-type values. |
 | Legacy route | `src/app/(auth)/admin/team/real-calls-reports/page.tsx` | Redirects to `/admin/team/reports?type=real-calls`. |
 
 The Real Calls Report list uses `GET /real-calls-reports`. It receives the unified global filter state and maps scorecard filters to `scorecardIds`, user filters to `userIds`, group filters to `groupIds`, and the selected date range to `dateFrom` and `dateTo`.
 
 The Real Calls Report Coaching Insights view uses the shared Coaching Insights tab with `source=REAL_CALL`. Its summary cards are average performance, average coaching need, and average engagement. Lower average coaching need means less remaining coaching need.
+
+## Coaching Insights Filters
+
+Real Calls List filters and Coaching Insights filters are independent even though they share the `real-calls-reports-filters` localStorage object. List view uses `selectedCallTypes` and `selectedCallOutcomes`; Coaching Insights uses `selectedCoachingCallTypes` and `selectedCoachingCallOutcomes`. Switching views restores each view's own selections.
+
+| Label/name | Frontend source and persisted field | Request field and backend path | Database behavior | Defaults, permissions, and edge cases |
+| --- | --- | --- | --- | --- |
+| Report type / Source | `useReportTypeRouting`; `reports-report-type` | `source=REAL_CALL` on admin overview, member, and snippet endpoints | Filters `Call.source = REAL_CALL`. | Real Calls requires the tenant feature, except in local development. The admin router requires team-lead or admin access. |
+| Group | `ReportsGlobalFilters`; `useRealCallsReportsModel.headerGroupId` | `groupIds` on overview | Resolves users in the selected tenant group and intersects them with selected users. | Default `all` omits the field. Team leads remain limited to their reporting subtree. |
+| User | `CoachingInsightsFiltersBar`; `selectedUserIds` | `userIds` on overview; selected user becomes the member path parameter | Filters by `Call.userId`. | Default `[]` means all users in the allowed group/workspace/subtree. Filters cannot broaden tenant or role scope. |
+| Scorecard | `CoachingInsightsFiltersBar`; `selectedScorecardIds` | `scorecardIds`, CSV, on overview/member/snippets | Matches `Agent.scorecardId` or `Call.metadata->>'scorecardId'`. | Default `[]` omits the parameter. |
+| Call Type | `CoachingInsightsFiltersBar`; `useCallTypeOptions`; `selectedCoachingCallTypes` | `callTypes`, CSV labels, on overview/member/snippets | Exact match on `Call.metadata->>'callType'`. | Default `[]` means all types. Options contain global and tenant-custom labels. Unknown, case-mismatched, or whitespace-prefixed values pass string validation but match no calls. |
+| Call Outcome | `CoachingInsightsFiltersBar`; `useCallOutcomeOptions`; `selectedCoachingCallOutcomes` | `callOutcomes`, CSV labels, on overview/member/snippets | Exact match on `Call.metadata->>'callOutcome'`. | Default `[]` means all outcomes. This filter is under **View more** and contributes to its active-count badge. Unknown or case-mismatched labels match no calls. |
+| Date range | `ReportsDateFilter`; `useDateRangeWithStorage` key `real-calls-reports-date-range` | `dateFrom` and `dateTo` ISO datetimes on overview/member/snippets | Bounds `Call.startedAt`. | Either side may be omitted. Previous-period comparisons require both values. |
+
+`CoachingInsightsOverviewSchema`, `CoachingInsightsMemberSchema`, and `CoachingInsightsSnippetsSchema` accept these shared filters. `parseCoachingInsightsFilters` converts CSV values to arrays, and `CoachingInsightsService` passes them to `callFilterCondition` in `prisma/queries/coachingInsightsQueries.ts`. The condition applies to overview stats, trend, weak signals, engagement, member detail, and snippets.
+
+Frontend requests are built by `src/hooks/api-hooks/coaching-insights/queries/coachingInsightsFilters.ts`. Query keys contain date, scorecard, Call Type, Call Outcome, and source; overview also contains group/user values, member detail contains the user ID, and snippets contain user and signal IDs. Empty arrays are omitted from the URL and represented by empty-string key segments.
+
+Snippet results use cursor pagination. The frontend requests 5 records and loads another page when the scroll sentinel approaches the viewport. `nextCursor` contains coachability, score, and feedback ID; `null` means there is no next page. A team lead requesting a user outside their subtree receives `{ snippets: [], nextCursor: null }`.
+
+Source references:
+
+- `zell-frontend/src/components/teamManagement/reports/RealCallsReportsContent.tsx`
+- `zell-frontend/src/components/teamManagement/reports/useRealCallsReportsModel.ts`
+- `zell-frontend/src/components/teamManagement/reports/ReportCoachingInsightsSection.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsFiltersBar.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/useCoachingInsightsTabModel.ts`
+- `zell-frontend/src/hooks/api-hooks/coaching-insights/queries/coachingInsightsFilters.ts`
+- `zell-backend-ts/src/schemas/coachingInsightsSchemas.ts`
+- `zell-backend-ts/src/api/coachingInsights/filters.ts`
+- `zell-backend-ts/src/api/admin/coachingInsights/coachingInsightsRouter.ts`
+- `zell-backend-ts/src/services/coachingInsights/index.ts`
+- `zell-backend-ts/prisma/queries/coachingInsightsQueries.ts`

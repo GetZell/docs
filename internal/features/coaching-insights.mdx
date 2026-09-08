@@ -50,7 +50,7 @@ Coaching Insights answers four main questions:
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
 | Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
 | Member detail | Selected rep's signal breakdown and engagement. | Per-signal scores, snippet counts, and read counts. |
-| Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
+| Snippets modal | Coachable snippets for a selected rep and signal, loaded in cursor-based pages of 5 as the user scrolls. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
 | Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
 | Personal skill gaps layout | The current user's focus areas and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
 
@@ -76,15 +76,65 @@ Coaching Insights combines global report filters with tab-local filters.
 | Filter | Where it comes from | Backend behavior |
 | --- | --- | --- |
 | Date range | Unified Reports global filters | Applies to `Call.startedAt`. Previous-period comparisons are only returned when both `dateFrom` and `dateTo` are present. |
-| Source | Unified Reports report type | `REAL_CALL` when `type=real-calls`. Otherwise the UI uses the normalized localStorage value from `reports-report-type`; empty, missing, null, or invalid values default to `SIMULATION`. The selector is managed by `useReportTypeRouting` in `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` and persists constants from `src/components/teamManagement/reports/filterPersistence.ts`. Tenants without the Real Calls feature, except local development, fall back to simulations even when real calls is requested or stored. |
+| Source | Unified Reports report type | `REAL_CALL` when `type=real-calls`. Otherwise the UI uses the normalized localStorage value from `reports-report-type`; empty, missing, null, or invalid values default to `SIMULATION`. The selector is managed by `useReportTypeRouting` in `src/components/teamManagement/reports/useReportTypeRouting.ts` and persists constants from `src/components/teamManagement/reports/filterPersistence.ts`. Tenants without the Real Calls feature, except local development, fall back to simulations even when real calls is requested or stored. |
 | Groups | Unified Reports global filters | Intersects the selected group members with any selected users. |
 | Users | Coaching Insights tab | Restricts overview results to selected users. |
 | Scorecards | Coaching Insights tab | Matches either the call agent's scorecard or `call.metadata.scorecardId`. |
+| Call Type | Coaching Insights API filter | Accepts comma-separated call type labels in `callTypes`. Real calls match `Call.metadata.callType`; simulations match the label of the `CallType` linked through `Agent.callTypeId`. |
+| Call Outcome | Coaching Insights API filter | Accepts comma-separated outcome labels in `callOutcomes` and matches `Call.metadata.callOutcome`. |
 | Workspace | Request context | If a workspace context exists, overview is scoped to that workspace's users. |
 
 <Note>
 When group and user filters are both active, the backend intersects them. If the intersection is empty, the overview returns empty stats and empty lists.
 </Note>
+
+### Manager Filter UI And Persistence
+
+`CoachingInsightsFiltersBar` renders report type, user, scorecard, Call Type, and date in the primary row. Group is under **View more**; Call Outcome is also under **View more**, but only when `source=REAL_CALL`. While collapsed, the button counts selected outcomes and adds one when a group is active.
+
+The Reports workspace persists each report type independently through `FilterGroup`:
+
+| Scope | localStorage key | Coaching Insights fields | Default/merge behavior |
+| --- | --- | --- | --- |
+| Simulation Reports | `reports-filters` | `selectedUserIds`, `selectedGroupIds`, `selectedScorecardIds`, `selectedCoachingCallTypes`, `headerGroupId`, `activeTab` | Arrays default to `[]`, group defaults to `all`, and the default tab is `coaching-insights`. Stored objects are merged over current defaults, so older values receive new fields. |
+| Real Calls Reports | `real-calls-reports-filters` | The same fields plus `selectedCoachingCallOutcomes` | The same defaults apply. List-view `selectedCallTypes` and `selectedCallOutcomes` are separate, so switching views does not leak list filters into Coaching Insights. |
+
+The call-type options come from `useCallTypeOptions` and include global defaults plus tenant custom labels. Call-outcome options come from `useCallOutcomeOptions` with the same global-plus-custom behavior. Clearing a multiselect stores `[]`; `buildCoachingInsightsParams` then omits the parameter. Changing user, scorecard, call type, or outcome clears the selected member while the filtered overview loads; the first member in the new response becomes selected when one exists.
+
+The group selector produces `effectiveGroupIds`: a selected `headerGroupId` takes precedence over legacy `selectedGroupIds`. Groups and users are sent only to the overview. Member detail and snippets are scoped by the selected member's `userId` plus date, source, scorecard, call-type, and call-outcome filters.
+
+### Call Type And Outcome Filter Contract
+
+These are label-based filters, not ID-based filters. They are shared by the admin overview, member-detail, and snippets endpoints and the equivalent current-user endpoints.
+
+| Employee-facing name | Request query parameter | Backend path | Database resolution | Default and empty behavior |
+| --- | --- | --- | --- | --- |
+| Call Type | `callTypes`, comma-separated exact labels | `parseCoachingInsightsFilters` parses the query; `CoachingInsightsFilterQuerySchema` validates it; `CoachingInsightsService` passes it to the Coaching Insights SQL queries. | For `REAL_CALL`, matches `Call.metadata->>'callType'`. For `SIMULATION`, joins `Call.agentId` to `Agent.callTypeId`, then matches `CallType.label`. | Missing or exactly empty (`callTypes=`) becomes `undefined` and does not filter. There is no backend default selection. |
+| Call Outcome | `callOutcomes`, comma-separated exact labels | `parseCoachingInsightsFilters` parses the query; `CoachingInsightsFilterQuerySchema` validates it; `CoachingInsightsService` passes it to the Coaching Insights SQL queries. | Matches `Call.metadata->>'callOutcome'` for both real and simulation calls. | Missing or exactly empty (`callOutcomes=`) becomes `undefined` and does not filter. There is no backend default selection. Calls with null or missing outcome metadata only remain when this filter is absent. |
+
+Both parameters accept standard and tenant-custom labels. The SQL compares the supplied strings directly: matching is case-sensitive, values are not trimmed, and unknown labels return no matching calls rather than a validation error. Multiple labels within one parameter are OR conditions. When call type, call outcome, source, scorecard, date, or user filters are combined, the filter groups are ANDed.
+
+The shared query parser uses a single comma-separated string. Repeated query keys are not supported, whitespace around a comma becomes part of the label, and labels containing commas cannot be represented because the decoded value is split on every comma. A literal `null` is treated as the label `"null"`; it is not the same as omitting the parameter.
+
+The filters apply consistently to overview totals, team/member scores, trends, weak signals, engagement, previous-period comparisons, member detail, and coachable snippets. A simulation call without a linked agent/call type cannot match `callTypes`; a real call without `metadata.callType` cannot match it. Any call without `metadata.callOutcome` cannot match `callOutcomes`.
+
+#### Employee Q&A
+
+**Why can the same Call Type selection find both real calls and simulations?**
+
+The backend resolves the same label against different storage: metadata for real calls and the agent's linked `CallType.label` for simulations. Supplying `source` additionally restricts which branch can contribute.
+
+**Does Call Outcome automatically imply real calls?**
+
+No. The outcome filter checks call metadata for either source. Use `source=REAL_CALL` when only real-call outcomes should count.
+
+**Why does an apparently valid filter return an empty dashboard?**
+
+Confirm the exact label and casing, remove spaces around commas, and verify the field exists on the selected source. Also check the existing tenant, workspace, team-lead subtree, user, group, scorecard, source, and date filters because all applicable scopes are combined.
+
+**Are custom labels checked against the tenant's Call Type or Call Outcome configuration?**
+
+No separate lookup validates request values. Tenant isolation comes from the calls/workspaces in the Coaching Insights query. Simulation call types resolve through the linked `CallType` record; real-call types and all outcomes compare stored metadata strings directly.
 
 ---
 
@@ -98,7 +148,7 @@ The admin Coaching Insights router requires team-lead or admin access.
 | Team lead | Server-side scope is restricted to the team lead subtree. |
 | Team lead overview | Requested users are intersected with the subtree. If no users are requested, the subtree is used. |
 | Team lead member detail | Returns an empty member detail when the requested user is outside the subtree. |
-| Team lead snippets | Returns `{ snippets: [] }` when the requested user is outside the subtree. |
+| Team lead snippets | Returns `{ snippets: [], nextCursor: null }` when the requested user is outside the subtree. |
 
 All overview-level team aggregates only include regular users with `role = USER` and `isTestUser = false`.
 
@@ -110,13 +160,15 @@ The non-admin Coaching Insights router exposes read-only endpoints for the authe
 
 | Endpoint | Auth | Valid query parameters | Scope behavior |
 | --- | --- | --- | --- |
-| `GET /coaching-insights/overview` | `requireAuth` | `scorecardIds`, `dateFrom`, `dateTo`, `source` | Forces `userIds` to the current user. If the request has workspace context, overview data is also scoped to that workspace. |
-| `GET /coaching-insights/me` | `requireAuth` | `scorecardIds`, `dateFrom`, `dateTo`, `source` | Loads member detail for the current user only. No `userId` path or query parameter is accepted. |
-| `GET /coaching-insights/me/snippets?signalId={signalId}` | `requireAuth` | `signalId`, `scorecardIds`, `dateFrom`, `dateTo`, `source` | Loads snippets for the current user and uses the current user as the snippet viewer. |
+| `GET /coaching-insights/overview` | `requireAuth` | `scorecardIds`, `callTypes`, `callOutcomes`, `dateFrom`, `dateTo`, `source` | Forces `userIds` to the current user. If the request has workspace context, overview data is also scoped to that workspace. |
+| `GET /coaching-insights/me` | `requireAuth` | `scorecardIds`, `callTypes`, `callOutcomes`, `dateFrom`, `dateTo`, `source` | Loads member detail for the current user only. No `userId` path or query parameter is accepted. |
+| `GET /coaching-insights/me/snippets?signalId={signalId}` | `requireAuth` | `signalId`, `scorecardIds`, `callTypes`, `callOutcomes`, `dateFrom`, `dateTo`, `source`, `cursor`, `limit` | Loads snippets for the current user and uses the current user as the snippet viewer. |
 
-Validation is handled by `UserCoachingInsightsOverviewSchema`, `UserCoachingInsightsDetailSchema`, and `UserCoachingInsightsSnippetsSchema`. `signalId` is required and must be a UUID for `/coaching-insights/me/snippets`; invalid values return a bad request before the service layer runs.
+Validation is handled by `UserCoachingInsightsSchema` and `UserCoachingInsightsSnippetsSchema`. `signalId` is required and must be a UUID for `/coaching-insights/me/snippets`; invalid values return a bad request before the service layer runs. The call type and outcome parameters are validated as strings, then split into labels by `parseCoachingInsightsFilters`.
 
 Current-user routes intentionally do not expose `groupIds`, `userIds`, `workspaceIds`, member `userId` path parameters, or coaching-focus mutation endpoints. They share the same overview, member-detail, and snippet response schemas as the admin routes.
+
+The current personal Calls workspace filter controls documented below do not yet expose Call Type or Call Outcome. The API accepts both parameters for current-user calls, so other clients can use them without gaining access to another user's data.
 
 ---
 
@@ -259,18 +311,20 @@ The snippets modal opens from a member signal card or a personal workspace focus
 | Coachability rule | `SnippetEvaluation.coachability > 5`. |
 | Vote exclusion | Snippets with any `DISLIKE` vote are excluded. |
 | Sort order | Highest coachability first, then lowest score. |
-| Limit | `50` snippets. |
+| Page size | The frontend requests `5` snippets per page. The request schema accepts `limit` from `1` through `100`; the service default is `5`. |
+| Pagination | Keyset cursor ordered by coachability descending, score ascending, then feedback ID ascending. The next page loads when the scroll sentinel approaches the viewport. |
 | Hydration | Adds transcript context, replies, viewer vote, reviewer, recording URL, and call metadata. |
 
 Snippets endpoints return an object wrapper, not a bare array:
 
 ```json
 {
-  "snippets": []
+  "snippets": [],
+  "nextCursor": null
 }
 ```
 
-This applies to both `GET /admin/coaching-insights/member/{userId}/snippets` and `GET /coaching-insights/me/snippets`. For admin requests by a team lead, an out-of-subtree member request also returns `{ snippets: [] }` instead of leaking whether the user has coachable moments. For personal workspace requests, the frontend enables the user endpoint only when a `signalId` is present.
+This applies to both `GET /admin/coaching-insights/member/{userId}/snippets` and `GET /coaching-insights/me/snippets`. A non-null cursor contains `coachability`, `score`, and `feedbackId` and is serialized as JSON in the next request. For admin requests by a team lead, an out-of-subtree member request returns `{ snippets: [], nextCursor: null }` instead of leaking whether the user has coachable moments. For personal workspace requests, the frontend enables the user endpoint only when a `signalId` is present.
 
 The frontend sorts loaded snippets so snippets with replies appear first. Audio playback is coordinated so only one snippet plays at a time.
 
@@ -325,9 +379,9 @@ Previous-period values are used for deltas on:
 | Personal workspace has no detail response | The frontend renders nothing after loading. |
 | Personal workspace has no signals | `SkillGapsLayout` shows "No coachable moments". |
 | Team lead requests member detail outside subtree | Empty member detail. |
-| Team lead requests snippets outside subtree | `{ snippets: [] }`. |
+| Team lead requests snippets outside subtree | `{ snippets: [], nextCursor: null }`. |
 | Signal has no eligible snippets | Member signal card shows no coachable moments. |
-| Snippets endpoint finds none | Response is `{ snippets: [] }`; the snippets modal shows "No coachable snippets found". |
+| Snippets endpoint finds none | Response is `{ snippets: [], nextCursor: null }`; the snippets modal shows "No coachable snippets found". |
 
 ---
 
@@ -342,11 +396,11 @@ Previous-period values are used for deltas on:
 | Current-user overview endpoint | `GET /coaching-insights/overview` |
 | Current-user detail endpoint | `GET /coaching-insights/me` |
 | Current-user snippets endpoint | `GET /coaching-insights/me/snippets?signalId={signalId}` |
-| Overview query key | `coaching-insights-overview` plus filter values |
-| Member query key | `coaching-insights-member` plus user and filter values |
-| Snippet query key | `coaching-insights-snippets` plus user, signal, and filter values |
-| Personal detail query key | `user-coaching-insights-detail` plus date, scorecard, and source filter values |
-| Personal snippets query key | `user-coaching-insights-snippets` plus signal, date, scorecard, and source filter values |
+| Overview query key | `coaching-insights-overview`, group CSV, user CSV, then date, scorecard, call-type, call-outcome, and source values |
+| Member query key | `coaching-insights-member`, user ID, then date, scorecard, call-type, call-outcome, and source values |
+| Snippet query key | `coaching-insights-snippets`, user ID, signal ID, then date, scorecard, call-type, call-outcome, and source values |
+| Personal detail query key | `user-coaching-insights-detail` plus date, scorecard, call-type, call-outcome, and source filter values |
+| Personal snippets query key | `user-coaching-insights-snippets`, signal ID, then date, scorecard, call-type, call-outcome, and source values |
 | Focus query key | `coaching-insights-focus`, user ID |
 | Personal scorecard storage | `calls-coaching-insights-scorecard-ids` |
 | Personal source storage | `calls-coaching-insights-source` |
@@ -369,6 +423,10 @@ Previous-period values are used for deltas on:
 | Router mounting | `zell-backend-ts/src/server.ts` |
 | Team-lead subtree scope | `zell-backend-ts/src/api/admin/coachingInsights/filters.ts` |
 | Request schemas | `zell-backend-ts/src/schemas/coachingInsightsSchemas.ts` |
+| Shared Coaching Insights query parser | `zell-backend-ts/src/api/coachingInsights/filters.ts` |
+| Call Type and Call Outcome SQL filtering | `zell-backend-ts/prisma/queries/coachingInsightsQueries.ts` |
+| Call Type and Call Outcome service propagation | `zell-backend-ts/src/services/coachingInsights/index.ts` |
+| Call filter service tests | `zell-backend-ts/src/tests/services/coachingInsights.test.ts` |
 | Score and coachability formulas | `zell-backend-ts/src/services/callScoring/index.ts` |
 | Coaching Insights tab | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsTab.tsx` |
 | Stats cards | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx` |
