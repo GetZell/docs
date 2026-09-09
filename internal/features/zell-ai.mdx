@@ -62,6 +62,43 @@ The backend validates generated scorecard output with a stricter schema than per
 
 For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
+## Course Creation Language
+
+The `create_course` tool generates a course draft for review and a separate save action. Its `language` argument controls the generated course, including titles, descriptions, module content, and the language used to select or create practice agents.
+
+The tool input schema instructs the assistant to choose the language in this order:
+
+1. The user's explicit language request
+2. The uploaded document's language
+3. The conversation's language
+4. English (`en`) as the default
+
+This precedence is guidance for the assistant when supplying the required `language` string. The schema does not detect a language or insert a default itself. Once supplied, that language takes precedence over the source document, course title, and target market. For example, a course about selling in France can use English throughout.
+
+### Backend Flow
+
+| Stage | Language handling |
+| --- | --- |
+| Tool execution | Copies `CreateCourseInput.language` into `CourseCreationContext.language`. |
+| Structure generation | Passes the context language to `buildStructurePrompt` and refines `CourseOutputSchema.language` to require an exact match. |
+| Module content | Passes the context language to the prompt for HTML content and practice instructions. |
+| Practice agents | Uses the context language to match agents by call type and language, and to create a missing agent. |
+| Tool result | Returns the draft as `courseData` and includes `Course language: <code>` in the success message, followed by the review-and-save instruction. |
+
+If the model returns a different language code, structure validation fails. The pipeline retries structure generation twice, then reports failure with no course draft if the mismatch persists. Module content generation and agent resolution start only after structure generation succeeds.
+
+The validator checks the returned language code; it does not detect the language of every title or paragraph. Also, existing agent-resolution fallback behavior can select the first available agent when no matching agent is available, including after automatic agent creation fails. That fallback can have a different language. Inspect the assigned agent when investigating a practice-call language mismatch.
+
+Generating the draft does not save the course. Agent resolution can create supporting personas and practice agents during draft generation; course persistence remains a separate action.
+
+### Troubleshooting Unexpected French Content
+
+Find the relevant Langfuse trace and compare the `create_course.language` argument, structure prompt, structure response's `language`, and module content prompts. Check the generated prose as well as the language code. A French target market or French source document should not override an explicit English request once `language: "en"` reaches the pipeline.
+
+If the tool argument is already wrong, inspect the user's request and the assistant's language selection. If the tool argument is correct but downstream prompts use another language, investigate backend language propagation. If prompts and codes are correct but prose is French, investigate generation compliance. For practice calls, check the assigned agent's language and agent-creation or fallback logs. Do not attribute French course text to display-language settings without trace evidence.
+
+Backend sources: `src/schemas/zellAISchemas.ts` (`CreateCourseInputSchema`), `src/services/zellAI/skills/createCourse.ts`, `src/services/zellAI/pipelines/courseCreation/index.ts`, `src/services/zellAI/pipelines/courseCreation/prompts.ts`, and `src/services/zellAI/pipelines/courseCreation/steps.ts`. Regression coverage: `src/tests/services/zellAI/courseCreation.test.ts`.
+
 ## Model Picker Defaults
 
 When the Zell AI chat model list loads, the frontend preselects an Opus model when one is available. This is a frontend picker default only; it does not change the backend model list or the backend-declared default.
