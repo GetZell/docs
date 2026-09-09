@@ -62,6 +62,77 @@ The backend validates generated scorecard output with a stricter schema than per
 
 For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
+## Course Brief and Outline Handoff
+
+Before calling `create_course`, the assistant must propose the output language and exact module outline and wait for the user's confirmation. The tool requires a nonempty `moduleOutline` array with a nonempty title and description for each module. Its length determines the generated module count; the older optional `numModules` argument does not override it.
+
+Both streaming and non-streaming chat execution pass `conversationHistory` into `ToolContext`. The course skill serializes that history, the current user message, optional `userSpec`, and the accepted `moduleOutline` into `courseInstructions`. A final message such as “ok” therefore travels with the earlier brief instead of becoming the only course instruction. Callers without conversation history can supply their brief through `userSpec`.
+
+`userSpec` is intended to preserve the full brief verbatim, including examples, named people, required topics, exclusions, and source material retrieved with tools. The assistant is instructed to retrieve the actual modules and content before reusing another course and to include the relevant material in `userSpec`. The course skill does not fetch a source course automatically, and prior assistant claims are not evidence of its contents.
+
+### Generation and Validation
+
+| Stage | Handoff or check |
+| --- | --- |
+| Source size | Estimates the serialized input, course instructions, and document size. Above 100,000 estimated tokens, returns a terminal response asking for a focused brief in a new conversation, before generation starts. This is a source-size guard, not an exact measurement of every final prompt. |
+| Structure | Receives the full `courseInstructions` and accepted outline under fixed keys `module1`, `module2`, and so on. The model generates a short description and steps for each required key. Descriptions are trimmed, nonempty, and limited to 120 characters; the prompt requests one short sentence. A strict schema rejects missing or extra module keys and empty step arrays. String-length bounds and strict-object constraints are also included in the JSON schema sent to the model. |
+| Outline assembly | The backend copies each approved module title verbatim and assigns its `order` from the outline position, starting at 1. It attaches generated steps by module key, independently of response-key insertion order. Model-supplied module titles or order fields do not override the approved outline. The generated short description is used for display; the full outline description remains required lesson coverage. |
+| Content | Receives the full `courseInstructions` and original outline description for each module, so shortening the visible description does not discard lesson requirements. Every expected step must receive a string containing non-whitespace content, matched by its `order`. |
+| Supporting agents | Practice-agent matching receives the full module outline in addition to short display descriptions. Persona generation and scorecard selection also receive the course instructions. Courses without practice-call steps return from agent resolution before querying agents. |
+| Result | Successful drafts return `courseData` plus a terminal summary containing the approved module titles, generated step titles, language, and review-and-save instruction. The agent does not run another model turn to paraphrase that result. |
+
+Structure validation failures use the pipeline's two retries. Each module content generation gets two attempts; errors after the second attempt propagate to the pipeline, which can retry the content stage once. Persistent missing, blank, or malformed content returns a terminal failure with no course draft. A partial module is no longer reported as successful merely because content generation exhausted its local retries.
+
+The brief is not sliced in these downstream prompts. Existing document excerpt limits still apply: structure generation uses the first 30,000 characters, module content 15,000, persona generation 3,000, and scorecard selection 5,000. Include required details in the accepted brief when they fall beyond those excerpts.
+
+These checks enforce structure and nonblank content, not semantic completeness. They do not mechanically verify that every example, exclusion, or requirement appears in the generated prose, that a supplied outline was actually approved in chat, or that prose is in the declared language. Review the actual draft before saving. Supporting personas and agents may already have been created if a parallel content stage later fails.
+
+### Troubleshooting Missing Requirements
+
+Compare the conversation and tool arguments with the structure and content prompts in Langfuse. Verify that `userSpec` contains retrieved source material and `moduleOutline` preserves the accepted titles and coverage. For structure failures, inspect the required module keys and their step arrays; module titles are assembled from the outline rather than checked against model-generated title strings. Check the returned `courseData` and actual saved step content before claiming that a course includes a particular example. If the prompts contain the requirement but the prose omits it, investigate generation compliance; a successful schema check does not establish semantic coverage.
+
+This workflow runs through the in-app assistant. The read-only Zell MCP server exposes only skills and tools marked `readOnly`; `create_course` is excluded.
+
+Backend sources: `src/lib/ai/toolRegistry.ts`, `src/services/zellAI/agent.ts`, `src/schemas/zellAISchemas.ts`, `src/services/zellAI/skills/createCourse.ts`, `src/services/zellAI/pipelines/courseCreation/`, and `src/services/mcp/index.ts`. Schema conversion: `src/ports/adapters/anthropicAdapter.ts`. Regression coverage: `src/tests/services/zellAI/agent.test.ts`, `src/tests/services/zellAI/courseCreation.test.ts`, and `src/tests/ports/adapters/anthropicAdapter.test.ts`.
+
+## Course Creation Language
+
+The `create_course` tool generates a course draft for review and a separate save action. Its `language` argument controls generated prose, including the course title and description, step titles and descriptions, module content, and the language used to select or create practice agents. Approved module titles retain their exact wording and original language. Module descriptions are generated in the requested language as short previews, not copied from the detailed outline requirements.
+
+The tool input schema instructs the assistant to choose the language in this order:
+
+1. The user's explicit output-language request
+2. The user's brief language
+3. The uploaded document's language
+4. The conversation's language
+5. English (`en`) as the default
+
+This precedence is guidance for the assistant when supplying the required `language` string. The schema does not detect a language or insert a default itself. A target country or market does not select the output language. Once supplied, the output language takes precedence over the source document and market context for generated prose. For example, a course about selling in France can have English content. Conversely, approved English module titles can remain English when the requested generated content is French.
+
+### Backend Flow
+
+| Stage | Language handling |
+| --- | --- |
+| Tool execution | Copies `CreateCourseInput.language` into `CourseCreationContext.language`. |
+| Structure generation | Passes the context language to `buildStructurePrompt` and refines `CourseOutputSchema.language` to require an exact match. Approved module titles are supplied by the backend without translation; module descriptions are generated in the requested language. |
+| Module content | Passes the context language to the prompt for HTML content and practice instructions. |
+| Practice agents | Uses the context language to match agents by call type and language, and to create a missing agent. |
+| Tool result | Returns the draft as `courseData` and includes `Course language: <code>` in the success message, followed by the review-and-save instruction. |
+
+If the model returns a different language code, structure validation fails. The pipeline retries structure generation twice, then reports failure with no course draft if the mismatch persists. Module content generation and agent resolution start only after structure generation succeeds.
+
+The validator checks the returned language code; it does not detect the language of every title or paragraph. Also, existing agent-resolution fallback behavior can select the first available agent when no matching agent is available, including after automatic agent creation fails. That fallback can have a different language. Inspect the assigned agent when investigating a practice-call language mismatch.
+
+Generating the draft does not save the course. Agent resolution can create supporting personas and practice agents during draft generation; course persistence remains a separate action.
+
+### Troubleshooting Unexpected French Content
+
+Find the relevant Langfuse trace and compare the `create_course.language` argument, structure prompt, structure response's `language`, and module content prompts. Check the generated prose as well as the language code. A French target market or French source document should not override an explicit English request once `language: "en"` reaches the pipeline. Compare module titles with the approved outline separately: retaining their approved language is intentional.
+
+If the tool argument is already wrong, inspect the user's request and the assistant's language selection. If the tool argument is correct but downstream prompts use another language, investigate backend language propagation. If prompts and codes are correct but prose is French, investigate generation compliance. For practice calls, check the assigned agent's language and agent-creation or fallback logs. Do not attribute French course text to display-language settings without trace evidence.
+
+Backend sources: `src/schemas/zellAISchemas.ts` (`CreateCourseInputSchema`), `src/services/zellAI/skills/createCourse.ts`, `src/services/zellAI/pipelines/courseCreation/index.ts`, `src/services/zellAI/pipelines/courseCreation/prompts.ts`, and `src/services/zellAI/pipelines/courseCreation/steps.ts`. Regression coverage: `src/tests/services/zellAI/courseCreation.test.ts`.
+
 ## Model Picker Defaults
 
 When the Zell AI chat model list loads, the frontend preselects an Opus model when one is available. This is a frontend picker default only; it does not change the backend model list or the backend-declared default.
