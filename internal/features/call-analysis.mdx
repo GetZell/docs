@@ -33,6 +33,17 @@ Call Analysis preserves breadcrumb context when opened from call collections or 
 
 Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
 
+## Summary Text Formatting
+
+Generated summaries and category explanations can contain literal escape characters around quotes or apostrophes, including in saved calls. The frontend rendering fix removes these escapes for display while preserving the existing line-break normalization and transcript timestamp links. It does not rewrite stored analysis or require call regeneration.
+
+For support investigations, verify that the deployed frontend includes the escaped-quote rendering fix before expecting this behavior. The fix does not add paragraph breaks when the generated text contains none.
+
+Source references:
+
+- `src/components/aiFeedback/analysis/components/explanationText.tsx`
+- `src/components/aiFeedback/analysis/components/explanationText.test.tsx`
+
 ## Recording Playback
 
 When a call includes video, Call Analysis displays the recording in a floating player alongside the shared waveform controls. Users can drag the player by its top grip and resize it from the lower-left resize handle. The player starts at 320 pixels wide and is constrained between 240 and 640 pixels, or the available viewport width when that is smaller. With the resize handle focused, the left and right arrow keys change the width in 20-pixel steps.
