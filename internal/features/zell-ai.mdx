@@ -62,6 +62,38 @@ The backend validates generated scorecard output with a stricter schema than per
 
 For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
+## Course Brief and Outline Handoff
+
+Before calling `create_course`, the assistant must propose the exact module outline and wait for the user's confirmation. The tool requires a nonempty `moduleOutline` array with a nonempty title and description for each module. Its length determines the generated module count; the older optional `numModules` argument does not override it.
+
+Both streaming and non-streaming chat execution pass `conversationHistory` into `ToolContext`. The course skill serializes that history, the current user message, optional `userSpec`, and the accepted `moduleOutline` into `courseInstructions`. A final message such as “ok” therefore travels with the earlier brief instead of becoming the only course instruction. Callers without conversation history can supply their brief through `userSpec`.
+
+`userSpec` is intended to preserve the full brief verbatim, including examples, named people, required topics, exclusions, and source material retrieved with tools. The assistant is instructed to retrieve the actual modules and content before reusing another course and to include the relevant material in `userSpec`. The course skill does not fetch a source course automatically, and prior assistant claims are not evidence of its contents.
+
+### Generation and Validation
+
+| Stage | Handoff or check |
+| --- | --- |
+| Source size | Estimates the serialized input, course instructions, and document size. Above 100,000 estimated tokens, returns a terminal response asking for a focused brief in a new conversation, before generation starts. This is a source-size guard, not an exact measurement of every final prompt. |
+| Structure | Receives the full `courseInstructions` and accepted outline. Validates the exact module count, titles, array sequence, and sequential module `order` values starting at 1. Every module must contain at least one step. |
+| Content | Receives the full `courseInstructions` for each module. Every expected step must receive a string containing non-whitespace content, matched by its `order`. |
+| Supporting agents | Persona generation and scorecard selection also receive the course instructions. Courses without practice-call steps return from agent resolution before querying agents. |
+| Result | Successful drafts return `courseData` plus a terminal summary containing the generated module and step titles, language, and review-and-save instruction. The agent does not run another model turn to paraphrase that result. |
+
+Structure validation failures use the pipeline's two retries. Each module content generation gets two attempts; errors after the second attempt propagate to the pipeline, which can retry the content stage once. Persistent missing, blank, or malformed content returns a terminal failure with no course draft. A partial module is no longer reported as successful merely because content generation exhausted its local retries.
+
+The brief is not sliced in these downstream prompts. Existing document excerpt limits still apply: structure generation uses the first 30,000 characters, module content 15,000, persona generation 3,000, and scorecard selection 5,000. Include required details in the accepted brief when they fall beyond those excerpts.
+
+These checks enforce structure and nonblank content, not semantic completeness. They do not mechanically verify that every example, exclusion, or requirement appears in the generated prose, that a supplied outline was actually approved in chat, or that prose is in the declared language. Review the actual draft before saving. Supporting personas and agents may already have been created if a parallel content stage later fails.
+
+### Troubleshooting Missing Requirements
+
+Compare the conversation and tool arguments with the structure and content prompts in Langfuse. Verify that `userSpec` contains retrieved source material and `moduleOutline` preserves the accepted titles and coverage. Check the returned `courseData` and actual saved step content before claiming that a course includes a particular example. If the prompts contain the requirement but the prose omits it, investigate generation compliance; a successful schema check does not establish semantic coverage.
+
+This workflow runs through the in-app assistant. The read-only Zell MCP server exposes only skills and tools marked `readOnly`; `create_course` is excluded.
+
+Backend sources: `src/lib/ai/toolRegistry.ts`, `src/services/zellAI/agent.ts`, `src/schemas/zellAISchemas.ts`, `src/services/zellAI/skills/createCourse.ts`, `src/services/zellAI/pipelines/courseCreation/`, and `src/services/mcp/index.ts`. Regression coverage: `src/tests/services/zellAI/agent.test.ts` and `src/tests/services/zellAI/courseCreation.test.ts`.
+
 ## Course Creation Language
 
 The `create_course` tool generates a course draft for review and a separate save action. Its `language` argument controls the generated course, including titles, descriptions, module content, and the language used to select or create practice agents.
