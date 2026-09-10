@@ -17,7 +17,8 @@
             "group": "Getting Started",
             "public": true,
             "pages": [
-              "index"
+              "index",
+              "guides/invite-users"
             ]
           },
           {
