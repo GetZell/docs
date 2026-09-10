@@ -62,6 +62,36 @@ The backend validates generated scorecard output with a stricter schema than per
 
 For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
+## Course Drafts
+
+`create_course` is available to admins and internal-tool admins. The assistant gathers the brief, output language, and module outline, then asks for approval before generation. It reuses approval already in the conversation for an approved brief or an explicitly requested revision. The latest explicit language request takes priority; a target country does not select the output language, and approved module titles stay as agreed.
+
+A successful tool result returns `courseData` for review. It does not save or publish the course. A chat outline is only a proposal. For the user workflow, see [Set Up a Course](/guides/courses).
+
+### Replies and completion status
+
+When course routing is active, the agent requires a tool response and buffers model narration. `create_course` generates a draft; `course_reply` handles discussion and status without an additional verification model call. A missing tool response or exhausted tool loop returns a failure message instead of treating model text as evidence of generation.
+
+For `course_reply` with `kind=status`, the server ignores the model's message and reports either no prior draft or the earlier draft's title and language. When an earlier draft exists, it explicitly states that no new draft was generated in that reply and that saving or publishing has not been verified. Questions, proposals, and informational answers still contain model-written text, and choosing the correct reply kind depends on the model. This protocol does not guarantee that every misleading claim is prevented.
+
+### Draft history and edited messages
+
+The send-message response's `courseData` comes only from the current agent result. An older draft can remain in conversation history without being returned as newly generated data on a later discussion or failed-generation turn.
+
+Prior draft evidence is read from the latest retained assistant message with valid draft metadata. Editing a message removes that message and all later messages, so drafts in the removed history do not count. Session metadata may still contain an older draft; support should use retained message metadata when checking what the current conversation actually generated.
+
+Large message metadata is stored in private storage through `_metadataRef`. New offloaded course messages also keep `_courseDraft` with the title and language in the database. Older references are hydrated when finding draft evidence, and paginated message responses hydrate full metadata. Missing or invalid downloaded metadata yields no hydrated evidence. A title/language summary alone does not prove the full draft can still be loaded.
+
+Replacing edited messages and writing the replacement user message is one database transaction. Saving the assistant result and updating session metadata is another. Private-storage uploads and cleanup occur outside those transactions.
+
+### Generation failures and tracing
+
+Lesson generation uses a structured `steps` array with nonempty content and exactly the expected step orders. Each module gets two generation attempts; within each attempt, the Anthropic adapter can retry invalid structured output twice. Modules run concurrently and all settle before the content stage reports failure. The pipeline does not retry the whole content stage, so one failing module does not regenerate successful siblings within that run.
+
+For a failed course request, inspect the `tool:create_course` span in the session's Langfuse trace and its child `llm` generations. Pipeline failures and thrown tool errors mark the tool span `ERROR` with a `statusMessage`; model-facing error results also carry `is_error`. LLM observations start before the request and finish on success or failure, so elapsed time includes the request. Exhausted structured-output validation retries include the raw output and available model/token usage; successful observations include available cache usage. Not every response without draft data is an error: confirmation requests and discussion can legitimately return no draft.
+
+Backend sources: `src/services/zellAI/skills/createCourse.ts`, `src/services/zellAI/courseCompletion.ts`, `src/services/zellAI/agent.ts`, `src/services/zellAI/index.ts`, `src/services/zellAI/pipelines/courseCreation/index.ts`, `src/services/zellAI/pipelines/courseCreation/steps.ts`, `src/lib/ai/anthropic.ts`, `src/ports/adapters/anthropicAdapter.ts`, `src/ports/adapters/langfuseAdapter.ts`.
+
 ## Model Picker Defaults
 
 When the Zell AI chat model list loads, the frontend preselects an Opus model when one is available. This is a frontend picker default only; it does not change the backend model list or the backend-declared default.
