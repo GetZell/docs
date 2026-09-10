@@ -62,6 +62,21 @@ The backend validates generated scorecard output with a stricter schema than per
 
 For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
+## User Report Tool References
+
+The frontend has no dedicated `generate_user_report` labels, sample prompts, or tool icon. The tool name is also absent from the frontend's admin-only skill list. For roles that load skills from `GET /admin/zell-ai/skills`, a returned User Report skill is no longer suppressed by that list. Backend catalog availability and authorization remain authoritative; coordinate backend retirement with the frontend release. Removing these frontend references does not itself disable the backend tool.
+
+When inspecting a conversation that contains `generate_user_report`, support should expect these displays:
+
+| Context | Display |
+|---------|---------|
+| Historical tool badge in `ThoughtBubble` | Generic wrench icon and the raw `generate_user_report` name. |
+| Active tool in `ThinkingIndicator` | The active-tool row is omitted because there is no mapped icon. Other thinking content can still appear. |
+
+The shared report data contract remains available for reports produced by other tools.
+
+Frontend sources: `src/hooks/api-hooks/personas/queries/useZellAiSkills.ts`, `src/components/zell-ai/components/ThinkingIndicator.tsx`, `src/components/zell-ai/types.ts`, and `src/messages/{en,de,fr,it}.json`. Backend catalog source: `src/services/zellAI/index.ts` (`getAvailableSkills`).
+
 ## Model Picker Defaults
 
 When the Zell AI chat model list loads, the frontend preselects an Opus model when one is available. This is a frontend picker default only; it does not change the backend model list or the backend-declared default.
