@@ -1,6 +1,6 @@
 ---
 title: "Users & Teams"
-description: "Manage users, invitations, team hierarchy, roles, and training access"
+description: "Invite users to Zell: navigation, admin permissions, roles, workspace assignment, email delivery, expiration, and pending invitations"
 icon: "users-round"
 ---
 
@@ -28,7 +28,80 @@ Users & Teams covers user management, invited users, manager relationships, role
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## How to Invite New Users
 
-This page is a feature placeholder. It should be expanded with user table behavior, invitation lifecycle, role changes, manager assignment, and deletion/deactivation rules.
+Customer guide: [Invite Users](/guides/invite-users).
 
+1. As an organization administrator, open **Settings → Tenant Settings → Team → Users**, or go directly to [User Management](https://app.getzell.com/settings/team/users).
+2. Click **Invite User**.
+3. Select the **Workspace**. The active workspace is used by default; a single workspace is selected automatically and its picker is hidden. Without a workspace, the remaining fields and submit button are disabled.
+4. Enter one **Email** address and choose **User** or **Admin**. These are the two roles exposed by this form; User is the default.
+5. Optionally select a **Group**, a **Manager**, and, for User invitations, a **Course**. The group list follows the selected workspace, and changing workspace resets the group selection.
+6. Click **Invite**. The recipient receives an email with a link to complete setup. New users enter their name and password using the invited email address.
+
+German UI: **Einstellungen → Mandanteneinstellungen → Team → Benutzer → Benutzer einladen**, then **Einladen**.
+
+## Permissions and Seat Limits
+
+All invitation endpoints require authentication and an admin role (`ADMIN` or `INTERNAL_TOOL_ADMIN`). `TEAM_LEAD` alone cannot list, create, revoke, or resend invitations, even though the settings navigation includes team pages for team leads.
+
+The invitation form exposes **User** and **Admin** only. Other platform roles listed above are not invitation options in this UI. Candidate invitations belong to the separate [Hiring workflow](/guides/hiring-module).
+
+Seat usage is the number of regular, non-test `USER` accounts plus unaccepted `USER` invitations in the tenant. The page disables **Invite User** when a configured limit is reached, and the create endpoint also enforces the limit before creating an invitation. This check applies before selecting or processing the invited role.
+
+## Invitation Lifecycle
+
+| Stage | Behavior |
+| --- | --- |
+| Create | The UI trims and lowercases the email. The backend stores the tenant, role, random token, seven-day expiry, and workspace/group/course/manager configuration. |
+| Duplicate | The create endpoint returns a conflict if an invitation record already exists for the same email and tenant. The UI also checks the currently loaded invitation list. |
+| Email | The invitation creation callback queues the tenant-invitation email with a `/login?token=...` link. Demo tenants intentionally do not receive invitation emails. |
+| Pending | The list returns records with `acceptedAt = null`, newest first, filtered by workspace when one is active. Expired invitations can still appear until removed; the pending query does not filter by expiry. |
+| Accept | Token resolution and invitation registration reject expired or already accepted links. Registration uses the invitation's email, assigns access, marks the invitation accepted, applies its workspace/manager/groups, and enrolls the user in the selected course. |
+| Revoke | Deleting an unaccepted invitation removes its record and invalidates the link. Accepted invitations cannot be revoked through this endpoint. |
+| Resend | The backend resend endpoint rotates the token and sets a new seven-day expiry. The token-change callback queues a new email. Accepted invitations cannot be resent. |
+
+## Pending Invitations and Replacement Emails
+
+The Users page displays **Pending Invitations** below the user table, with email, role, date, and a trash button. Accepted invitations disappear from this list. Check the active workspace when an expected invitation is missing.
+
+The current user-management UI provides cancellation but no dedicated resend button. To send a replacement through this UI, delete the old pending invitation and invite the address again with the intended assignments. The old link stops working, and the recipient must use the newest email.
+
+The form accepts one email at a time. There is no bulk invitation control for regular users on this page.
+
+## Support Checks
+
+- **Access denied:** verify the caller has an admin role; team-lead navigation visibility does not grant invitation API access.
+- **Invite disabled:** check the seat counter and pending User invitations. Within the dialog, also check workspace selection.
+- **Already invited:** check other workspaces and whether the invitation was accepted. The duplicate check spans the tenant, while the displayed pending list can be workspace-filtered.
+- **No email:** check the address and spam folder, confirm the tenant is not a demo, and inspect notification delivery if needed. Creating the record and delivering its email are separate operations.
+- **Expired link:** create a replacement through the UI, or use the admin resend endpoint. Do not describe expired pending records as valid links.
+
+## Invitation APIs
+
+| Method and path | Purpose |
+| --- | --- |
+| `GET /admin/invitations` | List unaccepted invitations; optional workspace filter. |
+| `POST /admin/invitations` | Create an invitation after admin, seat-limit, and duplicate checks. |
+| `DELETE /admin/invitations/:invitationId` | Revoke an unaccepted invitation in the tenant. |
+| `POST /admin/invitations/:invitationId/resend` | Rotate the token, renew expiry, and trigger a replacement email. |
+
+## Source References
+
+Verified against the application source on September 10, 2026.
+
+| Area | Source |
+| --- | --- |
+| Settings entry and team navigation | `zell-frontend/src/components/nav/SidebarFooterActions.tsx`, `zell-frontend/src/components/layouts/SettingsNav.tsx` |
+| Users page and seat-limit button | `zell-frontend/src/app/(auth)/settings/team/(settings)/users/page.tsx` |
+| Invitation form | `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/InviteUserModal.tsx` |
+| Workspace selection | `zell-frontend/src/components/workspace/WorkspaceFormPicker.tsx` |
+| Pending list and cancellation | `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/InvitationsList.tsx` |
+| Routes and permissions | `zell-backend-ts/src/api/admin/tenant/tenantRouter.ts` |
+| Creation and duplicate checks | `zell-backend-ts/src/api/admin/tenant/invitations/create/index.ts`, `zell-backend-ts/src/api/admin/tenant/invitations/create/middleware.ts` |
+| Lifecycle and expiry | `zell-backend-ts/src/services/invitation/index.ts` |
+| Seat accounting | `zell-backend-ts/src/services/tenant/index.ts` |
+| Email callbacks | `zell-backend-ts/prisma/callbacks/invitation.ts` |
+| Invitation acceptance | `zell-backend-ts/src/services/auth/index.ts` |
+
+For workspace organization and manager relationships, see [Workspaces](/guides/workspaces). For permission concepts, see [Access Control](/internal/features/access-control).

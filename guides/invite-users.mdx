@@ -1,0 +1,65 @@
+---
+title: "Invite Users"
+description: "Invite new users to Zell by email, choose their role and workspace, and manage pending invitations"
+icon: "user-plus"
+---
+
+## Invite a New User to Zell
+
+As an administrator, open **Settings → Tenant Settings → Team → Users**, click **Invite User**, enter the person's email address, choose their workspace and role, then click **Invite**.
+
+You can also open [User Management](https://app.getzell.com/settings/team/users) directly.
+
+In the German interface, the path is **Einstellungen → Mandanteneinstellungen → Team → Benutzer → Benutzer einladen**. Confirm with **Einladen**.
+
+## Before You Start
+
+- You need the **Admin** role to create, view, or cancel user invitations. Team Lead access alone does not grant these permissions.
+- The person needs a workspace. If your organization has only one workspace, Zell selects it automatically.
+- Your organization must have capacity under its seat limit. Pending invitations for the **User** role already count toward occupied seats.
+
+## Send an Invitation
+
+1. Open **Settings**, choose **Tenant Settings**, then select **Users** under **Team**.
+2. Click **Invite User** at the top of the User Management page.
+3. Check the **Workspace**. Your active workspace is selected by default. If you have multiple workspaces and none is selected, choose one to enable the rest of the form. With only one workspace, the picker is hidden.
+4. Enter one **Email** address and choose a **Role**: **User** for a regular team member or **Admin** for an organization administrator. The default is **User**.
+5. Optionally choose a **Group**, a **Manager**, and, for the User role, a **Course**. Groups are filtered to the selected workspace; changing the workspace clears the group selection.
+6. Click **Invite**. Zell creates the invitation and sends an email with a link to join your organization.
+
+## What the Invited Person Does
+
+The recipient opens the link in the invitation email and completes the setup shown by Zell using the invited email address. For a new account, this includes their name and password.
+
+The invitation link is valid for **seven days**. When the invitation is accepted, Zell applies the assigned role, workspace, manager, and group. If a course was selected, Zell enrolls the user during setup.
+
+## Manage Pending Invitations
+
+Pending invitations appear below the user table under **Pending Invitations** (**Ausstehende Einladungen** in German). Each entry shows the email address, role, invitation date, and a trash button. The list follows the active workspace filter, so switch to the invited person's workspace if their invitation is missing.
+
+To cancel an invitation, click its **trash button**. This removes the pending invitation and invalidates its link. Once an invitation is accepted, it no longer appears in this list.
+
+To send a new invitation from this page, remove the old pending invitation and invite the same address again. Re-enter the intended workspace, role, and any optional assignments. The recipient should use the newest email. The user-management page currently has no separate **Resend** button.
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| The Users page is unavailable or fails to load for a Team Lead | Ask an organization administrator to send the invitation. User invitations require Admin access. |
+| **Invite User** is disabled | Check the seat counter at the top of the page. Remove invitations that are no longer needed, or contact your Zell administrator or support about capacity. |
+| The invitation form is disabled | Select a workspace first. If no workspaces are available, resolve workspace access before inviting the person. |
+| Zell says the email has already been invited | Find the existing invitation, including in other workspaces. If it is still pending, cancel it before creating a replacement. If the person already accepted it, check their existing user access. |
+| The email did not arrive | Check the email spelling and the recipient's spam folder. If necessary, cancel the pending invitation and create a replacement, or contact [Zell support](mailto:hey@getzell.com). |
+| The link has expired | Ask an administrator to create a replacement invitation. Links expire after seven days. |
+| The link has already been accepted | Sign in with the account that accepted the invitation. |
+
+## Invite Multiple People
+
+The user invitation form accepts **one email address at a time**. Repeat the invitation steps for each person. Bulk candidate invitations in the Hiring module are a separate workflow and do not invite regular team members.
+
+## Related Guides
+
+- [Workspaces](/guides/workspaces): organize team members and their resources.
+- [Groups](/guides/groups): organize training access within a workspace.
+- [Courses](/guides/courses): assign training during onboarding.
+- [Hiring Module](/guides/hiring-module): invite candidates to assessments.
