@@ -62,9 +62,33 @@ The backend validates generated scorecard output with a stricter schema than per
 
 For the real-call field flow and the distinction between Evaluation Criteria and User Guidelines, see [Scorecards & Signals](/internal/features/scorecards-and-signals).
 
-## User Report Tool References
+## Rep Coaching and User Report Retirement
 
-The frontend has no dedicated `generate_user_report` labels, sample prompts, or tool icon. The tool name is also absent from the frontend's admin-only skill list. For roles that load skills from `GET /admin/zell-ai/skills`, a returned User Report skill is no longer suppressed by that list. Backend catalog availability and authorization remain authoritative; coordinate backend retirement with the frontend release. Removing these frontend references does not itself disable the backend tool.
+Rep 1:1 coaching now runs through the assistant's own queries and follow-up answers in Flare and connected MCP clients. Both use the shared coaching instructions in `src/services/zellAI/coachingInstructions.ts`. The backend no longer registers `generate_user_report`, exposes it in the skill catalog or MCP tools/prompts, or runs its dedicated report gatherer and formatter. A direct call to the retired MCP tool returns an unknown-tool error. The hiring candidate report remains registered, and the shared report data contract remains available for supported reports.
+
+The assistant reuses conversation context, earlier query results, and supplied KPIs. It searches the supplied rep name while ignoring case and extra spaces, and asks for clarification when matches are ambiguous. Partial KPIs remain usable with their source, person, and period; missing metrics or URLs do not require a complete replacement dataset.
+
+Named months use exact UTC calendar-month boundaries and the explicitly supplied year, or the most recent occurrence when no year is supplied. The past week is the default only when the user supplies no period. For a disputed result, check the executed query's dates, joins, and filters against the request.
+
+Coaching answers should show two or three independent call examples when available, with the context, rep behavior, prospect response, and source link. Speakers must be identified, dialogue translated into the user's language, and evaluator assessments distinguished from transcript evidence. Causes remain hypotheses to discuss with the rep; score associations do not establish causation. If evidence is unavailable, the assistant should leave unsupported conclusions open.
+
+Under **Recommended focuses in Coaching Insights** (translated to the user's language), recommendations use the exact, untranslated names of existing scorecard signals. Multiple supported focuses can be ranked with evidence and one observable practice per signal for 30 days. A new priority does not invalidate earlier supported issues. These are recommendations: the assistant has not set a Coaching Insights focus, obtained the rep's agreement, or saved a commitment.
+
+Forms and action plans appear only when requested. The assistant should reuse the evidence and preserve the destination's structure; commitments require rep confirmation. Filling an external destination depends on browser or document tools supplied by the host client, and success may be reported only after a successful write. Zell's MCP tools remain read-only.
+
+### Evidence Retrieval and Access
+
+The existing query permissions continue to apply: regular users see their own permitted records, team leads are restricted to their reporting hierarchy, and tenant/workspace scoping is injected for tenant-scoped queries. The existing internal administrator access is unchanged. Shared coaching instructions do not grant broader access.
+
+`CallAnalysis.transcript` is an array of `{role, content, secondsFromStart, duration}`. Transcript positions and `CallComment.transcriptIndex` / `transcriptEndIndex` are zero-based. Preserve positions when retrieving surrounding turns. The query parser does not support `WITH ORDINALITY`; use indexed JSON slices or `generate_series`, not an unordered `row_number()`.
+
+Query responses cap the model's display of each long value at 4,000 characters. Selecting the same transcript column again will still truncate it. Retrieve smaller indexed JSON slices or text substrings below the cap when the needed evidence falls outside the displayed portion; the underlying stored value remains intact.
+
+Backend sources: `src/services/zellAI/coachingInstructions.ts`, `src/services/zellAI/agent.ts`, `src/services/mcp/index.ts`, `src/services/zellAI/reports/index.ts`, `src/services/zellAI/primitives/queryDatabase/index.ts`, and `src/services/zellAI/primitives/queryDatabase/schemaContext.ts`.
+
+### Historical User Report Displays
+
+The frontend has no dedicated `generate_user_report` labels, sample prompts, or tool icon. The tool name is also absent from the frontend's admin-only skill list. Current skill availability is determined by the backend catalog, which no longer includes User Report.
 
 When inspecting a conversation that contains `generate_user_report`, support should expect these displays:
 
@@ -72,8 +96,6 @@ When inspecting a conversation that contains `generate_user_report`, support sho
 |---------|---------|
 | Historical tool badge in `ThoughtBubble` | Generic wrench icon and the raw `generate_user_report` name. |
 | Active tool in `ThinkingIndicator` | The active-tool row is omitted because there is no mapped icon. Other thinking content can still appear. |
-
-The shared report data contract remains available for reports produced by other tools.
 
 Frontend sources: `src/hooks/api-hooks/personas/queries/useZellAiSkills.ts`, `src/components/zell-ai/components/ThinkingIndicator.tsx`, `src/components/zell-ai/types.ts`, and `src/messages/{en,de,fr,it}.json`. Backend catalog source: `src/services/zellAI/index.ts` (`getAvailableSkills`).
 
@@ -93,4 +115,4 @@ Source: `src/hooks/zell-ai/modelSelection.ts`, `src/hooks/zell-ai/useZellAiChat.
 
 ## Current Documentation Status
 
-This page is a feature placeholder. It should be expanded with chat lifecycle, available tools, access-control rules, query limitations, and common support cases.
+This page covers scorecard creation, rep coaching, historical User Report displays, and model selection. Chat lifecycle and the full tool catalog still need further coverage.
