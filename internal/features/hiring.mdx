@@ -28,7 +28,12 @@ The Hiring module supports candidate assessment workflows, invitations, submissi
   </Card>
 </CardGroup>
 
+## Report Recording Controls
+
+In Hiring Reports, recording controls operate inline. Clicking another cell in the call row opens the call analysis page. Rows without a recording show a “No recording” badge.
+
+If clicking play opens the call analysis page, check that the `bucketUrl` column in `zell-frontend/src/components/hiring/reports/AssessmentCallsTable.tsx` has `meta: { interactive: true }`. The shared table in `zell-frontend/src/components/react-table/table.tsx` uses this metadata to place the recording cell above the row's navigation overlay, allowing the player to receive clicks (ZELL-1017).
+
 ## Current Documentation Status
 
 This internal page should eventually add implementation details beyond the public [Hiring Module guide](/guides/hiring-module), including candidate permissions, assessment lifecycle, and reporting logic.
-
