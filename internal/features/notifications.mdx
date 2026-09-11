@@ -28,7 +28,24 @@ Notifications keep users informed about coaching, streaks, training, and platfor
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Streak Notification Delivery
 
-This page is a feature placeholder. It should be expanded with notification templates, delivery jobs, channels, read state, and retry behavior.
+The `streakSaved` notification is created when a freeze saves a user's streak. Its delivery window applies only to external channels:
 
+| Channel | Delivery timing |
+| --- | --- |
+| In-app | Created immediately when the notification job runs. |
+| Email or Slack | Sent from 08:00 inclusive until 18:00 exclusive; outside that window, queued for the next 08:00. |
+
+The window uses the tenant's `notificationPreferences.dailyReviewReminder.timezone`, defaulting to `Europe/Berlin` when no timezone is configured. The delivery handler checks the current local time whenever a job runs, including delayed jobs. If a delayed job executes outside the window, it defers the external delivery again. Requeued jobs contain only external channels, so they do not recreate the in-app notification.
+
+Other notification types keep their existing schedules.
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| Streak saved trigger | `zell-backend-ts/prisma/callbacks/userProgress.ts` |
+| Delivery window and channel handling | `zell-backend-ts/src/jobs/handlers/notificationDelivery.ts` |
+| Queue delay option | `zell-backend-ts/src/ports/queuePort.ts` |
+| Delivery timing tests | `zell-backend-ts/src/tests/jobs/streakNotificationDelivery.test.ts` |

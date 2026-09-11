@@ -202,6 +202,8 @@ The streak-saved notification includes:
 
 No streak-saved notification is sent when a streak resets or when freezes decrease after recovery activity.
 
+The in-app notification is created immediately when its delivery job runs. Email and Slack delivery is allowed from 08:00 inclusive until 18:00 exclusive in the tenant's `notificationPreferences.dailyReviewReminder.timezone`, defaulting to `Europe/Berlin`. Outside that window, external delivery waits until the next 08:00. Delayed jobs recheck the window when they execute. Other notification schedules are unchanged; see [Notifications](/internal/features/notifications) for delivery details.
+
 ---
 
 ## Operational Notes
@@ -227,7 +229,8 @@ No streak-saved notification is sent when a streak resets or when freezes decrea
 | Call XP trigger | `zell-backend-ts/prisma/callbacks/callEvaluation.ts` |
 | Feedback read and reply XP triggers | `zell-backend-ts/prisma/callbacks/callComment.ts` |
 | Streak saved notification trigger | `zell-backend-ts/prisma/callbacks/userProgress.ts` |
+| Streak notification delivery window | `zell-backend-ts/src/jobs/handlers/notificationDelivery.ts` |
+| Streak notification timing tests | `zell-backend-ts/src/tests/jobs/streakNotificationDelivery.test.ts` |
 | Achievement toasts | `zell-frontend/src/components/achievements/AchievementNotifications.tsx` |
 | Player card | `zell-frontend/src/components/achievements/PlayerCard.tsx` |
 | User stats query | `zell-frontend/src/hooks/api-hooks/users/queries/useGetUserStats.ts` |
-
