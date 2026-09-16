@@ -36,6 +36,12 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
   </Card>
 </CardGroup>
 
+## HubSpot Meeting Recaps
+
+Structured HubSpot meeting recap generation uses an output-token budget of 8,000 (`maxTokens: 8000`), increased from 2,500. This backend generation limit is not a transcript input-length limit or a customer-configurable setting.
+
+Source: `src/services/integration/hubspotMeetingExport.ts`
+
 ## Microsoft Teams Integration
 
 The Teams integration connects an individual Zell user to Microsoft Graph, subscribes to that user's Teams recording notifications, and imports recordings as real calls when Graph sends webhook events.
