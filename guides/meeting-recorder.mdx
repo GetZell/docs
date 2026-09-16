@@ -1,0 +1,59 @@
+---
+title: "Connect Your Meeting Recorder"
+description: "Connect Google Calendar or Microsoft Outlook to record external meetings in Zell"
+icon: "calendar"
+---
+
+## Overview
+
+Connect your calendar so the Zell meeting bot can join external meetings and record them for analysis. An organization administrator must enable Meeting Recorder first. Each person then connects and manages their own calendar.
+
+## Connect Your Calendar
+
+<Steps>
+  <Step title="Open Meeting Recorder">
+    Go to **Settings** → **Meeting Recorder** under your user settings.
+
+    If you see **Meeting Recorder is unavailable**, ask your organization administrator to enable it.
+  </Step>
+
+  <Step title="Choose Your Calendar">
+    Under **Calendar Connection**, click **Connect Google Calendar** or **Connect Microsoft Outlook**.
+  </Step>
+
+  <Step title="Select an Account and Approve Access">
+    Sign in with the account that owns the calendar you use for meetings and approve the requested calendar access. Microsoft shows an account picker so you can choose the right account.
+
+    If Microsoft asks for administrator approval, contact your Microsoft administrator before trying again.
+  </Step>
+
+  <Step title="Confirm the Connection">
+    After returning to Zell, check for **Connected via Google Calendar** or **Connected via Microsoft Outlook**.
+
+    Connecting turns on **Automatically record external calendar meetings**.
+  </Step>
+</Steps>
+
+## Manage Automatic Recording
+
+When automatic recording is enabled, the bot is scheduled for calendar meetings with external attendees and a supported conferencing link. Internal-only meetings are skipped.
+
+You can turn **Automatically record external calendar meetings** off or on from the same page while keeping your calendar connected. This preference applies to your own connection.
+
+## Disconnect or Switch Accounts
+
+Open **Settings** → **Meeting Recorder** and click **Disconnect Calendar**.
+
+You can have one calendar connection at a time. To switch accounts or move between Google Calendar and Microsoft Outlook, disconnect first, then connect the account you want to use.
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| Meeting Recorder is unavailable | Ask your Zell organization administrator to enable it. |
+| Microsoft asks for administrator approval | Ask your Microsoft administrator to approve the requested access, then start a new connection attempt. |
+| Microsoft sign-in succeeds but the calendar will not connect | For a work or school account, ask IT to confirm that it has an active Microsoft 365 license with an Exchange Online mailbox. On-premises Exchange calendars are unsupported. See [Recall's mailbox troubleshooting guide](https://docs.recall.ai/docs/calendar-integration-faq#why-did-my-calendar-fail-to-connect-with-the-error-mailboxnotenabledforrestapi). |
+| Google calendar access was declined | Start the connection again and allow access to calendar events. See [Recall's calendar permission guidance](https://docs.recall.ai/docs/calendar-integration-faq#invalid_scope-error). |
+| An expected meeting is not recorded | Check that automatic recording is enabled and the meeting has external attendees and a supported conferencing link. It must be on the connected account's primary calendar; shared and secondary calendars are unsupported. See [Recall's supported calendar guidance](https://docs.recall.ai/docs/calendar-integration-faq#does-the-calendar-integration-support-teamsharednon-primary-calendars). |
+
+If the connection still fails, contact Zell support with the error message and the calendar provider you selected.

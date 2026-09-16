@@ -1,6 +1,6 @@
 ---
 title: "Integrations"
-description: "Connect Zell with Gong, Slack, Aircall, HubSpot, tl;dv, and calling providers"
+description: "Connect Zell with Gong, Slack, Aircall, HubSpot, tl;dv, Recall, and calling providers"
 icon: "plug"
 ---
 
@@ -34,7 +34,91 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
   <Card title="Microsoft Teams" icon="video">
     Imports Teams meeting recordings through Microsoft Graph recording subscriptions.
   </Card>
+
+  <Card title="Meeting Recorder" icon="calendar">
+    Connects Google or Outlook calendars through Recall for automatic meeting recording.
+  </Card>
 </CardGroup>
+
+## Meeting Recorder Calendar Connections
+
+Meeting Recorder uses Recall to connect a user's Google Calendar or Microsoft Outlook calendar. The connection belongs to the initiating user within the active Zell tenant. Customer setup is covered in [Connect a calendar to Meeting Recorder](/guides/meeting-recorder).
+
+### Permissions and API Flow
+
+All paths below are relative to `/integrations/recall`. Protected handlers obtain tenant and user identity from the authenticated request; calendar requests do not accept a target user or tenant ID in their body.
+
+| Action | Method and path | Authorization and request | Service behavior |
+| --- | --- | --- | --- |
+| Read organization status | `GET /` | Authenticated user | `getStatus(tenantId)` returns `enabled: false` when disabled. |
+| Enable recording | `POST /enable` | `requireAuth`, `requireAdmin` | `enable(tenantId)` saves tenant settings with bot name `Zell Notetaker` and minimum call duration `60` seconds. |
+| Edit organization settings | `PATCH /settings` | Admin; `UpdateRecallSettingsSchema` | `updateSettings` accepts optional `botName` (1–100 characters) and `minCallDurationSeconds` (integer, 0–600). |
+| Disable recording | `DELETE /` | Admin | `disable` attempts to disconnect saved calendars and clears the tenant's Recall integration. |
+| Start calendar connection | `POST /calendar/connect` | Authenticated user; `RecallConnectCalendarSchema` requires `platform: "google"` or `"microsoft"` | `connectCalendar(tenantId, userId, platform)` returns `{ url }` inside the standard response envelope. |
+| Read own calendar status | `GET /calendar` | Authenticated user | `getCalendarStatus` returns `{ connected: false }` when no connection is saved; otherwise returns `platform`, `connectedAt`, and Recall's current `autoRecord` preference. |
+| Change own recording preference | `PUT /calendar/preferences` | Authenticated user; `UpdateRecallCalendarPreferencesSchema` requires boolean `autoRecord` | `updateCalendarPreferences` requires an enabled integration and saved connection. |
+| Disconnect own calendar | `DELETE /calendar` | Authenticated user | `disconnectCalendar` removes the user's saved connection after attempting Recall disconnection. |
+
+Regular users can connect, inspect, update, and disconnect their own calendar after an admin enables Recall. Starting another connection while one is saved returns `Calendar already connected`, including when switching between Google and Microsoft. Disconnect first to change accounts or providers.
+
+Sources: `src/api/integration/recallRouter.ts`, `src/common/middleware/adminAuth.ts`, `src/api/integration/connectRecallCalendar/index.ts`, `src/api/integration/getRecallCalendarStatus/index.ts`, `src/api/integration/updateRecallCalendarPreferences/index.ts`, `src/api/integration/disconnectRecallCalendar/index.ts`, `src/schemas/integrationSchemas.ts`, `src/services/integration/recall.ts`.
+
+### Provider Redirects and Signed Connection Callback
+
+`connectCalendar` obtains a Recall calendar authentication token for the Zell user and returns the provider authorization URL. Microsoft uses its `common` authorization endpoint with `prompt=select_account`, `response_mode=query`, and scopes `offline_access openid email https://graph.microsoft.com/Calendars.Read`. The account picker lets the user choose the account owning the calendar. Google requests calendar-event read access and email access with offline access and consent.
+
+The OAuth state includes the Recall calendar authentication token, the selected provider redirect URI, and success/error URLs. Google's `google_oauth_redirect_url` and Microsoft's `ms_oauth_redirect_url` each match the authorization request's `redirect_uri` exactly.
+
+| Public GET callback | Destination and behavior |
+| --- | --- |
+| `/calendar/google-oauth-callback` | HTTP 302 to `https://eu-central-1.recall.ai/api/v1/calendar/google_oauth_callback/`. |
+| `/calendar/microsoft-oauth-callback` | HTTP 302 to `https://eu-central-1.recall.ai/api/v1/calendar/ms_oauth_callback/`. |
+| `/calendar/callback` | Verifies the signed `connection` token, saves the connection, and redirects to `${FRONTEND_URL}/settings/user/meeting-recorder?recall_calendar_connected=true`. |
+
+The Google and Microsoft proxy callbacks preserve the complete raw query from `req.originalUrl`, including encoded state, provider errors, and repeated parameters. They forward OAuth responses to Recall without exchanging provider codes in Zell. The callback registrar applies `OAuthCallbackSchema` validation and registers these public routes in OpenAPI; no Zell login session is required for the redirect callbacks.
+
+The success URL contains a JWT signed with `AUTH_SECRET` using HS256. It binds `tenantId`, `userId`, `platform`, and token type `recall-calendar-callback`, expires after 10 minutes, and uses `BACKEND_URL` as issuer and `recall-calendar` as audience. Verification checks the signature, expiry, issuer, audience, type, identity field types, and supported platform before using those claims to save the connection. Plain user or tenant query parameters cannot replace this token.
+
+Sources: `src/services/integration/recall.ts`, `src/api/integration/recallOAuthCallback/index.ts`, `src/api/integration/recallCalendarCallback/index.ts`, `src/api/integration/registerPublicCallback.ts`, `src/schemas/integrationSchemas.ts`, `src/ports/recallPort.ts`, `src/tests/routes/recallRouter.test.ts`.
+
+### Configuration and Local Callback Override
+
+| Setting | Behavior |
+| --- | --- |
+| `RECALL_MICROSOFT_CLIENT_ID` | Defaults to public application ID `f6fc65a2-5649-469b-8ea3-18f9bd9cdb60` when unset. An explicitly configured value, including an empty string, overrides the default; remove an old empty value or set the intended application ID. |
+| `RECALL_MICROSOFT_REDIRECT_URI` | Optional URL, default `""`. Empty or unset uses `${BACKEND_URL}/integrations/recall/calendar/microsoft-oauth-callback`. A non-empty URL overrides both Microsoft's `redirect_uri` and `state.ms_oauth_redirect_url`. |
+| `RECALL_GOOGLE_CLIENT_ID` | Google application ID; Google's redirect remains `${BACKEND_URL}/integrations/recall/calendar/google-oauth-callback`. |
+| `RECALL_API_KEY` | Authenticates backend requests to the Recall EU workspace. Configure the provider application credentials in the corresponding Recall workspace. |
+| `BACKEND_URL`, `FRONTEND_URL` | Publicly reachable URLs for OAuth callbacks and the final return to Meeting Recorder settings. |
+
+Register the exact Microsoft redirect URI in the provider application for each environment and ensure its application configuration matches Recall's configuration.
+
+If a development tunnel rejects a large Microsoft callback before it reaches the backend, the Microsoft callback can go directly to Recall by configuring:
+
+```dotenv
+RECALL_MICROSOFT_REDIRECT_URI=https://eu-central-1.recall.ai/api/v1/calendar/ms_oauth_callback/
+```
+
+Register that exact URI with the Microsoft application before using it. Recall then returns to Zell through the signed success callback. Restart the backend after changing environment settings and begin a new connection attempt. Leave the override empty or unset when using Zell's own callback URL. This override does not affect Google.
+
+Sources: `src/common/utils/envConfig.ts`, `.env.template`, `src/services/integration/recall.ts`, `src/ports/recallPort.ts`.
+
+### Recording Defaults and Support Q&A
+
+Successful connection confirmation enables `autoRecord` and sends the tenant's bot name to Recall before saving `calendarConnections[userId] = { platform, connectedAt }` in tenant integrations. The adapter enables external-meeting recording and disables internal-meeting recording; its other recording flags are false. Setting `autoRecord: false` disables the external-meeting flag. Reading status derives `autoRecord` from Recall's current preferences, so the saved connection timestamp alone does not establish calendar synchronization or recording health.
+
+| Question or symptom | Support guidance |
+| --- | --- |
+| `Recall integration not enabled` | An admin must enable Recall for the active tenant before connecting or changing preferences. |
+| `Calendar already connected` | One connection is already saved for this user in this tenant. Disconnect it before choosing another account or provider. |
+| `No calendar connected` | Preference updates and disconnect require a saved connection. Start a connection from Meeting Recorder. |
+| Microsoft opens the wrong account | Start a fresh connection and choose the calendar-owning account in Microsoft's account picker. Check that an existing Zell calendar connection has been disconnected first. |
+| Return URL includes `recall_error=oauth_failed` | Provider/Recall OAuth failed, or the success callback received an `error` parameter. Inspect the provider error and application configuration. |
+| Return URL includes `recall_error=connection_save_failed` | Token verification, Recall preference setup, or saving the tenant connection failed. Check the `Failed to confirm calendar connection` backend log; an invalid or expired token requires a fresh connection attempt. |
+| Disconnect succeeded in Zell but Recall reported an error | Once a Recall auth token has been obtained, provider disconnection failures are logged and the local connection is still removed. Check `Failed to disconnect Recall calendar user` and investigate provider state; local disconnection does not prove remote deletion succeeded. |
+| No recorded meeting appears despite connected status | Check the live Recall calendar and bot state, recording preference, tenant minimum duration, and import logs. The route tests use a fake Recall adapter and do not verify live OAuth, calendar synchronization, or scheduled recording. |
+
+Sources: `src/services/integration/recall.ts`, `src/ports/adapters/recallAdapter.ts`, `src/api/integration/recallCalendarCallback/index.ts`, `src/tests/routes/recallRouter.test.ts`.
 
 ## Microsoft Teams Integration
 
