@@ -1,6 +1,6 @@
 ---
 title: "Integrations"
-description: "Connect Zell with Gong, Slack, Aircall, HubSpot, tl;dv, and calling providers"
+description: "Connect Zell with Meeting Recorder, Gong, Slack, Aircall, HubSpot, tl;dv, and calling providers"
 icon: "plug"
 ---
 
@@ -35,6 +35,50 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
     Imports Teams meeting recordings through Microsoft Graph recording subscriptions.
   </Card>
 </CardGroup>
+
+## Meeting Recorder Calendar Connection
+
+Meeting Recorder uses Recall for the meeting bot workflow. Users connect Google Calendar or Microsoft Outlook at `/settings/user/meeting-recorder`. The organization must first enable Meeting Recorder at `/settings/tenant/:tenantId/recall`; otherwise the user page shows `Meeting Recorder is unavailable` and asks an organization administrator to enable it. A connected calendar exposes recording preferences, including `autoRecord`.
+
+The Microsoft Outlook option belongs to this calendar connection flow. The Microsoft Teams integration documented below imports existing recordings through Graph subscriptions and has separate connection and subscription state.
+
+Source (frontend): `src/appRoutes.ts`, `src/components/settings/recall/RecallUserSettings.tsx`, `src/components/settings/recall/RecallCalendarConnection.tsx`
+
+### Calendar Connection Requests
+
+| Action | Request | Frontend behavior |
+| --- | --- | --- |
+| Check organization availability | `GET /integrations/recall` | Uses `enabled` to show the active setup controls. |
+| Check the user's calendar | `GET /integrations/recall/calendar` | Shows the connected provider and disconnect action when `connected: true`; otherwise shows the Google Calendar and Microsoft Outlook buttons. |
+| Connect Google Calendar | `POST /integrations/recall/calendar/connect` with `{ "platform": "google" }` | Redirects the browser to the `url` returned by the API. |
+| Connect Microsoft Outlook | `POST /integrations/recall/calendar/connect` with `{ "platform": "microsoft" }` | Uses the same redirect flow; `platform` is the request field, not `provider`. |
+| Disconnect calendar | `DELETE /integrations/recall/calendar` | On success, invalidates organization and calendar status queries and shows `Calendar disconnected`. |
+
+The frontend platform type allows `google` and `microsoft`. These requests do not include a tenant ID in their URL or body; the status query keys include the current session's tenant ID. Backend authorization, storage, and provider consent requirements must be checked in the backend when investigating access problems.
+
+Source (frontend): `src/hooks/api-hooks/tenants/recallTypes.ts`, `src/hooks/api-hooks/tenants/queries/useGetRecallStatus.ts`, `src/hooks/api-hooks/tenants/queries/useGetRecallCalendarStatus.ts`, `src/hooks/api-hooks/tenants/mutations/useConnectRecallCalendar.ts`, `src/hooks/api-hooks/tenants/mutations/useDisconnectRecallCalendar.ts`, `src/components/settings/recall/useRecallUserSetup.ts`
+
+### Calendar Connection Troubleshooting
+
+| Symptom | What support should check |
+| --- | --- |
+| A spinner appears instead of connection options | The calendar status request is still loading. |
+| Both provider buttons are disabled | A connection request is pending. Only the selected provider shows its spinner and `Connecting …` label. |
+| `Failed to start calendar connection` | The connect request failed before the redirect. The pending state clears so the user can retry. |
+| `Failed to check calendar connection status` followed by connect buttons | The status hook returned `null` after a request failure. The buttons alone do not establish that the saved connection is absent. |
+| `Failed to check Meeting Recorder status` followed by the unavailable panel | Organization status could not be loaded. Investigate the failed request before concluding that an administrator disabled the feature. |
+| `Calendar connection failed: …` after returning from authorization | The page received a non-empty `recall_error` query parameter. It shows the error and removes the callback parameters from the URL. |
+| `Calendar connected successfully` after returning from authorization | A non-empty `recall_calendar_connected` parameter triggers the success toast and invalidates the calendar status query. Check the refreshed status to confirm the current connection. If both callback parameters are present, the error takes precedence. |
+
+Source (frontend): `src/components/settings/recall/RecallCalendarConnectButton.tsx`, `src/components/settings/recall/RecallCalendarConnection.tsx`, `src/components/settings/recall/RecallUserSettings.tsx`, `src/components/settings/recall/useRecallUserSetup.ts`, and the status/connect hooks listed above.
+
+### Microsoft Association File
+
+The frontend serves `/.well-known/microsoft-identity-association.json` from `public/.well-known/microsoft-identity-association.json`. Its `associatedApplications` array contains application ID `f6fc65a2-5649-469b-8ea3-18f9bd9cdb60`.
+
+`src/proxy.ts` bypasses the authentication wrapper for that exact pathname. Other paths, including `/.well-known/microsoft-identity-association.json/other`, continue through the normal authentication wrapper. When investigating Microsoft domain verification, check the file on the deployed app domain without a Zell session and confirm that it returns the expected JSON rather than a login redirect. The checked-in file and proxy test establish the intended routing; they do not establish that the deployment is live or that Microsoft verification has completed.
+
+Source (frontend): `public/.well-known/microsoft-identity-association.json`, `src/proxy.ts`, `src/proxy.test.ts`
 
 ## Microsoft Teams Integration
 

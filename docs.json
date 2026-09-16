@@ -41,6 +41,7 @@
             "pages": [
               "guides/mcp-integration",
               "guides/gong-integration",
+              "guides/meeting-recorder",
               "guides/teams-integration",
               "guides/tldv-integration",
               "guides/slack-integration"
