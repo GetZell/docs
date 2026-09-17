@@ -32,6 +32,31 @@ Scorecards and signals define how Zell evaluates calls and training interactions
   </Card>
 </CardGroup>
 
+## Scorecard Assignment Filters
+
+The scorecard form and template configuration use `ScorecardFilterEditor` to edit the saved `filter` rule for real-call assignment. `useScorecardFilterEditorModel` owns options and condition/group updates; `ScorecardFilterConditionRow` renders each condition. This is a scorecard request-body field, not a report query parameter.
+
+| Filter field | Values and option source | Saved representation |
+| --- | --- | --- |
+| Call type | Built-in labels and tenant custom labels from `useCallTypeOptions`. | `field: "callType"`, with complete labels in `values`. |
+| Call outcome | Built-in labels and tenant custom labels from `useCallOutcomeOptions`. | `field: "callOutcome"`, with complete labels in `values`. |
+| User | `useGetAllTenantUsers` using the session tenant ID; names fall back to email. | `field: "user"`, with user IDs in `values`. |
+
+Custom labels containing spaces, such as `Renewal Call`, remain one selected value when a filter is opened or edited. The condition row memoizes a JSON round trip of the value array so unchanged selections stay stable without splitting labels on whitespace. Built-in options remain available while tenant options load; user options are empty until the user query returns.
+
+Each condition uses `is` or `isNot`. The root and one optional level of subgroups each combine conditions with `and` or `or`. New conditions start as call type / `is` with no values; saving requires at least one nonempty value per condition. Changing a condition's field clears its values. Removing a subgroup's last condition removes the subgroup, and removing the last root node sets `filter` to `null`.
+
+| Contract | Behavior |
+| --- | --- |
+| Save endpoints | `POST /admin/score-cards`, `PUT /admin/score-cards/{scoreCardId}`, and `POST /admin/score-cards/from-template` accept `filter` in the body. `CreateScoreCardSchema`, `UpdateScoreCardSchema`, and `CreateFromTemplateSchema` use `ScorecardFilterSchema`. |
+| Storage and scope | The rule is stored in `Scorecard.filter` JSON. `ScoreCardService.assertFilterIsValid` checks user IDs against the tenant and call type/outcome labels against that tenant's effective labels. |
+| Permissions | The admin router applies `requireWorkspaceAdmin` and `rejectWorkspaceIdForNonAdmin`; updating an existing scorecard also applies `assertResourceWorkspace`. |
+| Assignment | `resolveRealCallScorecard` considers active default scorecards in the call's workspace. Among matching rules, more conditions take priority. A default scorecard with a null filter is the catch-all after no rule matches. |
+| Null and empty | The form defaults to `null`; an empty condition/group array is invalid. An omitted filter on update leaves the stored rule unchanged, while explicit `null` clears it. |
+| Missing call values | `is` needs a matching candidate value; `isNot` passes when no candidate matches, including a missing call value. Call types use `callTypeCandidateLabels`; outcomes and users use their supplied value. |
+
+Sources: `zell-frontend/src/components/score-cards/ScorecardFilterConditionRow.tsx`, `zell-frontend/src/components/score-cards/useScorecardFilterEditorModel.ts`, `zell-frontend/src/components/score-cards/hooks/useScoreCardForm.tsx`, `zell-frontend/src/schemas/scoreCardSchema.ts`, `zell-backend-ts/src/api/admin/scoreCard/scoreCardRouter.ts`, `zell-backend-ts/src/schemas/scoreCardSchemas.ts`, `zell-backend-ts/src/services/scoreCard/index.ts`, `zell-backend-ts/src/services/scoreCard/filter.ts`, `zell-backend-ts/src/services/scoreCard/realCallScorecardResolver.ts`, and `zell-backend-ts/prisma/schema/scorecard.prisma`.
+
 ## Zell AI Generation
 
 Generated scorecards must contain at least one signal before they are handed to the scorecard creation service. Persisted scorecard metadata can still represent an empty signal list for existing records or intermediate admin edits, but the Zell AI generation path uses a stricter output contract so the model cannot silently create a scorecard without scoring criteria. Structured-output tooling must preserve array shape and item constraints for generated signals, including arrays wrapped in schema defaults.

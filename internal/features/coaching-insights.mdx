@@ -46,9 +46,8 @@ Coaching Insights answers four main questions:
 | Section | What it shows | Source data |
 | --- | --- | --- |
 | Stats cards | Average performance, average coaching need, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
-| Weak signals | Lowest-performing signals for the selected scope. | Evaluation categories grouped by signal. |
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
-| Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
+| Team performance | Reps ordered by average Zell Score; the list expands to show all returned members and scrolls with the page. | Per-user call evaluation aggregates. |
 | Member detail | Selected rep's signal breakdown and engagement. | Per-signal scores, snippet counts, and read counts. |
 | Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
 | Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
@@ -215,7 +214,7 @@ That means `10.0` is fully read, `5.0` is half read, and `0.0` means no eligible
 
 ## Weak Signals
 
-Weak signals show the lowest-scoring signals across the selected scope.
+The overview response still includes `weakSignals`, the lowest-scoring signals across the selected scope. The manager dashboard no longer renders a separate weak-signals card; member detail continues to show the selected rep's signal breakdown.
 
 | Rule | Behavior |
 | --- | --- |
@@ -226,7 +225,7 @@ Weak signals show the lowest-scoring signals across the selected scope.
 | Evaluated count | Count of distinct users evaluated for that signal. |
 | Previous score | Returned only when both `dateFrom` and `dateTo` are present. |
 
-The UI displays weak signals as bars on a 0-10 scale. Green starts at `7`, amber at `4`, and red below `4`.
+Removing the card does not change the backend aggregation or previous-period calculations above.
 
 ---
 
@@ -371,6 +370,7 @@ Previous-period values are used for deltas on:
 | Request schemas | `zell-backend-ts/src/schemas/coachingInsightsSchemas.ts` |
 | Score and coachability formulas | `zell-backend-ts/src/services/callScoring/index.ts` |
 | Coaching Insights tab | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsTab.tsx` |
+| Team performance list | `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformancePanel.tsx` |
 | Stats cards | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx` |
 | Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
 | Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
