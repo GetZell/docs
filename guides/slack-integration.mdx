@@ -6,7 +6,7 @@ icon: "slack"
 
 ## Overview
 
-The Slack integration sends real-time notifications to your team about key events like feedback submissions, course completions, and training reminders. This guide shows you how to connect Zell to your Slack workspace.
+The Slack integration sends real-time notifications to your team about key events like feedback submissions, hiring assessment submissions, course completions, and training reminders. This guide shows you how to connect Zell to your Slack workspace.
 
 ## Setup Steps
 
@@ -45,7 +45,7 @@ The Slack integration sends real-time notifications to your team about key event
 
 ## Notification Types
 
-The integration will automatically post notifications to your configured Slack channels for these events:
+The integration supports notifications for these events. Hiring assessment notifications are sent as direct messages to the configured recipients:
 
 <CardGroup cols={2}>
   <Card title="Feedback Submitted" icon="comment">
@@ -63,4 +63,16 @@ The integration will automatically post notifications to your configured Slack c
   <Card title="Training Reminders" icon="bell">
     Automated reminders for upcoming training sessions
   </Card>
+
+  <Card title="Hiring Assessments" icon="user">
+    Completed candidate assessments, with a link to review the submission
+  </Card>
 </CardGroup>
+
+## Hiring Assessment Notifications
+
+Enable hiring notifications and add recipient email addresses in your hiring notification settings. Set your tenant's default notification channel to **Slack** and connect your Slack workspace to receive assessment submission notifications as direct messages.
+
+Each message includes the candidate's name, assessment name, and a **Review Submission** button. If email is the default channel, Slack is disconnected, or Slack delivery fails, Zell sends the notification by email instead. In-app notifications remain available for recipients with a Zell account.
+
+Candidate invitation and submission confirmation emails are unchanged. See the [Hiring Module](/guides/hiring-module) guide for the assessment workflow.

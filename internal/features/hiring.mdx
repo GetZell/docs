@@ -28,7 +28,41 @@ The Hiring module supports candidate assessment workflows, invitations, submissi
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Submission Notifications
 
-This internal page should eventually add implementation details beyond the public [Hiring Module guide](/guides/hiring-module), including candidate permissions, assessment lifecycle, and reporting logic.
+When an assessment invitation changes to `COMPLETED`, the callback loads its candidate, assessment, and tenant. Missing records and demo tenants do not produce completion notifications. An unchanged status does not trigger another notification.
 
+The candidate receives a completion confirmation by email. Admin submission alerts use the tenant's `notificationPreferences.hiring` configuration: `enabled` must be true and `recipients` must contain at least one email address. Missing or disabled hiring preferences, or an empty recipient list, skip the admin alerts without preventing the candidate's confirmation.
+
+Each configured recipient gets a `HIRING_SUBMISSION_ADMIN_NOTIFICATION` job supporting email, Slack, and in-app delivery. Its content includes the candidate's name (or email when the name is empty), assessment name, and a review link to `/admin/hiring/submission/{invitationId}`.
+
+### Delivery Channel
+
+| Tenant configuration or delivery result | External delivery |
+| --- | --- |
+| `notificationPreferences.defaultChannel` is `SLACK` and `integrations.slack.accessToken` exists | Send a Slack direct message to the recipient identified by email. The message includes a **Review Submission** button. |
+| Default channel is `EMAIL` or is unset | Send email. |
+| Slack is preferred but its integration token is missing | Fall back to email. |
+| Slack delivery reports failure | Fall back to email. |
+| Slack delivery succeeds | Complete external delivery without also sending email. |
+
+In-app delivery runs separately before external delivery. It creates a notification with the submission deep link when the recipient email matches an existing Zell user. A recipient without a Zell user can still receive an external alert but has no in-app notification. In-app creation errors are logged and do not prevent external delivery.
+
+### Troubleshooting
+
+- **No admin alert:** verify the invitation transitioned to `COMPLETED`, the tenant is not a demo, and hiring notifications are enabled with recipients configured.
+- **Email arrives instead of Slack:** inspect the tenant's default channel and Slack integration token, then check notification delivery logs for a failed Slack send.
+- **No in-app alert:** confirm the recipient email belongs to a Zell user and check logs for `Failed to create dashboard notification`.
+
+### Source References
+
+| Responsibility | Source |
+| --- | --- |
+| Completion trigger, tenant preferences, and recipients | `zell-backend-ts/prisma/callbacks/assessmentInvitation.ts` |
+| Email and Slack template registration | `zell-backend-ts/src/notifications/templates/hiring.ts` |
+| Slack message and review button | `zell-backend-ts/src/lib/slack/templates/hiring.ts` |
+| Preferred channel and email fallback | `zell-backend-ts/src/jobs/handlers/notificationDelivery.ts` |
+| In-app recipient lookup and creation | `zell-backend-ts/src/notifications/dashboard.ts` |
+| Delivery regression tests | `zell-backend-ts/src/tests/jobs/hiringNotificationDelivery.test.ts` |
+
+See the public [Hiring Module guide](/guides/hiring-module) for the candidate assessment workflow.

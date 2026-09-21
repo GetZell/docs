@@ -166,6 +166,18 @@ Invitations can have the following statuses:
 
 ## Reviewing Candidate Performance
 
+### Submission Notifications
+
+When a candidate completes an assessment, Zell notifies the recipients configured in your hiring notification settings. Hiring notifications must be enabled and have at least one recipient.
+
+If your tenant's default notification channel is **Slack** and Slack is connected, each recipient receives a direct message with the candidate's name, assessment name, and a **Review Submission** button. Zell sends an email instead when email is the default, Slack is disconnected, or the Slack message cannot be delivered.
+
+In-app notifications remain available for recipients with a Zell account. Candidate invitations and submission confirmations continue to arrive by email.
+
+See [Set Up Slack Bot](/guides/slack-integration) to connect your workspace.
+
+### Review a Submission
+
 <Steps>
   <Step title="Open Assessment">
     Navigate to the assessment in **Team Management** → **Hiring**.
