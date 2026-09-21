@@ -11,7 +11,7 @@ Coaching Insights supports both the manager-facing dashboard for finding coachin
 - Missing or non-`real-calls` `type` uses the persisted report type from localStorage key `reports-report-type`, then defaults to `source=SIMULATION`.
 - `type=real-calls` mounts the tab with `source=REAL_CALL` and overrides the stored report type.
 
-Coaching Insights answers four main questions:
+Coaching Insights helps answer these questions:
 
 - Which reps have the greatest coaching need?
 - Which signals are weakest across the selected team?
@@ -46,13 +46,22 @@ Coaching Insights answers four main questions:
 | Section | What it shows | Source data |
 | --- | --- | --- |
 | Stats cards | Average performance, average coaching need, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
-| Weak signals | Lowest-performing signals for the selected scope. | Evaluation categories grouped by signal. |
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
-| Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
-| Member detail | Selected rep's signal breakdown and engagement. | Per-signal scores, snippet counts, and read counts. |
+| Who needs the most help | Reps ordered by descending coaching need, with avatar, name, call count, and score. | Per-user `avgZellScore` from the overview response. |
+| Their lowest-scoring categories | The selected rep's categories ordered by ascending performance, with snippet read counts and coaching-focus actions. | Per-signal `avgScore`, snippet counts, and read counts from member detail. |
 | Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
 | Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
 | Personal skill gaps layout | The current user's focus areas and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
+
+The member list and category list are separate, equal-width cards with a 24px gap and independent heights on large screens. They stack on smaller screens. Each card shows its 0-10 scale once in the score column header. Blue marks the selected member; amber bars represent coaching need. Member rows have avatars and no visible ranking numbers.
+
+The cards do not display member engagement, critical-engagement warnings, streaks, or category score deltas. Engagement, streak, and previous-score fields remain in the responses; average engagement and previous-period comparisons still appear in the overview stats cards.
+
+### Member Selection
+
+`useCoachingInsightsTabModel` sorts a copy of the overview members by descending `avgZellScore`, leaving the query data unchanged. When the member list changes, it keeps the selected user if still present and refreshes the selected object from that list. Otherwise it selects the first member, or clears the selection when the list is empty.
+
+The user, scorecard, call-type, and call-outcome filter handlers clear the selected member. Selection is reconciled when the overview member list changes. Selecting a different member remounts `MemberDetailPanel` using that user's ID as its React key, so snippet-selection state belongs to the selected member.
 
 ---
 
@@ -85,6 +94,8 @@ Coaching Insights combines global report filters with tab-local filters.
 <Note>
 When group and user filters are both active, the backend intersects them. If the intersection is empty, the overview returns empty stats and empty lists.
 </Note>
+
+`useCoachingInsightsFilterData` supplies the user and scorecard options. It enables the real-call option queries only for `source=REAL_CALL`; otherwise it enables the simulation option queries. Selected group IDs scope those option queries, and an empty group list is passed as `undefined`. The filter loading indicator uses the two active option queries. `useCoachingInsightsTabModel` continues to build the overview and member-detail filters; the extracted data hook does not change request fields, defaults, or server-side scope.
 
 ---
 
@@ -215,7 +226,7 @@ That means `10.0` is fully read, `5.0` is half read, and `0.0` means no eligible
 
 ## Weak Signals
 
-Weak signals show the lowest-scoring signals across the selected scope.
+The overview response includes weak signals for the selected scope. The current manager tab renders the selected member's category panel rather than a separate team-wide weak-signals section.
 
 | Rule | Behavior |
 | --- | --- |
@@ -226,24 +237,26 @@ Weak signals show the lowest-scoring signals across the selected scope.
 | Evaluated count | Count of distinct users evaluated for that signal. |
 | Previous score | Returned only when both `dateFrom` and `dateTo` are present. |
 
-The UI displays weak signals as bars on a 0-10 scale. Green starts at `7`, amber at `4`, and red below `4`.
+In the selected-member category panel, performance bars use green at `7` or above, amber at `4` or above, and red below `4`, on a 0-10 scale.
 
 ---
 
 ## Member Detail
 
-Selecting a member loads that user's detailed signal breakdown.
+Selecting a member loads that user's detailed signal breakdown into "Their lowest-scoring categories". `useMemberDetailPanelModel` sorts a copy of `signals` by ascending `avgScore`; the query response order is preserved. Snippet selection and coaching-focus actions use signal IDs, so sorting does not change which category an action targets.
 
 | Field | Behavior |
 | --- | --- |
-| Call count | Count of valid calls with a non-null total score for that user. |
+| Call count | Count of valid calls with a non-null total score for that user; the member list displays the overview member's call count. |
 | Signal average | Average `EvaluationCategory.score`, rounded to one decimal. |
 | Snippet count | Count of eligible coachable snippets for that signal. |
 | Read count | Count of eligible coachable snippets with `readAt` set. |
 | Signal order | Lowest average score first. |
-| Previous signal score | Same signal over the previous period when a full date range exists. |
+| Previous signal score | Returned for the same signal over the previous period when a full date range exists; no category delta is rendered in the panel. |
 
 Member engagement uses the same snippet score, coachability, dislike, source, date, scorecard, and daily-cap rules as team engagement, but only for the selected user. The member-detail query scopes directly to the selected `userId`; in the normal UI flow that user comes from the overview list, where regular-user and non-test-user filtering has already been applied.
+
+The API still returns `engagement` and `previousEngagement` in member detail, and `engagement` and `currentStreak` in overview member rows. The two cards do not render these values.
 
 ---
 
@@ -305,14 +318,13 @@ When both `dateFrom` and `dateTo` exist, Coaching Insights compares the selected
 | July 8 to July 15 | July 1 to July 8 |
 | Last 14 days | The 14 days before that window |
 
-Previous-period values are used for deltas on:
+The current dashboard displays previous-period deltas on:
 
 - average performance,
 - average coaching need,
-- average engagement,
-- weak signal average score,
-- member signal average score,
-- member engagement.
+- average engagement.
+
+The API also returns previous weak-signal scores, member signal scores, and member engagement when available. The current member/category cards do not display those deltas.
 
 ---
 
@@ -322,6 +334,11 @@ Previous-period values are used for deltas on:
 | --- | --- |
 | No users after filter intersection | Empty overview. |
 | No scored valid calls | Stats are `0`, member and trend lists can be empty. |
+| Overview loading | Skeletons replace the stats, chart, and both cards. |
+| Overview has no response after loading | The tab keeps its filters but renders no overview content. |
+| Overview has no members | The member card shows "No members found" and the category area prompts the user to select a member. |
+| Selected member detail loading | The category card keeps its header and shows category-row skeletons. |
+| Selected member has no signals or no detail response after loading | The category card shows "No evaluation data available"; the current panel has no separate error message. |
 | Personal workspace has no detail response | The frontend renders nothing after loading. |
 | Personal workspace has no signals | `SkillGapsLayout` shows "No coachable moments". |
 | Team lead requests member detail outside subtree | Empty member detail. |
@@ -371,8 +388,16 @@ Previous-period values are used for deltas on:
 | Request schemas | `zell-backend-ts/src/schemas/coachingInsightsSchemas.ts` |
 | Score and coachability formulas | `zell-backend-ts/src/services/callScoring/index.ts` |
 | Coaching Insights tab | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsTab.tsx` |
+| Member sorting, selection, and filter wiring | `zell-frontend/src/components/teamManagement/coachingInsights/useCoachingInsightsTabModel.ts` |
+| User and scorecard option queries | `zell-frontend/src/components/teamManagement/coachingInsights/useCoachingInsightsFilterData.ts` |
+| Filter controls | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsFiltersBar.tsx` |
 | Stats cards | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx` |
+| Member list | `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformancePanel.tsx` |
+| Shared card and column headings | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingPanelHeader.tsx` |
 | Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
+| Category sorting, snippet selection, and focus actions | `zell-frontend/src/components/teamManagement/coachingInsights/useMemberDetailPanelModel.ts` |
+| Category rows | `zell-frontend/src/components/teamManagement/coachingInsights/CategoryCard.tsx` |
+| Category loading state | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailSkeleton.tsx` |
 | Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
 | Scoped snippets hook | `zell-frontend/src/components/teamManagement/coachingInsights/useScopedCoachingInsightsSnippets.ts` |
 | Calls workspace route | `zell-frontend/src/app/(auth)/calls/page.tsx` |

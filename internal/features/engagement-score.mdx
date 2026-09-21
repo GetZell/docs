@@ -18,19 +18,20 @@ Internal source references:
 
 - `zell-backend-ts/prisma/queries/coachingInsightsQueries.ts`
 - `zell-backend-ts/src/services/coachingInsights/index.ts`
+- `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx`
 - `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx`
 - `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformancePanel.tsx`
+- `zell-frontend/src/models/CoachingInsights.ts`
 
 ## Where It Appears
 
 | Surface | Value shown |
 | --- | --- |
 | Coaching Insights overview | `stats.avgEngagement`, the team-level engagement score for the current filters. |
-| Member row/detail | `member.engagement`, the selected user's engagement score. |
-| Member detail trend | `previousEngagement`, returned only when the current request includes both `dateFrom` and `dateTo`. |
+| Coaching Insights overview comparison | The average-engagement card displays a delta when `stats.previousAvgEngagement` is available. |
 | Weekly engagement report | Member engagement values are sorted and summarized in email/Slack reports. |
 
-The frontend formats member engagement with one decimal. Member detail also uses status colors:
+The overview card formats average engagement with one decimal and uses these status colors:
 
 | Score range | UI status |
 | --- | --- |
@@ -38,7 +39,9 @@ The frontend formats member engagement with one decimal. Member detail also uses
 | `>= 4` and `< 7` | Amber |
 | `< 4` | Red |
 
-Team performance rows show a critical-engagement warning when a member's engagement is below `3`.
+The manager dashboard's two member/category cards show coaching need and category performance. They do not display member engagement, an engagement delta, a critical-engagement warning, or member streaks.
+
+The API still returns `member.engagement` in overview members, and `engagement` and `previousEngagement` in member detail. A previous-period engagement value is available only when the current request includes both `dateFrom` and `dateTo`. These fields remain available for consumers even though the current cards do not render them. The frontend display change does not change the formulas, eligibility rules, or report calculations below.
 
 ## Eligible Snippets
 
@@ -137,7 +140,7 @@ avgEngagement = round((10 / 14) * 100) / 10 = 7.1
 
 Member engagement is calculated in two places:
 
-- `queryPerUserEngagement()` calculates the value shown in the overview member list.
+- `queryPerUserEngagement()` calculates the value returned in each overview member record.
 - `getMemberDetail()` calculates the selected user's detail value from signal snippet counts.
 
 Both use the same read-ratio and cap formula:
