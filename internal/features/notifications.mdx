@@ -28,7 +28,32 @@ Notifications keep users informed about coaching, streaks, training, and platfor
   </Card>
 </CardGroup>
 
-## Current Documentation Status
+## Course enrollment links
 
-This page is a feature placeholder. It should be expanded with notification templates, delivery jobs, channels, read state, and retry behavior.
+The learner course route is `/course/:courseId`. An in-app notification with the `enrollment` template stores this path in `InAppNotification.deepLink` when the backend creates the notification.
 
+Older notifications can contain `/courses/:courseId`, which caused a 404. The backend correction generates `/course/:courseId` for new notifications; deploying it does not rewrite existing database rows.
+
+The frontend's permanent redirect maps `/courses/:courseId` to `/course/:courseId` with HTTP 308, preserving the course ID and query parameters. This redirect takes effect after the frontend change is deployed and also handles old bookmarked links. It does not change the stored notification data.
+
+### Repair existing notification rows
+
+Connect the Zell REPL to the database you intend to repair and paste this entire command as one line, including the closing backtick and semicolon:
+
+```js
+await DB.instance.$executeRaw`UPDATE "InAppNotification" SET "deepLink" = regexp_replace("deepLink", '^/courses/', '/course/') WHERE "template" = 'enrollment' AND "deepLink" LIKE '/courses/%'`;
+```
+
+The returned number is the count of updated notifications. This updates matching enrollment notifications across all users in that database, without a tenant or workspace filter. Only the leading `/courses/` is replaced, so the course ID and any query parameters remain intact. The command changes only `deepLink`; `readAt` and read/unread status remain unchanged.
+
+The command is safe to rerun: repaired rows no longer match the filter. A result of `0` means no matching rows remained at execution time. Other templates and links that do not start with `/courses/` are unaffected.
+
+Refresh the app to reload notifications after the repair, then open an enrollment notification and verify that it uses `/course/:courseId`. Deploy the backend correction to prevent new notifications from storing the old path. A database repair does not require the frontend redirect to be deployed.
+
+### Source references
+
+- Backend `src/notifications/deepLinks.ts`: enrollment link generation.
+- Backend `src/notifications/dashboard.ts`: persists the generated link when creating an in-app notification.
+- Backend `prisma/schema/notification.prisma`: notification fields and read state.
+- Frontend `src/appRoutes.ts`: canonical learner course route.
+- Frontend `next.config.mjs`: permanent redirect for old course URLs.
