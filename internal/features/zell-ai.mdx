@@ -32,3 +32,50 @@ Zell AI is the assistant experience inside the platform. It helps users ask ques
 
 This page is a feature placeholder. It should be expanded with chat lifecycle, available tools, access-control rules, query limitations, and common support cases.
 
+---
+
+## Message Feedback
+
+Users can rate an individual completed Zell AI response with a thumbs-up or thumbs-down. The controls appear with the other response actions when the message is hovered or receives keyboard focus.
+
+- The selected vote remains visible after a page refresh.
+- Selecting the same vote again does not submit another request.
+- A user can switch between thumbs-up and thumbs-down; the new value replaces the previous score.
+- Feedback is available only for assistant messages with a persisted Langfuse trace ID.
+
+### Trace and Session Semantics
+
+A Langfuse **session** represents the full Zell AI conversation and groups its activity. Each assistant response has its own Langfuse **trace**. Message feedback scores that response trace, not the entire session.
+
+The assistant message metadata connects the application message to Langfuse and restores its UI state:
+
+| Metadata key | Purpose |
+| --- | --- |
+| `_traceId` | Identifies the response trace to score and enables feedback for the message. |
+| `_feedbackValue` | Stores the last submitted value (`1` for thumbs-up or `0` for thumbs-down) so the selected state is restored after refresh. |
+
+<Note>
+Historical messages created before trace IDs were persisted cannot be rated. Although their traces may exist in the same Langfuse session, the application cannot reliably map those traces back to individual messages.
+</Note>
+
+### API Contract
+
+`PUT /admin/zell-ai/sessions/{sessionId}/messages/{messageId}/feedback`
+
+```json
+{
+  "value": 1
+}
+```
+
+`value` must be `1` for thumbs-up or `0` for thumbs-down. The response returns the persisted value:
+
+```json
+{
+  "value": 1
+}
+```
+
+The backend verifies that the session belongs to the authenticated tenant and user, and that the target is an assistant message in that session. It then records a Langfuse Boolean score named `user-feedback` against `_traceId` and persists `_feedbackValue` on the message.
+
+The score ID is stable (`zell-ai-feedback-{messageId}`), making submission idempotent in Langfuse. Switching a vote updates the score associated with that message instead of creating a separate score.
