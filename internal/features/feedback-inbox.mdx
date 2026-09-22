@@ -52,7 +52,7 @@ Managers have a separate follow-up inbox for team replies. See [Manager Feedback
   </Step>
 
   <Step title="Continue">
-    The backend marks the feedback as read. The frontend keeps the reveal state visible until the rep clicks continue, then loads the next item.
+    The backend marks the feedback as read when the interaction is completed. The frontend keeps the reveal state visible until the rep clicks continue, then loads the next item. After an answer, continue waits for any reply draft or pending reply to clear.
   </Step>
 </Steps>
 
@@ -93,9 +93,23 @@ For the complete Daily Review card filtering rules, see [Daily Review Card Filte
 
 | Action | What happens |
 | --- | --- |
-| Reply | Adds a feedback reply and refreshes related inbox, call, snippet, history, manager pending reply, and user stats data. |
+| Reply | Adds a feedback reply without marking the inbox item as read. Refreshes related call, snippet, history, manager pending reply, and user stats data; marks the inbox query stale without refetching the current card. |
 | Save for later | Opens the collection dialog for the current call. |
-| Continue | Fetches the next unread item from today's plan. |
+| Continue | Fetches the next unread item from today's plan. After an answer, the button is disabled while reply activity is `draft` or `pending`. |
+
+### Reply Activity And Continue
+
+`useReplyThread` reports reply activity to `InboxCardLayout`. The layout disables the primary continue control when an answer result exists and activity is not `idle`.
+
+| Activity | Condition | Continue after an answer |
+| --- | --- | --- |
+| `idle` | No submission or Flare reply is pending, and the composer is empty or whitespace-only. | Available. |
+| `draft` | The composer contains non-whitespace text and no reply is pending. | Disabled; a prompt asks the rep to send the reply. Clearing the draft also returns to `idle`. |
+| `pending` | The reply mutation is pending or the thread is waiting for Flare. This takes precedence over draft text. | Disabled. |
+
+The reply submit control also rejects another submission while pending. Save for later and Discuss with Flare remain available.
+
+When reply creation returns `flarePending`, `useFlareReplyStream` opens `/api/feedbacks/flare-stream?callId=...&feedbackId=...&afterId=...`. A valid reply message is appended to the thread and closes the stream. The `done` and `timeout` events or an error also close it and clear the pending state, without adding a reply. Malformed message JSON is ignored. Starting another stream closes the previous one, and unmounting closes the active stream. Once pending clears, any remaining composer text determines whether activity is `draft` or `idle`.
 
 ## Empty State
 
@@ -106,4 +120,20 @@ The inbox is empty when there are no eligible unread feedback snippets or when a
 - Query key: `['inbox-snippets']`
 - Answer endpoint: `/calls/inbox-snippets/{feedbackId}/answer`
 - Answering intentionally does not immediately invalidate the inbox query, so the reveal state remains visible until continue.
+- Reply creation invalidates `['inbox-snippets']` with `refetchType: 'none'`: the query becomes stale while the current card and conversation stay mounted. Continue explicitly fetches the next card; a later visit can fetch the stale query.
+- `useInboxReview` disables refetch on window focus and reconnect. These settings do not block an explicit refetch or other mutations' invalidations; reply deletion still invalidates the inbox normally.
 - Extra reps are tracked locally with `zell:extra-reps:{yyyy-mm-dd}` after the daily progress goal is reached.
+
+## Source References
+
+| Area | Source |
+| --- | --- |
+| Card controls and reply activity wiring | `zell-frontend/src/components/dashboard/user/FeedbackInbox/InboxCardChrome.tsx` |
+| Continue refetch | `zell-frontend/src/components/dashboard/user/FeedbackInbox/FeedbackInbox.tsx` |
+| Inbox query options | `zell-frontend/src/hooks/api-hooks/calls/queries/useInboxReview.ts` |
+| Reply mutations and cache invalidation | `zell-frontend/src/hooks/api-hooks/calls/mutations/useFeedbackReply.ts` |
+| Reply integration | `zell-frontend/src/components/snippets/SnippetReplies.tsx` |
+| Reply mutations, optimistic replies, and merging | `zell-frontend/src/components/snippets/replies/useSnippetReplies.tsx` |
+| Reply composer and activity | `zell-frontend/src/components/snippets/replies/useReplyThread.ts` |
+| Reply rendering | `zell-frontend/src/components/snippets/replies/ReplyThread.tsx` |
+| Flare stream lifecycle | `zell-frontend/src/components/snippets/replies/useFlareReplyStream.ts` |

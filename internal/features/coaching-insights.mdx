@@ -53,7 +53,7 @@ Coaching Insights helps answer these questions:
 | Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
 | Personal skill gaps layout | The current user's focus areas and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
 
-The member list and category list are separate, equal-width cards with a 24px gap and independent heights on large screens. They stack on smaller screens. Each card shows its 0-10 scale once in the score column header. Blue marks the selected member; amber bars represent coaching need. Member rows have avatars and no visible ranking numbers.
+The member list and category list are separate, equal-width cards with a 24px gap and independent heights on large screens. They stack on smaller screens. Each card shows its 0-10 scale once in the score column header. Blue marks the selected member; yellow bars represent coaching need. Member rows have avatars and no visible ranking numbers.
 
 `TeamPerformanceRow` shows the member's current streak beside the call count and a warning beside the name when overview `member.engagement < 3`. `MemberCoachingMetrics` shows the selected member's streak and engagement in the category-card header. Both use `CoachingStreak` for the flame icon and streak value. Category score deltas remain hidden; average engagement and previous-period comparisons still appear in the overview stats cards.
 
@@ -237,7 +237,7 @@ The overview response includes weak signals for the selected scope. The current 
 | Evaluated count | Count of distinct users evaluated for that signal. |
 | Previous score | Returned only when both `dateFrom` and `dateTo` are present. |
 
-In the selected-member category panel, performance bars use green at `7` or above, amber at `4` or above, and red below `4`, on a 0-10 scale.
+In the selected-member category panel, performance bars use green at `7` or above, yellow at `4` or above, and red below `4`, on a 0-10 scale.
 
 ---
 

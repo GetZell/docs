@@ -194,8 +194,10 @@ Submitting an answer goes to `/calls/inbox-snippets/{feedbackId}/answer`.
 If the feedback was unread, submission marks it read. Correct non-passive answers receive the interaction bonus XP in addition to the standard feedback-read XP. Re-answering the same already-read item does not award XP again.
 
 <Note>
-The answer mutation intentionally does not immediately invalidate the inbox query. This keeps the reveal/coaching state visible until the rep clicks continue.
+The answer mutation intentionally does not immediately invalidate the inbox query. Reply creation marks that query stale without refetching it, and the inbox query disables refetch on window focus and reconnect. This keeps the reveal/coaching state visible during replies until the rep clicks continue; it does not prevent explicit refetches or other mutations from refreshing the query.
 </Note>
+
+After an answer result exists, continue is disabled while the reply composer has non-whitespace text (`draft`) or a reply submission/Flare response is pending (`pending`). It becomes available when activity is `idle`. This frontend control does not change the backend plan, read state, selection rules, or XP. See [Feedback Inbox](/internal/features/feedback-inbox#reply-activity-and-continue) for the activity and stream lifecycle rules.
 
 ---
 
@@ -210,6 +212,8 @@ The answer mutation intentionally does not immediately invalidate the inbox quer
 | Why is the same call moment not repeated? | The pool deduplicates by call and transcript index, preferring direct reviewer feedback. |
 | Why is multiple choice unavailable for some feedback? | It only applies to negative snippets on a flagged rep transcript line. |
 | Why does progress stop at 10 when more cards exist? | 10 is the visible daily goal. The backend plan can include up to 30 items, and extra reps unlock the remaining items. |
+| Why is continue disabled after answering? | A reply draft or pending reply is keeping the current card open. Send or clear the draft, or wait for the reply/Flare stream to finish. A stream timeout or error also clears its pending state. |
+| Why does switching tabs no longer move to the next card? | The inbox disables window-focus and reconnect refetches. Reply creation also avoids an immediate inbox refetch; continue explicitly fetches the next unread plan item. |
 
 ---
 
@@ -219,6 +223,11 @@ The answer mutation intentionally does not immediately invalidate the inbox quer
 | --- | --- |
 | Home page routing | `zell-frontend/src/app/(auth)/page.tsx` |
 | Frontend inbox shell | `zell-frontend/src/components/dashboard/user/FeedbackInbox/FeedbackInbox.tsx` |
+| Continue gating and reply activity wiring | `zell-frontend/src/components/dashboard/user/FeedbackInbox/InboxCardChrome.tsx` |
+| Inbox refetch options | `zell-frontend/src/hooks/api-hooks/calls/queries/useInboxReview.ts` |
+| Reply cache invalidation | `zell-frontend/src/hooks/api-hooks/calls/mutations/useFeedbackReply.ts` |
+| Reply activity state | `zell-frontend/src/components/snippets/replies/useReplyThread.ts` |
+| Flare stream lifecycle | `zell-frontend/src/components/snippets/replies/useFlareReplyStream.ts` |
 | Frontend item model | `zell-frontend/src/models/InboxReview.ts` |
 | Card display shell | `zell-frontend/src/components/dashboard/user/FeedbackInbox/cards/CardShell.tsx` |
 | API route | `zell-backend-ts/src/api/call/callRouter.ts` |
