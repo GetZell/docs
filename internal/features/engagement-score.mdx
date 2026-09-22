@@ -20,7 +20,11 @@ Internal source references:
 - `zell-backend-ts/src/services/coachingInsights/index.ts`
 - `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx`
 - `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/MemberCoachingMetrics.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/useMemberDetailPanelModel.ts`
 - `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformancePanel.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformanceRow.tsx`
+- `zell-frontend/src/components/teamManagement/coachingInsights/CoachingStreak.tsx`
 - `zell-frontend/src/models/CoachingInsights.ts`
 
 ## Where It Appears
@@ -29,9 +33,11 @@ Internal source references:
 | --- | --- |
 | Coaching Insights overview | `stats.avgEngagement`, the team-level engagement score for the current filters. |
 | Coaching Insights overview comparison | The average-engagement card displays a delta when `stats.previousAvgEngagement` is available. |
+| Selected member's category-card header | Member-detail `engagement`, with its rounded nonzero delta when `previousEngagement` is available. |
+| Coaching Insights member row | A critical-engagement warning when overview `member.engagement < 3`; the numeric engagement score appears in the selected member's category-card header. |
 | Weekly engagement report | Member engagement values are sorted and summarized in email/Slack reports. |
 
-The overview card formats average engagement with one decimal and uses these status colors:
+The overview card and selected-member header format engagement with one decimal and use these status colors:
 
 | Score range | UI status |
 | --- | --- |
@@ -39,9 +45,11 @@ The overview card formats average engagement with one decimal and uses these sta
 | `>= 4` and `< 7` | Amber |
 | `< 4` | Red |
 
-The manager dashboard's two member/category cards show coaching need and category performance. They do not display member engagement, an engagement delta, a critical-engagement warning, or member streaks.
+`TeamPerformanceRow` uses overview `member.engagement` for its warning, with the strict threshold `< 3`. `MemberCoachingMetrics` uses the selected member-detail response for the header's numeric engagement and status indicator. The warning threshold differs from the red indicator threshold of `< 4`.
 
-The API still returns `member.engagement` in overview members, and `engagement` and `previousEngagement` in member detail. A previous-period engagement value is available only when the current request includes both `dateFrom` and `dateTo`. These fields remain available for consumers even though the current cards do not render them. The frontend display change does not change the formulas, eligibility rules, or report calculations below.
+The header hides engagement and its delta when member-detail engagement is unavailable, including initial loading without detail data; an available `0` is displayed. Both the member row and selected-member header show overview `member.currentStreak` through `CoachingStreak`, so the header's streak remains visible while detail loads.
+
+A previous-period engagement value is available only when the current request includes both `dateFrom` and `dateTo`. `useMemberDetailPanelModel` computes `Math.round((engagement - previousEngagement) * 10) / 10` when `previousEngagement` is available. The header shows a nonzero result with a green upward arrow for an increase or a red downward arrow for a decrease and the absolute value formatted to one decimal. Unavailable and zero deltas are hidden. Category performance deltas remain hidden. These displays use existing response fields and do not change the formulas, eligibility rules, or report calculations below.
 
 ## Eligible Snippets
 

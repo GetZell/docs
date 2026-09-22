@@ -47,15 +47,15 @@ Coaching Insights helps answer these questions:
 | --- | --- | --- |
 | Stats cards | Average performance, average coaching need, and average engagement. | Overview endpoint aggregates scored valid calls and coachable snippets. |
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
-| Who needs the most help | Reps ordered by descending coaching need, with avatar, name, call count, and score. | Per-user `avgZellScore` from the overview response. |
-| Their lowest-scoring categories | The selected rep's categories ordered by ascending performance, with snippet read counts and coaching-focus actions. | Per-signal `avgScore`, snippet counts, and read counts from member detail. |
+| Who needs the most help | Reps ordered by descending coaching need, with avatar, name, call count, current streak, score, and a critical-engagement warning when engagement is below `3`. | Per-user `avgZellScore`, `currentStreak`, and `engagement` from the overview response. |
+| Their lowest-scoring categories | The selected rep's categories ordered by ascending performance, with snippet read counts and coaching-focus actions. The header shows the rep's current streak, engagement, and a nonzero engagement delta when available. | Member detail supplies per-signal `avgScore`, snippet counts, and read counts, plus member-level `engagement` and `previousEngagement`; the overview member supplies `currentStreak`. |
 | Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
 | Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
 | Personal skill gaps layout | The current user's focus areas and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
 
 The member list and category list are separate, equal-width cards with a 24px gap and independent heights on large screens. They stack on smaller screens. Each card shows its 0-10 scale once in the score column header. Blue marks the selected member; amber bars represent coaching need. Member rows have avatars and no visible ranking numbers.
 
-The cards do not display member engagement, critical-engagement warnings, streaks, or category score deltas. Engagement, streak, and previous-score fields remain in the responses; average engagement and previous-period comparisons still appear in the overview stats cards.
+`TeamPerformanceRow` shows the member's current streak beside the call count and a warning beside the name when overview `member.engagement < 3`. `MemberCoachingMetrics` shows the selected member's streak and engagement in the category-card header. Both use `CoachingStreak` for the flame icon and streak value. Category score deltas remain hidden; average engagement and previous-period comparisons still appear in the overview stats cards.
 
 ### Member Selection
 
@@ -256,7 +256,9 @@ Selecting a member loads that user's detailed signal breakdown into "Their lowes
 
 Member engagement uses the same snippet score, coachability, dislike, source, date, scorecard, and daily-cap rules as team engagement, but only for the selected user. The member-detail query scopes directly to the selected `userId`; in the normal UI flow that user comes from the overview list, where regular-user and non-test-user filtering has already been applied.
 
-The API still returns `engagement` and `previousEngagement` in member detail, and `engagement` and `currentStreak` in overview member rows. The two cards do not render these values.
+The category-card header uses member-detail `engagement`, formatted to one decimal. Its indicator is green at `>= 7`, amber at `>= 4` and `< 7`, and red below `4`. The member-row warning separately uses overview `member.engagement < 3`; a red header indicator does not necessarily mean the row shows a warning.
+
+`useMemberDetailPanelModel` computes `Math.round((engagement - previousEngagement) * 10) / 10` when `previousEngagement` is available. `MemberCoachingMetrics` displays that delta only when it is nonzero, with a green upward arrow for an increase or a red downward arrow for a decrease and the absolute value to one decimal. The header's streak comes from overview `member.currentStreak` and remains visible while member detail loads. Engagement and its delta are hidden when member-detail engagement is unavailable; an available `0` engagement score is displayed.
 
 ---
 
@@ -322,9 +324,10 @@ The current dashboard displays previous-period deltas on:
 
 - average performance,
 - average coaching need,
-- average engagement.
+- average engagement,
+- selected-member engagement when its rounded delta is nonzero.
 
-The API also returns previous weak-signal scores, member signal scores, and member engagement when available. The current member/category cards do not display those deltas.
+The API also returns previous weak-signal scores and member signal scores when available. The current member/category cards do not display those score deltas.
 
 ---
 
@@ -337,8 +340,8 @@ The API also returns previous weak-signal scores, member signal scores, and memb
 | Overview loading | Skeletons replace the stats, chart, and both cards. |
 | Overview has no response after loading | The tab keeps its filters but renders no overview content. |
 | Overview has no members | The member card shows "No members found" and the category area prompts the user to select a member. |
-| Selected member detail loading | The category card keeps its header and shows category-row skeletons. |
-| Selected member has no signals or no detail response after loading | The category card shows "No evaluation data available"; the current panel has no separate error message. |
+| Selected member detail loading | The category card keeps its header and overview-member streak and shows category-row skeletons. Engagement and its delta are hidden when detail data is unavailable. |
+| Selected member has no signals or no detail response after loading | The category card shows "No evaluation data available"; the current panel has no separate error message. The streak remains visible; engagement is shown only when available in member detail. |
 | Personal workspace has no detail response | The frontend renders nothing after loading. |
 | Personal workspace has no signals | `SkillGapsLayout` shows "No coachable moments". |
 | Team lead requests member detail outside subtree | Empty member detail. |
@@ -393,9 +396,12 @@ The API also returns previous weak-signal scores, member signal scores, and memb
 | Filter controls | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsFiltersBar.tsx` |
 | Stats cards | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx` |
 | Member list | `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformancePanel.tsx` |
+| Member row and critical-engagement warning | `zell-frontend/src/components/teamManagement/coachingInsights/TeamPerformanceRow.tsx` |
 | Shared card and column headings | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingPanelHeader.tsx` |
 | Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
-| Category sorting, snippet selection, and focus actions | `zell-frontend/src/components/teamManagement/coachingInsights/useMemberDetailPanelModel.ts` |
+| Member engagement and delta display | `zell-frontend/src/components/teamManagement/coachingInsights/MemberCoachingMetrics.tsx` |
+| Shared streak display | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingStreak.tsx` |
+| Category sorting, snippet selection, focus actions, and engagement delta | `zell-frontend/src/components/teamManagement/coachingInsights/useMemberDetailPanelModel.ts` |
 | Category rows | `zell-frontend/src/components/teamManagement/coachingInsights/CategoryCard.tsx` |
 | Category loading state | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailSkeleton.tsx` |
 | Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
