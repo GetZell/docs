@@ -28,7 +28,77 @@ Bots are AI agents used for training conversations. They define the simulated co
   </Card>
 </CardGroup>
 
+## Mood Controls
+
+The admin **Create simulation** settings and the agent editor's **Call Settings**
+tab show explanations beneath the mood options. The selected mood's explanation
+also appears below the field; the closed selector shows only the mood name.
+These descriptions are presentation-only. They do not change the stored mood
+values or the existing call-type restrictions.
+
+| Mood | Explanation |
+| --- | --- |
+| Nice (`NICE`) | Friendly but busy. May hang up if you take too long to get to the point. |
+| Less Rude (`LESS_RUDE`) | Skeptical. Wants to discuss their problems before hearing your pitch. |
+| Rude (`RUDE`) | Impatient and dismissive. Will only listen if you quickly show how you can help with their problems. |
+| Sassy (`SASSY`) | Witty and unpredictable. Pushes back and takes the conversation off topic. |
+
+### Available moods
+
+Both controls use `getAvailableMoods(callType, allowRandom)` to determine their
+options. The second argument defaults to `false`.
+
+| Call type | Available moods |
+| --- | --- |
+| `COLD_CALL` | Nice, Less Rude, Rude, Sassy; also Random when `allowRandom` is `true` |
+| `DEMO`, `PROPOSAL` | Less Rude |
+| `DISCOVERY` | Less Rude, Sassy |
+| `WARM_CALL` | Nice, Less Rude, Rude |
+| `CHECK_IN` | Nice |
+| `CUSTOMER_CARE` | Rude |
+| `GATEKEEPER`, custom/unrecognized call types, or an empty call type | Nice, Less Rude, Rude, Sassy |
+
+Random (`RANDOM`) has no explanation. It is offered only for `COLD_CALL` when
+the caller enables `allowRandomMood`. The current `CreateSimulationForm` and
+`EditAgentForm` both enable that prop. No selected-mood explanation is displayed
+for Random or a value absent from the current option list.
+
+### Creation and editing behavior
+
+- **Create simulation:** `SimulationSettings` disables the mood selector until
+  a call type is selected. Its `useSimulationSettings` hook preserves the
+  current mood when the new call type supports it, or resets it to an empty
+  string otherwise. Other form values are retained during this call-type
+  change. The hook also clears `RANDOM` when `allowRandomMood` is disabled.
+- **Agent editing:** `CallSettingsTab` derives its options from the watched
+  call type and binds the selected mood to the form's `mood` field. Its
+  call-type control updates the `type` field; this tab does not perform the
+  creation hook's mood-reset operation when the call type changes.
+
+The shared option renderer keeps descriptions outside the selected label.
+Described options expose their supporting text through `aria-describedby`.
+The creation field also links to its selected explanation, while editing uses
+`FormDescription` with a polite live region. Selection and submitted values
+continue to use the existing mood codes.
+
+### Source ownership
+
+All paths below are in `zell-frontend`.
+
+| Responsibility | Frontend source |
+| --- | --- |
+| Mood labels and values | `src/constants/agents.ts` |
+| Explanations and call-type availability | `src/components/admin/bot/forms/formSelections.ts` |
+| Shared mood option rendering | `src/components/admin/bot/forms/MoodSelectContent.tsx` |
+| Description accessibility and selected-label separation | `src/components/ui/select.tsx` |
+| Creation controls and selected explanation | `src/components/admin/simulations/SimulationSettings.tsx` |
+| Creation call-type changes and mood resets | `src/components/admin/simulations/useSimulationSettings.ts` |
+| Creation form and Random opt-in | `src/components/admin/simulations/CreateSimulationForm.tsx` |
+| Editor controls and selected explanation | `src/components/admin/bot/forms/tabs/CallSettingsTab.tsx` |
+| Editor form and Random opt-in | `src/components/admin/bot/forms/EditAgentForm.tsx` |
+
 ## Current Documentation Status
 
-This page is a feature placeholder. It should be expanded with bot creation, assignment, voice configuration, LiveKit/Vapi behavior, and scorecard integration.
-
+Mood controls are documented above. Broader bot creation, assignment, voice
+configuration, LiveKit/Vapi behavior, and scorecard integration still need
+additional implementation documentation.
