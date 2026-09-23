@@ -12,7 +12,7 @@ The workspace has two views:
 
 <CardGroup cols={2}>
   <Card title="Coaching Insights" icon="chart-line">
-    Review focus areas, coachable moments, and skill gaps from your calls.
+    Review skill categories, coachable moments, and skill gaps from your calls.
   </Card>
 
   <Card title="Table View" icon="table">
@@ -40,8 +40,7 @@ At the top of the view, you can see:
 
 - **Moments:** Total coachable moments found in the selected calls
 - **Reviewed:** How many moments you have already reviewed
-- **Focus Areas:** The number of skill areas with coaching opportunities
-- **Review Progress:** Your reviewed moments compared with all available moments
+- **Skill categories:** The number of skill categories included in your insights
 
 ### Filter Insights
 
@@ -51,20 +50,24 @@ Use the filters to narrow what you are reviewing:
 - **Call Source:** Show all calls, real calls, or simulations
 - **Date Range:** Limit insights to a specific time period
 
-### Review Focus Areas
+### Review Skill Categories
 
-Coaching Insights shows your focus areas in a single list. Select a focus area to see the related snippets from your calls beside it.
+The **Skill categories** list starts with the lowest average performance score, so you can focus on your weakest skill first. That category is selected initially. Select another category to see its related snippets beside the list; your selection stays in place as you review moments.
 
-Use this view when you want to work through one skill at a time. Each focus area shows how many moments are available, and the selected focus area shows its review progress together with the matching snippets.
+Each category row shows its name, average performance score out of 10, a score bar, and an arrow. If a category has no coachable moments, its row lets you know. The selected category's name appears above its snippets.
 
 ### Review Moments
 
-When you open a focus area, Zell shows the relevant snippets from your calls. From each snippet, you can:
+When you select a skill category, Zell shows the relevant snippets from your calls. From each snippet, you can:
 
 - Play the call moment
 - Review the coaching feedback
 - Add the call to a collection
 - Vote on whether the feedback was helpful
+
+Snippets are expanded by default and stay open when you add a reply or the feedback is marked as read. Click a snippet's header to collapse or reopen it.
+
+Moments you have already loaded stay visible while feedback refreshes, including while Flare replies. Adding a reply keeps the moment in its existing place in the list.
 
 <Tip>
   Reviewing moments updates your progress, making it easier to see what still needs attention.
@@ -106,8 +109,8 @@ Changes are saved from the header controls. If an update cannot be saved, Zell s
 ## Best Practices
 
 <CardGroup cols={2}>
-  <Card title="Start With Focus Areas" icon="bullseye">
-    Use Coaching Insights first to identify the skills with the most coachable moments.
+  <Card title="Start With Skill Categories" icon="bullseye">
+    Use Coaching Insights to start with the skill that has the lowest average performance score.
   </Card>
 
   <Card title="Filter by Scorecard" icon="filter">

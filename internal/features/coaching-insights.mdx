@@ -17,7 +17,7 @@ Coaching Insights answers four main questions:
 - Which signals are weakest across the selected team?
 - Which concrete snippets should a manager review with a rep?
 - What coaching opportunities can the current user review for themselves?
-- Which personal focus areas and call moments should the current user review next?
+- Which personal skill categories and call moments should the current user review next?
 
 ## Key Concepts
 
@@ -50,9 +50,9 @@ Coaching Insights answers four main questions:
 | Score trend | Daily average score, Zell Score, and call count. | Scored valid calls grouped by started date. |
 | Team performance | Reps ordered by average Zell Score. | Per-user call evaluation aggregates. |
 | Member detail | Selected rep's signal breakdown and engagement. | Per-signal scores, snippet counts, and read counts. |
-| Snippets modal | Up to 50 coachable snippets for a selected rep and signal. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
-| Personal workspace summary | Current user's total moments, reviewed moments, focus areas, and review progress. | Current-user member detail aggregated in the frontend. |
-| Personal skill gaps layout | The current user's focus areas and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
+| Snippets modal | Coachable snippets for a selected rep and signal, loaded in cursor pages. | Snippet evaluations plus hydrated transcript, replies, votes, reviewer, and audio. |
+| Personal workspace summary | Current user's total moments, reviewed moments, and skill category count. | Current-user member detail aggregated in the frontend. |
+| Personal skill gaps layout | The current user's skill categories and selected signal snippets in one inline workspace. | Current-user signal breakdown plus user-scoped snippet endpoint. |
 
 ---
 
@@ -128,10 +128,12 @@ The Calls page mounts `UserCallsWorkspace`. It reads the `view` search parameter
 | --- | --- | --- |
 | View toggle | `UserCallsWorkspace` | No backend call. `/calls` is coaching; `/calls?view=list` is the table view. |
 | Workspace summary | `UserCoachingWorkspaceSummary` | Uses `GET /coaching-insights/me` through `useUserCoachingInsightsDetail`. |
-| Skill gaps | `SkillGapsLayout` | Shows focus areas in a left column and the selected signal's snippets inline with `SnippetsList scope="user"`. |
+| Skill categories | `SkillGapsLayout`, `SkillCategoriesPanel` | Shows skill categories in a left column and the selected signal's snippets inline with `SnippetsList scope="user"`. |
 | Snippets list | `SnippetsList`, `useScopedCoachingInsightsSnippets` | Uses `GET /coaching-insights/me/snippets?signalId=...` when `scope="user"`; admin views keep using the admin member snippets endpoint. |
 
-Signals in the personal workspace are sorted by highest `snippetCount`, then by lowest `avgScore`. The personal workspace no longer stores or restores a layout choice; it only keeps the selected signal in component state. When there is no selected signal state, the first sorted signal is selected by default.
+Signals in the personal workspace are sorted by ascending `avgScore`, placing the weakest category first. The first category is selected by default. A manually selected category remains selected through data refreshes while it is still present; if it is unavailable, selection falls back to the first sorted category. The personal workspace keeps the selected signal in component state and does not store or restore a layout choice.
+
+The **Skill categories** panel shares `CoachingPanelHeader` and `CoachingCategorySummary` with the admin category UI. Each compact personal category row shows the category name, average performance out of 10, a performance bar, and a selection arrow. Personal rows hide read and moment counts; a category with no snippets shows the no-coachable-moments label. The adjacent snippets panel header contains only the selected category's title.
 
 ### Personal Workspace Filters
 
@@ -140,7 +142,7 @@ Signals in the personal workspace are sorted by highest `snippetCount`, then by 
 | Scorecard | `UserCoachingInsightsDisplay` uses `MultiSelect`; `useUserCoachingInsightsViewModel` stores `calls-coaching-insights-scorecard-ids`; options come from `useScoreCardsUsedByUser`. | `scorecardIds`, comma-separated by `buildUserCoachingInsightsParams`. | `GET /coaching-insights/me` and `GET /coaching-insights/me/snippets`; `UserCoachingInsightsDetailSchema` and `UserCoachingInsightsSnippetsSchema`; `CoachingInsightsService.getMemberDetail/getCoachableSnippets`. Options load from `GET /score-cards/used-by-user`. | Filters `Agent.scorecardId` or `Call.metadata.scorecardId` in Coaching Insights SQL. Current-user endpoints force the authenticated user as the member/viewer. | Default is `[]`; empty arrays omit `scorecardIds`. If no scorecards are available, the dropdown is empty and the request is unfiltered by scorecard. | Requires `requireAuth`. The option source currently returns scorecards from ended simulation calls with agent scorecards, so real-call-only scorecards may be absent from the personal workspace filter. |
 | Source | `UserCoachingInsightsDisplay` select; `useUserCoachingInsightsViewModel` stores `calls-coaching-insights-source`. | `source` with `REAL_CALL` or `SIMULATION`; omitted for `all`. | `GET /coaching-insights/me` and `/me/snippets`; current-user schemas use the `CallSource` enum. | Filters `Call.source` in member detail and snippet SQL. | Default is `all`, which sends `undefined` and includes both sources. | Invalid enum values fail schema validation. The Calls History table does not currently expose this source filter. |
 | Date range | `DateRangeDropdown`; `useDateRangeWithStorage` stores `calls-coaching-insights-date-range`; `formatDateForApi` serializes dates. | `dateFrom`, `dateTo` as ISO datetime strings without milliseconds. | `GET /coaching-insights/me` and `/me/snippets`; current-user detail/snippets schemas; `CoachingInsightsService` date filters. | Filters `Call.startedAt`. Previous-period values are only meaningful when both dates are present. | Default is last 7 days. Missing `from` or `to` omits that side. Invalid local-storage JSON is removed and the default remains. | Future dates are disabled; custom future end dates are clamped to today. |
-The personal snippets list sorts loaded snippets so snippets with replies appear first. Score badges are hidden in user scope (`showScoreBadges={false}`), while admin scope keeps score badges visible.
+The personal snippets list preserves the server's snippet order. Score badges are hidden in user scope (`showScoreBadges={false}`), while admin scope keeps score badges visible.
 
 ---
 
@@ -249,7 +251,7 @@ Member engagement uses the same snippet score, coachability, dislike, source, da
 
 ## Coachable Snippets
 
-The snippets modal opens from a member signal card or a personal workspace focus area and loads snippets for one user and one signal.
+The admin snippets panel opens from a member signal card. In the personal workspace, selecting a skill category loads snippets inline. Both surfaces load snippets for one user and one signal.
 
 | Rule | Behavior |
 | --- | --- |
@@ -259,20 +261,25 @@ The snippets modal opens from a member signal card or a personal workspace focus
 | Coachability rule | `SnippetEvaluation.coachability > 5`. |
 | Vote exclusion | Snippets with any `DISLIKE` vote are excluded. |
 | Sort order | Highest coachability first, then lowest score. |
-| Limit | `50` snippets. |
+| Frontend pagination | Requests `limit=5` per page and sends the returned `nextCursor` as the next request's `cursor`. |
 | Hydration | Adds transcript context, replies, viewer vote, reviewer, recording URL, and call metadata. |
 
-Snippets endpoints return an object wrapper, not a bare array:
+Snippet pages use an object wrapper with the snippets and the next cursor. A completed result has no next cursor:
 
 ```json
 {
-  "snippets": []
+  "snippets": [],
+  "nextCursor": null
 }
 ```
 
 This applies to both `GET /admin/coaching-insights/member/{userId}/snippets` and `GET /coaching-insights/me/snippets`. For admin requests by a team lead, an out-of-subtree member request also returns `{ snippets: [] }` instead of leaking whether the user has coachable moments. For personal workspace requests, the frontend enables the user endpoint only when a `signalId` is present.
 
-The frontend sorts loaded snippets so snippets with replies appear first. Audio playback is coordinated so only one snippet plays at a time.
+Both scopes use `useCoachingInsightsSnippetPages`, a shared React Query infinite query. `usePaginatedCoachingInsightsSnippets` loads additional pages as the scroll sentinel becomes visible. Loaded pages remain in the query cache during refetches, and existing cards stay mounted while comments, read status, votes, or Flare replies refresh. The frontend preserves server order across the loaded pages, so adding a reply does not move its snippet to the top.
+
+Snippet cards start expanded regardless of existing comments, read status, or votes. These updates do not automatically collapse a card or reopen one the user manually collapsed. Users control expansion from the card header. Snippets can still disappear when refreshed results no longer include them, such as after a disqualifying dislike vote. Audio playback is coordinated so only one snippet plays at a time.
+
+Marking feedback as read invalidates both the admin and personal snippet query prefixes so the corresponding cards can refresh their read status.
 
 <Note>
 For the shared snippet hydration behavior, see [Snippet Selection Logic](/internal/features/backend-snippet-selection).
@@ -344,9 +351,9 @@ Previous-period values are used for deltas on:
 | Current-user snippets endpoint | `GET /coaching-insights/me/snippets?signalId={signalId}` |
 | Overview query key | `coaching-insights-overview` plus filter values |
 | Member query key | `coaching-insights-member` plus user and filter values |
-| Snippet query key | `coaching-insights-snippets` plus user, signal, and filter values |
+| Snippet query key | `['coaching-insights-snippets', userId, 'infinite', signalId, ...filterValues]` |
 | Personal detail query key | `user-coaching-insights-detail` plus date, scorecard, and source filter values |
-| Personal snippets query key | `user-coaching-insights-snippets` plus signal, date, scorecard, and source filter values |
+| Personal snippets query key | `['user-coaching-insights-snippets', 'infinite', signalId, ...filterValues]` |
 | Focus query key | `coaching-insights-focus`, user ID |
 | Personal scorecard storage | `calls-coaching-insights-scorecard-ids` |
 | Personal source storage | `calls-coaching-insights-source` |
@@ -375,6 +382,10 @@ Previous-period values are used for deltas on:
 | Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
 | Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
 | Scoped snippets hook | `zell-frontend/src/components/teamManagement/coachingInsights/useScopedCoachingInsightsSnippets.ts` |
+| Snippet pagination | `zell-frontend/src/components/teamManagement/coachingInsights/usePaginatedCoachingInsightsSnippets.ts` |
+| Shared infinite snippet query | `zell-frontend/src/hooks/api-hooks/coaching-insights/queries/useCoachingInsightsSnippetPages.ts` |
+| Snippet expansion state | `zell-frontend/src/components/snippets/useSnippetCardState.ts` |
+| Read-status invalidation | `zell-frontend/src/hooks/api-hooks/feedback/mutations/useMarkFeedbackAsRead.ts` |
 | Calls workspace route | `zell-frontend/src/app/(auth)/calls/page.tsx` |
 | Calls workspace toggle | `zell-frontend/src/components/dashboard/user/UserCallsWorkspace.tsx` |
 | Personal Coaching Insights view | `zell-frontend/src/components/dashboard/user/UserCoachingInsightsDisplay.tsx` |
@@ -384,6 +395,8 @@ Previous-period values are used for deltas on:
 | Score trend chart tests | `zell-frontend/src/components/teamManagement/coachingInsights/ScoreTrendChart.test.tsx` |
 | Personal workspace summary | `zell-frontend/src/components/dashboard/user/UserCoachingWorkspaceSummary.tsx` |
 | Personal skill gaps layout | `zell-frontend/src/components/dashboard/user/coachingInsightsLearningLayouts.tsx` |
+| Personal skill categories panel | `zell-frontend/src/components/dashboard/user/SkillCategoriesPanel.tsx` |
+| Shared category summary | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingCategorySummary.tsx` |
 | Personal detail hook | `zell-frontend/src/hooks/api-hooks/coaching-insights/queries/useUserCoachingInsightsDetail.ts` |
 | Personal snippets hook | `zell-frontend/src/hooks/api-hooks/coaching-insights/queries/useUserCoachingInsightsSnippets.ts` |
 | Frontend API hooks | `zell-frontend/src/hooks/api-hooks/coaching-insights` |
