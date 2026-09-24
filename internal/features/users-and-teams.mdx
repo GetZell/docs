@@ -41,6 +41,29 @@ Customer guide: [Invite Users](/guides/invite-users).
 
 German UI: **Einstellungen → Mandanteneinstellungen → Team → Benutzer → Benutzer einladen**, then **Einladen**.
 
+## Aircall Setup After an Invitation
+
+For Aircall-connected tenants, a successful invitation can open **Finish Aircall setup** after the invitation dialog closes. It shows the invited email address and reminds the administrator to connect the person's Aircall number to Zell. The reminder applies to successful invitations for either role exposed by this form; it does not wait for the recipient to accept the invitation.
+
+Click **Connect in Aircall** to open the tenant's Zell integration in a new tab. In Aircall, choose **Connected numbers → Add numbers** and select the person's Aircall numbers. This remains a manual Aircall action. Sending an invitation, opening the link, or dismissing the popup does not connect numbers or verify that setup is complete.
+
+| Condition | Reminder behavior |
+| --- | --- |
+| Invitation succeeds | The form resets, the invitation dialog closes, and the normalized email is added to local reminder state. Failed or duplicate invitations do not add an email. |
+| Aircall status is connected | The reminder requires `GET /integrations/aircall` to return `connected: true`. A missing tenant ID disables this status query. Disconnected or unavailable status does not show the reminder. |
+| Integration details are loading | After a successful invitation for a connected tenant, the user-connections query loads the integration details. The popup can appear during loading; without a link, its button shows **Preparing Aircall link…** and is disabled. |
+| Integration is inactive | If the returned integration has `active: false`, the reminder is hidden. The popup does not check whether the particular invitee already has connected numbers. |
+| Administrator dismisses the popup | Dismissal clears the remembered emails. This does not revoke the invitation or save a completion flag. A later successful invitation can show a fresh reminder. |
+| Tenant changes or page reloads | Reminder emails are local component state, not persisted. Emails recorded for one tenant are hidden in another tenant. A page reload removes that state. |
+
+The integration query keys include the tenant ID. The reminder requests `GET /integrations/aircall/user-connections` only while it has invited emails and connected status. The link uses the returned integration name and ID: `https://dashboard.aircall.io/integrations/hub/{integrationName}/{integrationId}/general`, where the name is lowercased, whitespace is replaced with underscores, and the result is URL-encoded. The invitation form still accepts one email at a time; the reminder deduplicates any emails held in its local state.
+
+**Aircall support checks**
+
+- **Popup did not appear:** confirm the invitation succeeded, the invitation dialog is closed, and the current tenant's Aircall status is connected. A status-request failure shows a connection-status error toast and leaves the reminder hidden. Also check whether the integration-details response reports `active: false` or the reminder was dismissed.
+- **Aircall link failed to load:** the invitation remains sent. When no link is available, **Retry Aircall link** refetches integration details; it does not resend the invitation. Investigate the user-connections endpoint if retries fail.
+- **Numbers still need setup:** opening the dashboard does not complete or verify the Aircall connection. Check **Connected numbers** in the Zell integration in Aircall and add the intended numbers there.
+
 ## Permissions and Seat Limits
 
 All invitation endpoints require authentication and an admin role (`ADMIN` or `INTERNAL_TOOL_ADMIN`). `TEAM_LEAD` alone cannot list, create, revoke, or resend invitations, even though the settings navigation includes team pages for team leads.
@@ -88,13 +111,15 @@ The form accepts one email at a time. There is no bulk invitation control for re
 
 ## Source References
 
-Verified against the application source on September 10, 2026.
+Invitation lifecycle verified against the application source on September 10, 2026. Aircall reminder behavior and frontend source references reviewed on September 24, 2026.
 
 | Area | Source |
 | --- | --- |
 | Settings entry and team navigation | `zell-frontend/src/components/nav/SidebarFooterActions.tsx`, `zell-frontend/src/components/layouts/SettingsNav.tsx` |
-| Users page and seat-limit button | `zell-frontend/src/app/(auth)/settings/team/(settings)/users/page.tsx` |
-| Invitation form | `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/InviteUserModal.tsx` |
+| Users page, seat-limit button, and dialog state | `zell-frontend/src/app/(auth)/settings/team/(settings)/users/page.tsx`, `zell-frontend/src/components/teamManagement/userManagement/UserManagement.tsx`, `zell-frontend/src/components/teamManagement/userManagement/useUserManagement.ts` |
+| Invitation form and success callback | `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/InviteUserModal.tsx`, `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/useInviteUserForm.ts` |
+| Aircall reminder UI and state | `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/AircallInvitationDialog.tsx`, `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/useAircallInvitationReminder.ts` |
+| Aircall status and integration details | `zell-frontend/src/hooks/api-hooks/tenants/queries/useGetAircallIntegration.ts`, `zell-frontend/src/hooks/api-hooks/tenants/queries/useGetAircallUserConnections.ts` |
 | Workspace selection | `zell-frontend/src/components/workspace/WorkspaceFormPicker.tsx` |
 | Pending list and cancellation | `zell-frontend/src/components/teamManagement/userManagement/invitedUsers/InvitationsList.tsx` |
 | Routes and permissions | `zell-backend-ts/src/api/admin/tenant/tenantRouter.ts` |
