@@ -98,6 +98,23 @@ If Slack is unavailable, delivery uses email. If `SlackService.sendDirectMessage
 
 The wrapper copy uses `getUserLocale()` and the template translations. Transcript and feedback content come directly from the stored snippet query; this flow does not use the inbox hydration/localization pipeline or generate new coaching text for the reminder.
 
+### PostHog Funnel
+
+New reminders carry a unique `notificationId` and the recipient's user ID in the delivery job. The delivery handler creates a separate login link for each attempted channel, with `origin: "daily_review_reminder"`. The attribution is stored with the login token on the server; login tokens and coaching text are not sent as analytics properties.
+
+| Event | When it is recorded |
+| --- | --- |
+| `notification_sent` | Slack confirms a successful send, or the email provider returns a message ID. This means provider acceptance, not proof of reading or inbox delivery. Queueing, failed sends, and suppressed duplicate emails do not count. |
+| `notification_clicked` | The backend consumes a valid tagged login token. A token can be consumed once; expired links and subsequent uses do not count. It measures link use, not every physical button click. |
+| `daily_review_started` | The rep submits the first valid answer for an unread primary plan item while the daily goal is still unmet. Passive acknowledgements and incorrect answers count. Loading or warming the plan does not. |
+| `daily_review_completed` | Recorded when an answer brings the read count to at least five primary plan items, or all primary items when fewer than five exist. Already-completed plans are skipped; completion is not backfilled if the threshold was reached elsewhere. This tracks the item goal, not five elapsed minutes. Wrong answers that leave an item unread do not advance completion. |
+
+All four events use the rep's user ID as PostHog `distinctId` and the tenant ID as the `organization` group. Attributed events share `origin`, `notificationId`, and `channel` (`SLACK` or `EMAIL`). Slack failure followed by successful email delivery records `EMAIL`. Delivery events are deduplicated by reminder ID. Start and completion events are deduplicated per user, organization, and review day. Analytics deduplication and click-attribution records expire from Redis after 48 hours.
+
+Start and completion also include `reviewDate`, `totalItems`, and `goalItems`; completion adds `completedItems`. A click is eligible for attribution only for the same user and organization on the same UTC day as the inbox plan. If multiple reminders are clicked before the first answer, the latest click is used. Attribution is fixed at the first answer, so a later click does not reassign an already-started review. Reviews without a matching click use `origin: "direct"` and have no reminder ID or channel. This UTC review day is separate from the tenant-local reminder schedule.
+
+In PostHog, create a person funnel with the four events above, filter `origin = daily_review_reminder`, and hold `notificationId` constant across steps. Use a one-day conversion window and break down by `channel`. Filter the `organization` group to Reonic to inspect its reps. Compare unique users per day and the sent-to-completed conversion rate. Extra reviews and replayed answers do not add daily completion events.
+
 ### Scheduling and Deduplication
 
 Production worker startup calls `DailyReviewReminderService.syncSchedules()`. It reads active tenants with `REAL_CALLS` once and applies their effective preferences. Each enabled tenant gets a BullMQ scheduler named `daily-review-reminder:{tenantId}`, with a daily `minute hour * * *` pattern and its configured timezone. Its job is `daily-review-reminders` and carries the tenant ID.
@@ -108,7 +125,7 @@ A disabled reminder removes that tenant's scheduler. Tenant deletion explicitly 
 
 Before enqueueing, the service reserves Redis key `daily-review-reminder:{userId}:{localDate}` with `NX` and a 48-hour TTL. An existing reservation skips that user. The date in the key allows a new reminder on the following local day even while yesterday's key still exists.
 
-If login-link creation, locale lookup, or notification enqueueing rejects, the service deletes the reservation and rethrows, allowing a later eligible attempt to retry. After successful enqueueing, the reservation remains; failures inside the later notification-delivery job do not clear it. The service's returned `sent` count records reminders queued, not confirmed Slack or email delivery.
+If locale lookup or notification enqueueing rejects, the service deletes the reservation and rethrows, allowing a later eligible attempt to retry. After successful enqueueing, the reservation remains; failures inside the later notification-delivery job, including login-link creation, do not clear it. The service's returned `sent` count records reminders queued. Use the PostHog `notification_sent` event to measure successful provider acceptance.
 
 ### Troubleshooting
 
@@ -128,7 +145,8 @@ All backend paths below are relative to `zell-backend-ts`.
 | Area | Source |
 | --- | --- |
 | Defaults | `src/services/dailyReviewReminder/preferences.ts` |
-| Scheduling, reservation, login link, enqueueing | `src/services/dailyReviewReminder/index.ts` |
+| Scheduling, reservation, enqueueing | `src/services/dailyReviewReminder/index.ts` |
+| Per-channel links, funnel attribution and deduplication | `src/services/dailyReviewReminder/tracking.ts`, `src/services/auth/index.ts`, `src/services/inboxReview/index.ts` |
 | Tenant preferences and lifecycle | `src/services/tenant/index.ts` |
 | Recipient eligibility and shared pending filter | `prisma/queries/inboxReviewQueries.ts` |
 | Preview selection | `prisma/queries/feedbackQueries.ts` |
@@ -139,6 +157,7 @@ All backend paths below are relative to `zell-backend-ts`.
 | Preference validation | `src/schemas/tenantSchemas.ts` |
 | Update endpoints | `src/api/tenant/tenantRouter.ts`, `src/api/admin/tenant/tenantRouter.ts` |
 | Recipient and schedule tests | `src/tests/services/dailyReviewReminder.test.ts` |
+| Analytics and conversion tests | `src/tests/services/dailyReviewTracking.test.ts` |
 
 Frontend sources are relative to `zell-frontend`:
 
