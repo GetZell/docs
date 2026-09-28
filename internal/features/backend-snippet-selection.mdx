@@ -93,6 +93,12 @@ This page explains the shared platform behavior behind [Feedback Inbox](/interna
 
 ---
 
+## Daily Review Reminder Preview
+
+The reminder uses `queryLatestFeedbackSnippet(userId, true)` to select one eligible unread comment, prioritizing coaching-focus matches and then the newest comment. It shares `PENDING_INBOX_REVIEW` with the inbox pool, but does not use the daily-plan ranking or `buildSnippetsFromRows()` hydration. The preview can differ from the first inbox card. See [Feedback selected for the preview](/internal/features/notifications#feedback-selected-for-the-preview) for the full filters and transcript rules.
+
+---
+
 ## Manager Inbox Selection
 
 <Steps>

@@ -45,7 +45,7 @@ The Slack integration sends real-time notifications to your team about key event
 
 ## Notification Types
 
-The integration will automatically post notifications to your configured Slack channels for these events:
+The integration sends channel notifications and personal direct messages, depending on the event:
 
 <CardGroup cols={2}>
   <Card title="Feedback Submitted" icon="comment">
@@ -63,4 +63,18 @@ The integration will automatically post notifications to your configured Slack c
   <Card title="Training Reminders" icon="bell">
     Automated reminders for upcoming training sessions
   </Card>
+
+  <Card title="5 min Daily Review" icon="clock" href="/guides/daily-review">
+    A personal reminder with feedback from your calls when you have unread feedback ready to review
+  </Card>
 </CardGroup>
+
+## Daily Review Direct Messages
+
+Daily Review reminders arrive as personal direct messages. They include a call moment and its coaching feedback, prioritizing your current coaching focus when matching feedback is available. Select **Start 5 min Daily Review** to sign in and open your Daily Review.
+
+Your Zell and Slack accounts should use the same email address. Email is the fallback when Slack is unavailable.
+
+Reminders are enabled by default at **09:00 Europe/Berlin** for organizations using real call analysis. Admins can change the time or disable them in **Tenant Settings → Notification Preferences**. Existing custom settings are kept, and no reminder is sent when there is no eligible unread feedback.
+
+See [5 min Daily Review](/guides/daily-review) for details.

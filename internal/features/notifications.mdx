@@ -1,34 +1,147 @@
 ---
 title: "Notifications"
-description: "Send in-app, email, and workflow notifications for training and coaching events"
+description: "Daily Review reminders, eligibility, scheduling, and Slack or email delivery"
 icon: "bell"
 ---
 
 ## Overview
 
-Notifications keep users informed about coaching, streaks, training, and platform events. Backend notification templates and delivery jobs support localized messages and deep links.
+Backend notification templates and delivery jobs send localized messages for coaching, streaks, training, and platform events. This page documents the **5 min Daily Review** reminder. It brings reps back to the [Feedback Inbox](/internal/features/feedback-inbox) on the home page.
 
-## Key Concepts
+## Daily Review Reminder
 
-<CardGroup cols={2}>
-  <Card title="Notification Template" icon="file-text">
-    Defines message content for a specific notification event.
-  </Card>
+The `dailyReviewReminder` template includes a brief reminder, a real call moment with transcript context when available, existing coaching feedback, and a **Start 5 min Daily Review** button. The German headline is **Dein Daily Review ist bereit** and the button is **5 min Daily Review starten**.
 
-  <Card title="Delivery Channel" icon="send">
-    Notifications can target channels such as email, Slack, or in-app messages.
-  </Card>
+The notification uses the selected feedback's reviewer name when present, otherwise the localized Flare coaching label. Sending the reminder does not mark feedback as read. Its button uses a login link with `fromPath: "/"`, taking the recipient into the home-page Daily Review. The previewed call is not the button's destination.
 
-  <Card title="Localization" icon="languages">
-    Notification copy can be localized based on user locale.
-  </Card>
+### Preferences and Defaults
 
-  <Card title="Deep Link" icon="link">
-    Some notifications include app links that take users to the relevant workflow.
-  </Card>
-</CardGroup>
+Settings are stored in `Tenant.notificationPreferences.dailyReviewReminder`.
 
-## Current Documentation Status
+| Field | Default when absent | Validation and behavior |
+| --- | --- | --- |
+| `enabled` | `true` | Optional boolean. Explicit `false` disables reminders. |
+| `time` | `09:00` | Optional 24-hour `HH:mm`, from `00:00` through `23:59`. |
+| `timezone` | `Europe/Berlin` | Optional timezone accepted by `Intl.DateTimeFormat`; the schema rejects invalid values. |
 
-This page is a feature placeholder. It should be expanded with notification templates, delivery jobs, channels, read state, and retry behavior.
+Missing tenant preferences, a missing reminder section, and an empty reminder object use these defaults. Partial stored preferences keep their supplied values and use defaults for omitted fields. Null values inside an update are not accepted by the schema. `TenantService.getTenantForDisplay()` returns the effective defaults to the frontend without requiring them to be stored first.
 
+The schedule runs every calendar day, including weekends. The configured timezone controls local reminder time and the local date used for deduplication.
+
+### Settings UI and API
+
+Admins find the reminder under **Settings → Notification preferences** at `/settings/tenant/:tenantId/notification-preferences`. `DailyReviewReminderSection` exposes an enable toggle and time input, and displays the timezone as text. There is no timezone picker. `useDailyReviewReminderPreference` saves the toggle immediately, saves the time on blur, and preserves the current timezone in the request.
+
+| Update path | Permission and schema | Write behavior |
+| --- | --- | --- |
+| `PUT /tenant/notification-preferences` | `requireAdmin` (`ADMIN` or `INTERNAL_TOOL_ADMIN`), then `validateRequest(UpdateNotificationPreferencesSchema)` | Uses the authenticated tenant context. `TenantService.updateNotificationPreferences()` merges supplied preference sections with stored values; omitted fields are preserved. |
+| `PUT /admin/tenants/{tenantId}` | `requireAuth`, `requireInternalAdmin`, then `validateRequest(UpdateTenantSchema)` | Internal tenant editing. A supplied `notificationPreferences` object replaces that stored object; it is not the partial-section merge used by the tenant preference endpoint. |
+
+The tenant preference endpoint accepts, for example:
+
+```json
+{
+  "dailyReviewReminder": {
+    "enabled": true,
+    "time": "09:00",
+    "timezone": "Europe/Berlin"
+  }
+}
+```
+
+`DailyReviewReminderNotificationPreferencesSchema` validates these fields. Sending only `{"dailyReviewReminder":{"enabled":false}}` through the tenant preference endpoint preserves the stored time and timezone.
+
+### Recipient Eligibility
+
+`queryDueDailyReviewUsers(now, tenantId?)` applies these conditions in SQL. Scheduled jobs supply a tenant ID; without it the query considers all matching tenants.
+
+| Filter | Database condition |
+| --- | --- |
+| Tenant | The user's `User.tenantId` joins an existing tenant with `Tenant.isArchived = false`. |
+| Feature | `Tenant.availableFeatures` contains `REAL_CALLS`. |
+| Enabled | Effective `dailyReviewReminder.enabled` is `true`. |
+| Time | Effective reminder time equals `now` formatted as `HH24:MI` in the effective timezone. |
+| Rep | `User.role = USER` and `User.isTestUser = false`. Admins, team leads, and assessment candidates are excluded. |
+| Pending work | At least one comment from a call owned by the rep passes `PENDING_INBOX_REVIEW`. |
+
+The local date returned by this query is `now` formatted as `YYYY-MM-DD` in the same timezone. The time check is an exact local-minute match; it does not catch up earlier missed reminder times. The pending-feedback age window uses database `NOW()`, not the optional `now` argument supplied to the recipient query.
+
+### Feedback Selected for the Preview
+
+For each eligible rep, the service calls `queryLatestFeedbackSnippet(userId, true)`. The shared `PENDING_INBOX_REVIEW` SQL fragment requires:
+
+- A call with a non-null `workspaceId`.
+- An unread comment (`CallComment.readAt IS NULL`) created within the last 30 days.
+- No `EvaluationVote` with `voteType = DISLIKE` from any user for that comment.
+- Either a non-null `SnippetEvaluation.score`, a non-null `CallComment.reviewerId`, or a comment reply from a user whose role is `ADMIN` or `TEAM_LEAD`.
+
+The preview query also requires `Call.userId` to match the rep, `Call.valid = true`, and nonblank `CallComment.text`. The direct-reviewer condition checks that a reviewer exists; it does not separately check that reviewer's role. A rep can pass the initial pending-work check but have no valid, nonblank preview candidate; in that case the service skips the reminder before reserving a deduplication key.
+
+The query selects one comment using this order:
+
+1. Comments whose `EvaluationCategory.signalId` matches `User.coachingFocus.signalIds` or the legacy `User.coachingFocus.signalId`.
+2. Newest `CallComment.createdAt` within each priority group.
+
+Coaching focus is a priority, not an exclusion filter. If there is no matching candidate, the newest otherwise eligible feedback is used. If there are no candidates at all, no reminder is queued.
+
+The query returns the stored feedback text, signal/category name, reviewer name, call context, and up to four nonblank transcript messages around the selected transcript range. Individual transcript messages are capped at 280 characters. Missing transcript data or a missing transcript index produces an empty transcript preview; the feedback can still be sent.
+
+<Note>
+The reminder preview does not select today's first inbox item. The inbox daily plan has its own coachability ranking, stable daily ordering, and positive-example mix. Opening the Daily Review can therefore show a different item. See [Snippet Selection Logic](/internal/features/backend-snippet-selection).
+</Note>
+
+### Delivery
+
+`DailyReviewReminderService` queues `dailyReviewReminder` with both `SLACK` and `EMAIL`. The template has `preferSlack: true`, so the delivery handler prefers a personal Slack direct message when the tenant has a Slack access token, even when the general default channel is email.
+
+If Slack is unavailable, delivery uses email. If `SlackService.sendDirectMessage()` reports failure, the handler falls back to email. The notification is sent through one successful external channel, rather than intentionally sending both. It does not create an in-app notification.
+
+The wrapper copy uses `getUserLocale()` and the template translations. Transcript and feedback content come directly from the stored snippet query; this flow does not use the inbox hydration/localization pipeline or generate new coaching text for the reminder.
+
+### Scheduling and Deduplication
+
+Production worker startup calls `DailyReviewReminderService.syncSchedules()`. It reads active tenants with `REAL_CALLS` once and applies their effective preferences. Each enabled tenant gets a BullMQ scheduler named `daily-review-reminder:{tenantId}`, with a daily `minute hour * * *` pattern and its configured timezone. Its job is `daily-review-reminders` and carries the tenant ID.
+
+The service also synchronizes a tenant's schedule after tenant creation, when `updateTenant()` receives `availableFeatures` or `notificationPreferences`, and when `updateNotificationPreferences()` receives a `dailyReviewReminder` section. `syncSchedules()` and `syncSchedule()` return immediately outside production.
+
+A disabled reminder removes that tenant's scheduler. Tenant deletion explicitly removes it too. Individual schedule synchronization reads preferences only; removing `REAL_CALLS` does not itself remove an enabled scheduler. Startup skips archived and non-real-call tenants rather than sweeping existing scheduler entries. The recipient query still excludes those tenants at execution time.
+
+Before enqueueing, the service reserves Redis key `daily-review-reminder:{userId}:{localDate}` with `NX` and a 48-hour TTL. An existing reservation skips that user. The date in the key allows a new reminder on the following local day even while yesterday's key still exists.
+
+If login-link creation, locale lookup, or notification enqueueing rejects, the service deletes the reservation and rethrows, allowing a later eligible attempt to retry. After successful enqueueing, the reservation remains; failures inside the later notification-delivery job do not clear it. The service's returned `sent` count records reminders queued, not confirmed Slack or email delivery.
+
+### Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| No reminder | Effective preferences, tenant archive/feature state, rep role/test flag, exact local minute, eligible unread feedback, and the per-day Redis key. |
+| Reminder missing after a delayed job | The recipient query only matches the current configured local minute; an earlier scheduled minute is not caught up. |
+| A newer comment was not previewed | An older eligible comment matching the rep's coaching focus ranks ahead of newer comments outside the focus. |
+| Preview differs from the first Daily Review card | The notification and daily inbox plan use separate ranking rules. |
+| Expected Slack but received email | Check the tenant Slack integration and the direct-message result in notification-delivery logs. |
+| No scheduled reminder in local development | Automatic schedule synchronization runs only in production. |
+
+## Source References
+
+All backend paths below are relative to `zell-backend-ts`.
+
+| Area | Source |
+| --- | --- |
+| Defaults | `src/services/dailyReviewReminder/preferences.ts` |
+| Scheduling, reservation, login link, enqueueing | `src/services/dailyReviewReminder/index.ts` |
+| Tenant preferences and lifecycle | `src/services/tenant/index.ts` |
+| Recipient eligibility and shared pending filter | `prisma/queries/inboxReviewQueries.ts` |
+| Preview selection | `prisma/queries/feedbackQueries.ts` |
+| Worker startup and scheduled dispatch | `src/jobs/workers.ts`, `src/jobs/handlers/scheduled.ts` |
+| Delivery and fallback | `src/jobs/handlers/notificationDelivery.ts` |
+| Template and Slack content | `src/notifications/templates/dailyReviewReminder.ts`, `src/lib/slack/templates/reengagement.ts` |
+| Email content | `src/emails/DailyReviewReminder.tsx`, `src/emails/CallMoment.tsx` |
+| Preference validation | `src/schemas/tenantSchemas.ts` |
+| Update endpoints | `src/api/tenant/tenantRouter.ts`, `src/api/admin/tenant/tenantRouter.ts` |
+| Recipient and schedule tests | `src/tests/services/dailyReviewReminder.test.ts` |
+
+Frontend sources are relative to `zell-frontend`:
+
+- `src/app/(auth)/settings/tenant/[tenantId]/notification-preferences/sections/DailyReviewReminderSection.tsx`
+- `src/app/(auth)/settings/tenant/[tenantId]/notification-preferences/hooks/useDailyReviewReminderPreference.ts`
+- `src/hooks/api-hooks/tenants/mutations/useUpdateDailyReviewReminder.ts`
