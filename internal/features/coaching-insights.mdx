@@ -35,7 +35,7 @@ Coaching Insights answers four main questions:
   </Card>
 
   <Card title="Coachable Snippet" icon="message-square-quote">
-    A low-scoring, high-coachability feedback moment with transcript context, score, coachability, replies, votes, and recording audio when available.
+    A below-average, high-coachability feedback moment with transcript context, score, coachability, replies, votes, and recording audio when available.
   </Card>
 </CardGroup>
 
@@ -238,7 +238,7 @@ Selecting a member loads that user's detailed signal breakdown.
 | --- | --- |
 | Call count | Count of valid calls with a non-null total score for that user. |
 | Signal average | Average `EvaluationCategory.score`, rounded to one decimal. |
-| Snippet count | Count of eligible coachable snippets for that signal. |
+| Snippet count | Count of eligible coachable snippets for that signal. Uses the same score rule as the snippets modal. |
 | Read count | Count of eligible coachable snippets with `readAt` set. |
 | Signal order | Lowest average score first. |
 | Previous signal score | Same signal over the previous period when a full date range exists. |
@@ -255,12 +255,14 @@ The snippets modal opens from a member signal card or a personal workspace focus
 | --- | --- |
 | Required user | Admin scope uses the selected member's user ID. User scope uses the authenticated user from the current-user endpoint; the frontend still passes `userId` for shared component props. |
 | Required signal | The selected signal ID. |
-| Score rule | `SnippetEvaluation.score <= 5`. |
+| Score rule | `SnippetEvaluation.score` is below the rep's average snippet score over the last 30 days (`userAverageSnippetScore`). |
 | Coachability rule | `SnippetEvaluation.coachability > 5`. |
 | Vote exclusion | Snippets with any `DISLIKE` vote are excluded. |
 | Sort order | Highest coachability first, then lowest score. |
 | Limit | `50` snippets. |
 | Hydration | Adds transcript context, replies, viewer vote, reviewer, recording URL, and call metadata. |
+
+The score threshold is the same personal moving average the Daily Review uses to label snippets `negative` (see [Daily Review Card Filtering](/internal/features/daily-review-card-filtering)), so a rep who receives a snippet as coaching in the Daily Review also sees it here, provided its coachability is above 5. The average always covers the last 30 days from now, even when the Coaching Insights date filter selects an older range. A rep with no scored snippets in that window has no average, so no snippets match.
 
 Snippets endpoints return an object wrapper, not a bare array:
 
