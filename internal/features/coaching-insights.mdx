@@ -312,7 +312,17 @@ Previous-period values are used for deltas on:
 - average engagement,
 - weak signal average score,
 - member signal average score,
-- member engagement.
+- member engagement,
+- member coaching need in the team list.
+
+### Delta Display
+
+| Surface | Delta | Source |
+| --- | --- | --- |
+| Member signal list (team view and personal Skill categories) | Signal average minus previous signal score, shown next to each score. Up is green, down is red. | `previousAvgScore` on each signal breakdown. |
+| Who needs the most help | Member `avgZellScore` minus the same member's previous-period `avgZellScore`. Down is green because lower coaching need is an improvement. | The overview response has no per-member previous value. The frontend sends a second overview request for the previous period with the same filters and matches members by `userId`. |
+
+Deltas are rounded to one decimal and hidden when the change is `0` or no previous value exists, for example when the date range is incomplete or a member had no scored calls in the previous period. The frontend computes the previous range the same way as the backend's `previousPeriod()`: the same duration, ending at the current `dateFrom`. The second overview request is skipped unless both dates are present.
 
 ---
 
@@ -373,6 +383,9 @@ Previous-period values are used for deltas on:
 | Coaching Insights tab | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsTab.tsx` |
 | Stats cards | `zell-frontend/src/components/teamManagement/coachingInsights/CoachingInsightsStats.tsx` |
 | Member detail panel | `zell-frontend/src/components/teamManagement/coachingInsights/MemberDetailPanel.tsx` |
+| Score delta badge | `zell-frontend/src/components/teamManagement/coachingInsights/ScoreDelta.tsx` |
+| Member coaching need deltas | `zell-frontend/src/components/teamManagement/coachingInsights/useCoachingNeedDeltas.ts` |
+| Previous period helper | `zell-frontend/src/components/teamManagement/coachingInsights/previousPeriod.ts` |
 | Snippets list | `zell-frontend/src/components/teamManagement/coachingInsights/SnippetsList.tsx` |
 | Scoped snippets hook | `zell-frontend/src/components/teamManagement/coachingInsights/useScopedCoachingInsightsSnippets.ts` |
 | Calls workspace route | `zell-frontend/src/app/(auth)/calls/page.tsx` |
