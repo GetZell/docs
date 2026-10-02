@@ -8,9 +8,15 @@ icon: "chart-column"
 
 Real Calls Reports provide manager/admin reporting over real call performance inside the unified team Reports workspace. The feature combines call filters, evaluation data, users, groups, workspaces, and scorecards to support performance analysis.
 
-The canonical explicit route is `/admin/team/reports?type=real-calls`. The legacy `/admin/team/real-calls-reports` route redirects to the unified Reports page with the real-calls report type selected. Without a `type` query parameter, the workspace falls back to the persisted report type in localStorage key `reports-report-type`, then to Simulation Reports.
+The page title is **Reports**. Real calls and simulations are two top-level tabs, **Real calls | Simulations**, above the filters. The canonical explicit route is `/admin/team/reports?type=real-calls`. The legacy `/admin/team/real-calls-reports` route redirects to the unified Reports page with the Real calls tab selected.
 
-When the real-calls reporting feature is disabled for a tenant, the report-type dropdown only exposes Simulation Reports and attempts to select real calls fall back to simulations.
+Which tab opens:
+
+1. A valid `type` query parameter (`real-calls` or `simulations`) wins.
+2. Otherwise, the last tab the manager picked, stored in localStorage key `reports-report-type`.
+3. Otherwise, the tenant default: Real calls when the tenant has the `REAL_CALLS` feature (always in local development), else Simulations.
+
+When the tenant does not have real calls, the tabs are hidden, the page shows Simulations only, and any request for real calls (URL or stored value) falls back to simulations.
 
 ## Call Detail Drilldown
 
@@ -29,7 +35,7 @@ Source references:
 
 <CardGroup cols={2}>
   <Card title="Report Filters" icon="filter">
-    Reports can combine report type, group, user, scorecard, and date filters.
+    Reports can combine group, user, scorecard, and date filters within the selected report tab.
   </Card>
 
   <Card title="Call Metrics" icon="activity">
@@ -49,10 +55,12 @@ Source references:
 
 | UI area | Frontend source | Behavior |
 | --- | --- | --- |
-| Report type | `src/components/teamManagement/reports/reportTypeSelect.tsx` and `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Selects Simulation Reports or Real Calls Report. `type=real-calls` selects real calls explicitly; otherwise the UI uses localStorage key `reports-report-type` and defaults to simulations. Changing to Real Calls Report stores `real-calls` and sets `type=real-calls`; changing to Simulation Reports stores `simulations` and removes `type`. Empty, missing, or unrecognized stored values normalize to simulations. |
-| Global filters | `src/components/teamManagement/reports/reportsGlobalFilters.tsx` | Renders report type, group, user, scorecard, and date filters in one row. Date is the last filter. |
-| View switch | `src/components/teamManagement/reports/reportsSwitch.tsx` | Switches between Coaching Insights and List view. The value is stored in the `view` search parameter. |
-| Route guard | `src/components/teamManagement/reports/useReportsWorkspaceModels.ts` | Hides Real Calls Report when the feature flag is inactive and normalizes invalid report/view search parameters. |
+| Report type tabs | `src/components/teamManagement/reports/ReportTypeTabs.tsx`, rendered by `ReportsWorkspace.tsx` | Top-level **Real calls / Simulations** tabs shown above the filters. Replaces the former report-type dropdown in the filter row (`reportTypeSelect.tsx`, removed). Only rendered when the tenant can view real calls. |
+| Report type routing | `src/components/teamManagement/reports/useReportTypeRouting.ts` | Resolves the active tab: valid `type` URL param, then localStorage key `reports-report-type`, then the tenant default (real calls if available, else simulations). Stored values other than `real-calls` normalize to simulations. Picking a tab stores the choice and sets `type=real-calls` or `type=simulations` in the URL. The workspace renders nothing until the tenant has loaded, so real-call tenants do not briefly see simulations. |
+| Real calls access | `src/components/teamManagement/reports/useCanViewRealCalls.ts` | True when the tenant has `Features.REAL_CALLS`, or in local development. Also used by the [Manager Home](/internal/features/manager-home) quick links. |
+| Global filters | `src/components/teamManagement/reports/reportsGlobalFilters.tsx` | Renders group, user, scorecard, and date filters in one row. Date is the last filter. The report type is no longer part of this row. |
+| View switch | `src/components/teamManagement/reports/ReportViewSwitch.tsx`, `reportsSwitch.tsx` | Switches between Coaching Insights and List view. The choice is stored as `activeTab` in the per-type filter state (localStorage keys `real-calls-reports-filters` and `reports-filters`) and defaults to Coaching Insights. |
+| View deep link | `src/components/teamManagement/reports/useReportViewParam.ts` | `?view=coaching-insights` or `?view=reports` (List view) sets the view tab once, then the param is removed from the URL with `router.replace` so the stored tab stays the source of truth. Other values are ignored. Used by `appRoutes.toAdminTeamReportsViewPage(view, type?)`, for example from the Manager Home quick links. |
 | Legacy route | `src/app/(auth)/admin/team/real-calls-reports/page.tsx` | Redirects to `/admin/team/reports?type=real-calls`. |
 
 The Real Calls Report list uses `GET /real-calls-reports`. It receives the unified global filter state and maps scorecard filters to `scorecardIds`, user filters to `userIds`, group filters to `groupIds`, and the selected date range to `dateFrom` and `dateTo`.

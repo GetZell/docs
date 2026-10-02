@@ -77,6 +77,7 @@
             "pages": [
               "internal/features/feedback-inbox",
               "internal/features/daily-review-card-filtering",
+              "internal/features/manager-home",
               "internal/features/manager-feedback-inbox",
               "internal/features/streaks-and-achievements",
               "internal/features/coaching-insights",

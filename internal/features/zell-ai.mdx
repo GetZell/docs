@@ -32,6 +32,17 @@ Zell AI is the assistant experience inside the platform. It helps users ask ques
   </Card>
 </CardGroup>
 
+## Entry Points
+
+Zell AI (Flare) chats can start from two surfaces that share `ZellAIContext` (`src/contexts/ZellAIContext.tsx`):
+
+| Entry point | Context call | Behavior |
+| --- | --- | --- |
+| Side panel | `openWithMessage(message)` | Opens the Flare panel on the current page and sends `message` as a new streaming chat. |
+| Full-page chat | `queueFullPageMessage(message)` | Clears the initial session, stores `message` as the pending message, and keeps the panel closed. The caller then navigates to `/chat`, where `src/components/zell-ai/ZellAiPage.tsx` sends the pending message as a new chat through its quick-start path and clears it. A ref prevents double sends when effects re-run. |
+
+The [Manager Home](/internal/features/manager-home) at `/` uses the full-page handoff: its Ask Flare input and four suggested prompts call `useStartFullPageChat` (`src/components/dashboard/manager/home/useStartFullPageChat.ts`), which queues the message and pushes `/chat`. Its recent chats list links to `/chat/{sessionId}` (`appRoutes.toChatSessionPage`). These Flare sections are hidden unless `useCanAccessZellAI` returns true (tenant has `ZELL_AI` and role is `USER`, `TEAM_LEAD`, `ADMIN`, or `INTERNAL_TOOL_ADMIN`).
+
 ## Scorecard Creation
 
 Scorecard creation is a review-and-confirm workflow, not a one-step write:

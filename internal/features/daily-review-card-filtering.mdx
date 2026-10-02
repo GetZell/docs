@@ -27,8 +27,8 @@ Zell shows a Daily Review card when the feedback belongs to the current rep, is 
 
 | Surface | Behavior |
 | --- | --- |
-| Home page for regular users | Renders `FeedbackInbox`. |
-| Admin and team-lead home page | Does not render this rep Daily Review inbox. Managers use the separate manager inbox. |
+| Home page for regular users | `UserHome` (`src/components/dashboard/user/UserHome.tsx`) renders `FeedbackInbox`. |
+| Admin and team-lead home page | Does not render this rep Daily Review inbox. Managers see the [Manager Home](/internal/features/manager-home) instead. |
 | Empty state | Shown when today's plan has no items, or when all items in today's plan are read. |
 | Extra reps | After 10 completed items, frontend shows an extra-reps gate before continuing through additional backend plan items. |
 

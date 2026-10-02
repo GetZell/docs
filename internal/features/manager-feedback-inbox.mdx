@@ -1,6 +1,6 @@
 ---
 title: "Manager Feedback Inbox"
-description: "Help managers follow up on rep replies that still need a response"
+description: "Pending rep replies that still need a manager response (frontend UI removed, backend API remains)"
 icon: "messages-square"
 ---
 
@@ -9,6 +9,12 @@ icon: "messages-square"
 The Manager Feedback Inbox is the follow-up queue for managers and admins. It shows reps who have replied to coaching feedback where no manager or admin has responded after the latest rep reply.
 
 This inbox is separate from the rep-facing [Feedback Inbox](/internal/features/feedback-inbox).
+
+<Warning>
+**The Manager Feedback Inbox UI was removed from the frontend.** Admins and team leads now see the [Manager Home](/internal/features/manager-home) at `/` instead of the "What you have to do" pending-replies queue. The frontend components (`ManagerInbox` and the `ManagerSnippet*` viewer in `src/components/dashboard/manager/`) and hooks (`useGetManagerPendingReplies`, `useGetNextManagerPendingReply`, `useSkipManagerPendingReply`) no longer exist.
+
+The backend endpoints are still present in `zell-backend-ts` (`src/api/admin/feedback/feedbackRouter.ts`), so the pending-reply logic below still describes the API. The UI flow sections describe the removed frontend and are kept for reference.
+</Warning>
 
 ## Key Concepts
 
@@ -32,27 +38,27 @@ This inbox is separate from the rep-facing [Feedback Inbox](/internal/features/f
 
 ---
 
-## How It Works
+## How It Worked (Removed UI)
 
 <Steps>
   <Step title="Open the Home Page">
-    Users with manager roles see the Manager Feedback Inbox instead of the rep-facing inbox.
+    Users with manager roles saw the Manager Feedback Inbox instead of the rep-facing inbox. They now see the Manager Home.
   </Step>
 
   <Step title="Load Pending Replies">
-    The frontend requests `/admin/feedback/pending-replies`.
+    The frontend requested `/admin/feedback/pending-replies`.
   </Step>
 
   <Step title="Choose a Rep">
-    The left column lists reps with pending snippets. Each row shows the remaining count and related agent names when available.
+    The left column listed reps with pending snippets. Each row showed the remaining count and related agent names when available.
   </Step>
 
   <Step title="Review the Current Snippet">
-    The right side shows the first pending snippet for the selected rep, including transcript context and the feedback thread.
+    The right side showed the next pending snippet for the selected rep (`/admin/feedback/pending-replies/{userId}/next`), including transcript context and the feedback thread.
   </Step>
 
   <Step title="Reply or Skip">
-    A manager reply removes the snippet from the pending queue after refresh. Skipping also removes it by creating an internal skip reply.
+    A manager reply removed the snippet from the pending queue after refresh. Skipping also removed it by creating an internal skip reply.
   </Step>
 </Steps>
 
@@ -75,7 +81,7 @@ For the full backend selection logic, see [Snippet Selection Logic](/internal/fe
 
 ---
 
-## Available Actions
+## Available Actions (Removed UI)
 
 | Action | What happens |
 | --- | --- |
@@ -85,16 +91,16 @@ For the full backend selection logic, see [Snippet Selection Logic](/internal/fe
 | Add to collection | Opens the collection dialog for the current call. |
 | Load transcript context | Expands the visible transcript window above or below the snippet. |
 
-## Empty States
+## Empty States (Removed UI)
 
-- If there are no pending replies, managers see `No pending replies from your team.`
-- If the selected rep has no current snippet, the viewer shows that all snippets for that rep have been reviewed.
+- If there were no pending replies, managers saw `No pending replies from your team.`
+- If the selected rep had no current snippet, the viewer showed that all snippets for that rep had been reviewed.
 
 ## Operational Notes
 
-- Query key: `['manager-pending-replies']`
-- Load endpoint: `/admin/feedback/pending-replies`
-- Skip endpoint: `/admin/feedback/pending-replies/{feedbackId}/skip`
-- The frontend currently renders this inbox for `ADMIN` and `TEAM_LEAD` session roles.
+- Load endpoint: `GET /admin/feedback/pending-replies` (still in the backend, no frontend caller)
+- Next snippet endpoint: `GET /admin/feedback/pending-replies/{userId}/next` (still in the backend, no frontend caller)
+- Skip endpoint: `POST /admin/feedback/pending-replies/{feedbackId}/skip` (still in the backend, no frontend caller)
+- Query key: `['manager-pending-replies']`. `useFeedbackReply` (`src/hooks/api-hooks/calls/mutations/useFeedbackReply.ts`) still invalidates it after a reply, but no mounted query uses it anymore.
+- Before the removal, the frontend rendered this inbox for `ADMIN` and `TEAM_LEAD` session roles.
 - Verify backend route middleware before relying on team-lead access, because the admin feedback router also uses router-level admin middleware.
-

@@ -1,0 +1,90 @@
+---
+title: "Manager Home"
+description: "The Flare-first home page for admins and team leads"
+icon: "house"
+---
+
+## Overview
+
+The authenticated home page at `/` renders a different experience by session role. Users with the `ADMIN` or `TEAM_LEAD` role see the Manager Home. Every other role, including regular reps, keeps the rep home (`UserHome`) with courses, tasks, and the [Feedback Inbox](/internal/features/feedback-inbox).
+
+The Manager Home replaces the previous manager home, which showed the "What you have to do" pending-replies queue. That queue was removed from the frontend; see [Manager Feedback Inbox](/internal/features/manager-feedback-inbox).
+
+## Key Concepts
+
+<CardGroup cols={2}>
+  <Card title="Greeting" icon="sun">
+    A localized greeting based on the time of day in the browser, with the user's first name when available.
+  </Card>
+
+  <Card title="Ask Flare" icon="sparkles">
+    A prompt box and four suggested prompts that start a new Flare chat in the full-page chat at `/chat`.
+  </Card>
+
+  <Card title="Quick Links" icon="link">
+    Shortcuts into reports, feedback, collections, and deals.
+  </Card>
+
+  <Card title="Recent Chats" icon="history">
+    The manager's five most recent Flare chats, each linking to `/chat/{sessionId}`.
+  </Card>
+</CardGroup>
+
+---
+
+## Page Sections
+
+| Section | Frontend source | Behavior |
+| --- | --- | --- |
+| Role routing | `src/app/(auth)/page.tsx` | Renders `ManagerHome` for `ADMIN` and `TEAM_LEAD`, otherwise `UserHome` (`src/components/dashboard/user/UserHome.tsx`). Renders nothing while the session is loading. |
+| Greeting | `src/components/dashboard/manager/home/ManagerHome.tsx`, `getDayPeriod.ts` | Uses the browser's local hour: 05:00-11:59 morning, 12:00-17:59 afternoon, 18:00-21:59 evening, otherwise night (shown as "Hello"). Uses the first word of the session name; without a name, a nameless greeting is shown. Strings live under `HomePage.managerHome` in the en, de, fr, and it message files. |
+| Ask Flare input | `ManagerAskFlare.tsx`, `useStartFullPageChat.ts` | Submitting a non-empty, trimmed message starts a new chat in the full-page chat view. |
+| Suggested prompts | `ManagerFlareSuggestions.tsx` | Four localized prompts: coaching focus (who needs coaching this week), weekly team recap (last 7 days, simulations and real calls), objections reps struggle with, and 1:1 preparation. Clicking one sends its full prompt text as a new chat. |
+| Recent chats | `ManagerRecentChats.tsx` | Loads the five most recent sessions with `useGuidedResearchRecentSessions`. Each row links to `/chat/{sessionId}`; **View all** links to `/chat`. Shows an empty state when there are no chats. |
+| Quick links | `ManagerQuickLinks.tsx`, `useManagerQuickLinks.ts` | Always visible, regardless of Flare access. See the table below. |
+
+### Flare Access
+
+The Ask Flare input, suggested prompts, and recent chats render only when `useCanAccessZellAI` returns true: the tenant has the `ZELL_AI` feature and the role is `USER`, `TEAM_LEAD`, `ADMIN`, or `INTERNAL_TOOL_ADMIN`. Without access, managers see only the greeting and the quick links.
+
+### Quick Links
+
+| Link | Target | Condition |
+| --- | --- | --- |
+| Real call reports | `/admin/team/reports?view=coaching-insights&type=real-calls` | Only when the tenant can view real calls (`useCanViewRealCalls`: `REAL_CALLS` feature, always on in development). |
+| Simulation reports | `/admin/team/reports?view=coaching-insights&type=simulations` | Always. |
+| Calls list | `/admin/team/reports?view=reports` (the Reports List view, keeping the current report type) | Always. |
+| Feedback | `/admin/team/enablement` (team feedback table and reviewer stats) | Always. |
+| Collections | `/call-collections` | Always. |
+| Deals | `/deals` | Always. |
+
+The report links use `appRoutes.toAdminTeamReportsViewPage`. The `view` and `type` parameters are handled by the Reports page; see [Real Calls Reports](/internal/features/real-calls-reports#unified-reports-workspace).
+
+---
+
+## Full-Page Chat Handoff
+
+Prompts from the Manager Home open the full-page chat, not the Flare side panel:
+
+<Steps>
+  <Step title="Queue the message">
+    `useStartFullPageChat` calls `queueFullPageMessage(message)` from `src/contexts/ZellAIContext.tsx`. It clears the initial session, stores the message as the pending message, and keeps the side panel closed.
+  </Step>
+
+  <Step title="Navigate to /chat">
+    The hook then pushes `/chat`.
+  </Step>
+
+  <Step title="Send as a new chat">
+    `src/components/zell-ai/ZellAiPage.tsx` watches `pendingMessage`, sends it with the same quick-start path used by the page's own prompts, and clears it. A ref guards against sending the same message twice when effects re-run.
+  </Step>
+</Steps>
+
+See [Zell AI](/internal/features/zell-ai#entry-points) for the other ways a chat can start.
+
+## Support Notes
+
+- A manager who expects the old pending-replies list on the home page will no longer find it. There is currently no dedicated pending-replies queue in the UI; managers can still reply in the feedback threads on call analysis.
+- If the Ask Flare section is missing, check that the tenant has the `ZELL_AI` feature.
+- If the Real call reports link is missing, check that the tenant has the `REAL_CALLS` feature.
+- The greeting uses the browser clock, not the tenant or user time zone setting.
