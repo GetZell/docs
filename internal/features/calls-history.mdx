@@ -1,6 +1,6 @@
 ---
 title: "Calls History"
-description: "Review past calls from the Calls workspace with date, scorecard, and coaching score filters"
+description: "Review past calls from the Calls workspace with source, date, scorecard, and coaching score filters"
 icon: "history"
 ---
 
@@ -67,6 +67,7 @@ The view toggle is client-side and does not change backend permissions. Clicking
 | --- | --- | --- | --- | --- | --- | --- |
 | Scorecard | `UserCallsHistoryDisplay` uses `MultiSelect`; `useUserCallsHistoryViewModel` stores `calls-history-scorecard-ids`; options come from `useScoreCardsUsedByUser`. | `scorecardIds`, comma-separated by `useUserCallHistory`. | `GET /calls/history`; `ListCallsSchema.query.scorecardIds`; `getCallHistory`; `CallService.getUserCalls`. Options load from `GET /score-cards/used-by-user`. | History matches either `Agent.scorecardId` through `Call.agentId` or `Call.metadata.scorecardId`, always scoped to `Call.userId = authenticated user` and `valid = true`. The scorecard option endpoint currently returns scorecards from ended simulation calls with agent scorecards. | Default is `[]`; an empty array omits `scorecardIds`. If no matching agent or metadata scorecards exist, the service returns an empty page. | Requires `requireAuth`. Real-call-only scorecards may not appear in this dropdown because this view uses `/score-cards/used-by-user`, not `/used-by-user-real-calls` or `/used-by-user-all`. |
 | Coaching score | `UserCallsHistoryDisplay` select; `useUserCallsHistoryViewModel`; `getCoachingScoreRange`. | `minCoachingScore`, `maxCoachingScore`. | `GET /calls/history`; `ListCallsSchema`; `getCallHistory`; `CallService.getUserCalls` calls `getCallIdsWithZellScoreRange`. | Filters by stored `CallEvaluation.zellScore` range, then applies the authenticated-user and valid-call scope. | Default is `all`, which omits both fields. `minCoachingScore != null` triggers the range lookup; `maxCoachingScore` can be omitted for the high range. | If the range lookup finds no calls, the response is an empty paginated result. Boundary behavior is service-defined; avoid assuming the UI labels are exclusive without checking `getCallIdsWithZellScoreRange`. |
+| Source | `useCallSourceFilter` stores `calls-coaching-insights-source`; `UserCallsWorkspace` renders the shared `ReportTypeTabs` (**Real calls** / **Simulations**) via `useUserCallsWorkspaceViewModel`. The same choice applies to Coaching Insights and the table view. | `source` with `REAL_CALL` or `SIMULATION`; always sent. | `GET /calls/history`; `ListCallsSchema.query.source`; `CallService.getUserCalls`. | Filters `Call.source`. | Default is `REAL_CALL`. A legacy stored `all` value (from the removed dropdown) is treated as `REAL_CALL`. | Unlike the admin Reports tabs, the tabs are always shown and there is no "all sources" option. |
 | Date range | `UserCallsHistoryDisplay` uses `DateRangeDropdown`; `useDateRangeWithStorage` stores `calls-history-date-range`; `formatDateForApi` serializes dates. | `startDate`, `endDate` as ISO datetime strings without milliseconds. | `GET /calls/history`; `ListCallsSchema.query.startDate/endDate`; `getCallHistory`; `CallService.getUserCalls`. | Filters `Call.startedAt >= startDate` and `Call.startedAt <= endDate`, scoped to the authenticated user's valid calls. | Default is last 7 days. Missing `from` or `to` omits that side of the range. Invalid local-storage JSON is removed and the default range remains. | Future dates are disabled in the dropdown. Custom ranges clamp future end dates to today. |
 
 ### Coaching Score Ranges
@@ -95,7 +96,7 @@ Some filters are supported by the API hook or backend even when they are not cur
 | Coaching score max | `maxCoachingScore` | Used with the score range filter. |
 | Has comments | `hasComments=true` | API hook supports this flag, but `ListCallsSchema` in the local backend does not currently declare it in the OpenAPI query schema. Handler reads only the literal string `true`. |
 | Has unread comments | `hasUnreadComments=true` | API hook supports this flag, but `ListCallsSchema` in the local backend does not currently declare it in the OpenAPI query schema. Requires unread coachable feedback without a dislike vote. |
-| Source | `source` | Filters by call source, `SIMULATION` or `REAL_CALL`; not visible in the current table view. |
+| Source | `source` | Filters by call source, `SIMULATION` or `REAL_CALL`; set by the Real calls / Simulations tabs. |
 
 ---
 
