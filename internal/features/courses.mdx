@@ -28,6 +28,19 @@ Courses provide structured learning content. Users can open assigned courses fro
   </Card>
 </CardGroup>
 
+## Moving a Course Between Workspaces
+
+Tenant admins can change a course's workspace from the **Edit course** dialog (`UpdateCourseForm`, using `WorkspaceFormPicker`). The form sends `workspaceId` in `PUT /admin/courses/{courseId}` only when the selected workspace differs from the current one. Workspace admins can't target another workspace: `rejectWorkspaceIdForNonAdmin` returns 403.
+
+When `Course.workspaceId` changes, the `afterChange("course", "workspaceId")` callback in `prisma/callbacks/course.ts` disconnects every enrollment group (`CourseEnrollmentGroups`) whose `workspaceId` differs from the new workspace. The callback runs asynchronously after the update.
+
+What a move does not touch:
+- `Enrollment` and `Task` rows are kept, so learners from the old workspace stay enrolled with their progress.
+- `ModuleStep.agentId` is not changed. Steps can still reference agents from the old workspace.
+- Courses with no workspace: the picker pre-fills the admin's active workspace, so saving the dialog assigns one.
+
+The separate **Move Course** action in internal tools (`MoveCourseModal`) moves a course to another tenant, not another workspace.
+
 ## Current Documentation Status
 
 This page is a feature placeholder. It should be expanded with course creation, step types, assignment, progress, and user course page behavior.
