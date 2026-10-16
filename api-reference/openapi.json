@@ -49840,6 +49840,27 @@
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "workspaces": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "locale": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "locale"
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Seed one workspace per entry from its locale blueprint. Names must be unique. When omitted, a single Default workspace is seeded from locale."
                   }
                 },
                 "required": [
@@ -49873,6 +49894,9 @@
                         "locale": {
                           "type": "string"
                         },
+                        "workspaces": {
+                          "type": "number"
+                        },
                         "counts": {
                           "type": "object",
                           "properties": {
@@ -49902,6 +49926,9 @@
                             },
                             "calls": {
                               "type": "number"
+                            },
+                            "collections": {
+                              "type": "number"
                             }
                           },
                           "required": [
@@ -49913,13 +49940,15 @@
                             "courses",
                             "assessments",
                             "stmTasks",
-                            "calls"
+                            "calls",
+                            "collections"
                           ]
                         }
                       },
                       "required": [
                         "tenantId",
                         "locale",
+                        "workspaces",
                         "counts"
                       ]
                     },

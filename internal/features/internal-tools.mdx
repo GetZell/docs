@@ -28,6 +28,30 @@ Internal Tools are restricted surfaces for Zell operators and internal admins. T
   </Card>
 </CardGroup>
 
+## Demo Tenants
+
+Demo tenants are created from the tenant blueprints in `zell-backend-ts/scripts/tenant-blueprint/` on **Internal Tools → Demo tenants** (`POST /internal-tools/tenant-blueprints`). Every created tenant has `isDemo = true`, so notification callbacks (invitations, task assignments, feedback replies) skip email, Slack and in-app delivery.
+
+| Language option | Result |
+|-----------------|--------|
+| English, German, Spanish, French, Italian | One `Default` workspace seeded from that locale. |
+| Regions (USA · Germany · France) | One tenant with three workspaces seeded from `en`, `de` and `fr`. Admins see the workspace switcher; each region has its own reps, scorecards, agents and calls in its language. |
+
+The API accepts `workspaces: [{ name, locale }]` for any combination of available locales. Workspace names must be unique. Each locale blueprint creates its own admin (`workspaceId = null`), so a regions tenant has one admin per region.
+
+### What the seed data demonstrates
+
+| Area | Seeded data |
+|------|-------------|
+| Coaching need | Real calls are distributed so the rep ranking spans roughly 7–8 (highest need) to 1–2 (lowest) over the last 7 days. |
+| Member snippets | Every rep has coachable Flare comments in their lowest-scoring signals. |
+| Engagement | Reps read their Flare feedback hours after each call, do inbox drills and reply to some points; engagement levels differ per rep. |
+| Enablement | The admin has reviewed one recent call per rep, some with rep replies. |
+| Tasks | Three tasks (two weekly, one monthly) assigned to all reps with current-period progress. |
+| Collections | A tenant-visible "best calls" collection and a snippet collection of saved Flare feedback highlights. |
+
+**Refresh** shifts calls, comments, comment reads, replies, user progress and task dates forward so the newest call is today. Task completions keep the period they were seeded in, so task progress resets once the week or month rolls over.
+
 ## Current Documentation Status
 
 This page is a feature placeholder. It should be expanded with each internal-tool page, required role, data access rules, and operational runbooks.
