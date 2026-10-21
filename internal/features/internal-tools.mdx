@@ -28,6 +28,21 @@ Internal Tools are restricted surfaces for Zell operators and internal admins. T
   </Card>
 </CardGroup>
 
+## Demo Tenant Refresh
+
+Refreshing a demo tenant (`POST /internal-tools/tenant-blueprints/{tenantId}/refresh`) prepares it for the next demo:
+
+- **Dates:** all call, feedback, reply, progress and task dates move forward so the newest call looks like it happened today.
+- **Feedback state:** anything done in the tenant during a demo is undone. Feedback read or played as a drill is unread again, and replies written during the demo are deleted. The read history and replies that come with the blueprint demo data stay.
+
+A change counts as a demo action when it happened more than 5 minutes after its workspace was created. Anything done in the first 5 minutes after creating a tenant is not reset.
+
+Passing `days` in the request body only moves dates by that many days and leaves the feedback state unchanged.
+
+Changes to signal content in the blueprint files (such as rubrics or evaluation guides) only show up in tenants created after the change. Re-create an existing demo tenant to pick them up.
+
+Source: `zell-backend-ts/src/services/tenantBlueprint/index.ts` (`refresh`, `resetDemoFeedbackEngagement`).
+
 ## Current Documentation Status
 
 This page is a feature placeholder. It should be expanded with each internal-tool page, required role, data access rules, and operational runbooks.
