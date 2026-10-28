@@ -1,0 +1,116 @@
+---
+title: "Connect Granola"
+description: "Import Granola meeting transcripts into Zell for automatic call analysis"
+icon: "note-sticky"
+---
+
+## Overview
+
+The Granola integration lets you bring customer-facing meeting transcripts from Granola into Zell. After connecting your Granola workspace, you can review recent meetings, import selected meetings manually, and optionally enable auto-import for meetings that match your filters.
+
+Zell imports the Granola transcript, so no audio is sent to Zell. Imported meetings are analyzed like any other real call.
+
+## Before You Start
+
+- **Zell admin access**: only tenant admins can see and manage integrations in Zell.
+- **A Granola workspace API key**: the key must be created by a Granola workspace admin. Granola API keys start with `grn_`.
+- **Matching users in Zell**: each Granola meeting is assigned to the Zell user who owns the meeting in Granola. Zell matches the owner by email, then by name. Meetings whose owner is not a Zell user are not imported.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    At the bottom of the left sidebar, click **Settings** (the gear icon), then select **Tenant Settings**.
+
+    **Tenant Settings** only appears for admins. Zell opens the Team overview first.
+  </Step>
+
+  <Step title="Find Granola Integration">
+    In the settings menu on the left, scroll to the **Integrations** section and click **Granola**.
+  </Step>
+
+  <Step title="Enter Your API Key">
+    Paste your Granola workspace API key into the **API key** field.
+
+    You can use the visibility button next to the field to show or hide the key while entering it.
+  </Step>
+
+  <Step title="Choose Import Filters">
+    Set the filters Zell should use to decide which Granola meetings are eligible for import:
+
+    - **Include title keywords**: only include meetings whose title contains one of these keywords.
+    - **Exclude title keywords**: filter out meetings whose title contains one of these keywords.
+    - **Minimum duration**: filter out meetings shorter than the selected number of minutes.
+    - **Only meetings with external participants**: filter out internal-only meetings.
+    - **Auto-import matching meetings**: allow Zell to import matching meetings automatically after the integration is connected.
+  </Step>
+
+  <Step title="Connect to Granola">
+    Click **Connect to Granola**. Zell checks the API key with Granola, saves it together with your import filters, and shows the integration as connected.
+
+    If Granola rejects the key, the connection fails and nothing is saved. Check that the key was created by a Granola workspace admin and copied in full.
+  </Step>
+</Steps>
+
+## Review Recent Meetings
+
+Once connected, the Granola page shows **Recent meetings**: up to 30 Granola meetings from the last 30 days. Matching meetings are shown by default, and each row includes the meeting name, date, organizer, duration, and status.
+
+Statuses help you decide what to import:
+
+- **Matches**: the meeting matches your current filters and can be selected for import.
+- **Filtered**: the meeting does not match one or more filters.
+- **Imported**: the meeting has already been imported into Zell and cannot be selected again.
+
+Use **Refresh** to reload the recent meetings list.
+
+<Note>
+  Meeting date and duration come from the calendar event linked to the Granola note. Notes without a calendar event have no duration, so they show as **Too short** whenever a minimum duration is set. You can still import them manually.
+</Note>
+
+## Show Filtered Meetings
+
+Turn on **Show filtered** to include meetings that did not match your filters. Zell shows why a meeting was filtered:
+
+- **Too short**: the scheduled meeting is shorter than your minimum duration.
+- **Keyword missing**: the title does not contain any of your include keywords.
+- **Excluded title**: the title contains one of your exclude keywords.
+- **Internal only**: all participants are from your own company.
+
+Filtered meetings can still be imported manually if you decide they belong in Zell.
+
+## Import Selected Meetings
+
+To import meetings manually:
+
+1. Select one or more meetings from the recent meetings list.
+2. Use the header checkbox to select or clear all visible importable meetings.
+3. Click **Import**.
+
+Imported meetings are added to Zell for call analysis and appear under the meeting owner's calls. After import, their status changes to **Imported**.
+
+A meeting is skipped if:
+
+- The Granola note has no transcript.
+- The meeting owner in Granola does not match a Zell user.
+- The meeting was already imported.
+
+## Update Import Filters
+
+After connecting Granola, you can update your filters from the same page. Change the filters and click **Save filters**.
+
+Your saved filters control which meetings are shown by default, which meetings are treated as matching in the review table, and which meetings are eligible for auto-import when auto-import is enabled.
+
+## Auto-Import
+
+When **Auto-import matching meetings** is enabled, Zell checks Granola for new and updated meetings every 15 minutes and imports the ones that match your saved filters. The first sync looks back over the last 7 days.
+
+Meetings that are filtered out are not auto-imported, but they can still be reviewed with **Show filtered** and imported manually. Meetings without a transcript or without a matching Zell user are also skipped.
+
+Leave auto-import turned off if you prefer to review and select meetings yourself.
+
+## Disconnect Granola
+
+To stop using the integration, open **Settings** → **Tenant Settings** → **Integrations** → **Granola** and click **Disconnect**.
+
+Disconnecting removes the saved Granola API key and import filters, and stops auto-import. Meetings already imported stay in Zell. You can reconnect later by entering an API key again.
