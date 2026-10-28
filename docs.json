@@ -43,6 +43,7 @@
               "guides/gong-integration",
               "guides/teams-integration",
               "guides/tldv-integration",
+              "guides/granola-integration",
               "guides/slack-integration"
             ]
           },
