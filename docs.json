@@ -59,7 +59,8 @@
             "public": true,
             "pages": [
               "guides/custom-call-types-outcomes",
-              "guides/language-settings"
+              "guides/language-settings",
+              "guides/training-mode"
             ]
           }
         ]

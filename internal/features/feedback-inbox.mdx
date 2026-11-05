@@ -58,6 +58,26 @@ Managers have a separate follow-up inbox for team replies. See [Manager Feedback
 
 ---
 
+## Training Modes
+
+Each rep picks how the daily plan is delivered. The setting is stored as `UserPreferences.trainingMode` (`MINIGAMES`, `FEEDBACK_ONLY`, `MIX`). Reps without a preferences row get `MIX`.
+
+| Mode | Plan behavior |
+| --- | --- |
+| `MINIGAMES` | Normal plan: drills, multi-card games, and the retry loop for wrong answers. |
+| `FEEDBACK_ONLY` | Every item is a passive card. No multi-card games and no retries. |
+| `MIX` | Alternates strictly by UTC date: even day numbers since epoch play minigames, odd days are feedback only. |
+
+- Endpoints: `GET /user/training-mode` and `PATCH /user/training-mode` with `{ trainingMode }`, both for the current user only.
+- The plan stored in Redis records its `mode`. When the rep changes mode, the next inbox request rebuilds today's plan: items already read stay at the front so progress is kept, and the remaining unread feedback is replanned in the new mode.
+- Plans written before this field existed have no `mode` and are rebuilt once on the next request, with read items kept.
+- Passive cards give read XP only, never the interaction bonus XP.
+- The overnight warm-up job skips users whose first item is passive, so feedback-only days generate no LLM calls in advance.
+- Rep-facing page: User Settings, then Training, then Training Mode (`/settings/user/training`). It saves on click. There is no onboarding step yet.
+- Source: `services/inboxReview/planBuilder.ts` (`playsMinigames`, `buildPlan`), `services/inboxReview/index.ts` (`resolvePlan`), `services/user/index.ts` (`getTrainingMode`, `updateTrainingMode`).
+
+---
+
 ## Item Selection
 
 The inbox does not expose manual filters. Zell selects items automatically.
@@ -83,7 +103,7 @@ For the complete Daily Review card filtering rules, see [Daily Review Card Filte
 
 | Type | When it appears | User experience |
 | --- | --- | --- |
-| Passive review | Always eligible | The rep reads the feedback and continues. |
+| Passive review | Always eligible, and every item on a feedback-only day | The rep reads the feedback and continues. |
 | Score estimate | The snippet has an AI score | The score is hidden until the rep submits an estimate. |
 | Multiple choice | Negative snippet, transcript index, and rep line exist | The rep chooses the best coached response. |
 
