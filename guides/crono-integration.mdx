@@ -1,0 +1,70 @@
+---
+title: "Connect Crono"
+description: "Import Crono dialer recordings into Zell for automatic call analysis"
+icon: "phone"
+---
+
+## Overview
+
+The Crono integration imports recorded calls from the Crono dialer into Zell. After you connect your Crono account, Zell checks for new calls every 15 minutes and analyzes every recorded call that meets your minimum duration.
+
+## Before You Start
+
+You need:
+
+- Your Crono **public API key** (starts with `cpk_`) and **private API key** (starts with `csk_`).
+- Call recording enabled in Crono. Zell can only import calls that have a recording.
+- Your reps invited to Zell with the same email address they use in Crono. Calls from Crono users who are not on Zell are skipped.
+
+## Setup Steps
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    At the bottom of the left sidebar, click **Settings** (the gear icon), then select **Tenant Settings**.
+
+    **Tenant Settings** only appears for admins.
+  </Step>
+
+  <Step title="Find Crono Integration">
+    In the settings menu on the left, scroll to the **Integrations** section and click **Crono**.
+  </Step>
+
+  <Step title="Enter Your API Keys">
+    Paste your public key into **Public API key** and your private key into **Private API key**.
+
+    You can use the visibility button next to the private key to show or hide it while entering it.
+  </Step>
+
+  <Step title="Set the Minimum Call Duration">
+    Calls shorter than this are not imported. The default is 60 seconds, and you can choose anything from 0 to 600 seconds.
+  </Step>
+
+  <Step title="Connect to Crono">
+    Click **Connect to Crono**. Zell checks the keys with Crono, saves them encrypted, and shows the integration as connected.
+  </Step>
+</Steps>
+
+## What Gets Imported
+
+Once connected, the Crono page shows the minimum duration and when Zell last synced.
+
+A Crono call is imported when:
+
+- It has a recording in Crono.
+- It is at least as long as your minimum duration. Calls without a duration are imported only when Crono marks them as **Connected**.
+- The Crono user who made it is on Zell.
+
+The first sync looks back 7 days. Each call is imported only once.
+
+Imported calls appear in Zell with the title `Crono - <contact name>` and are analyzed like any other call.
+
+## Disconnect Crono
+
+Click **Disconnect** on the Crono page. Zell deletes the stored keys and stops importing new calls. Calls that were already imported stay in Zell.
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| "Failed to connect Crono" | Check both keys are copied completely and belong to the same Crono account. |
+| Connected, but no calls appear | Check call recording is enabled in Crono, calls are longer than your minimum duration, and the reps use the same email address in Crono and Zell. |

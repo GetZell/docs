@@ -31,6 +31,10 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
     Imports customer-facing tl;dv recordings into Zell call analysis.
   </Card>
 
+  <Card title="Crono" icon="phone">
+    Imports recorded Crono dialer calls into Zell call analysis every 15 minutes.
+  </Card>
+
   <Card title="Microsoft Teams" icon="video">
     Imports Teams meeting recordings through Microsoft Graph recording subscriptions.
   </Card>
@@ -206,6 +210,50 @@ Source: `src/schemas/integrationSchemas.ts`, `src/ports/adapters/tldvAdapter.ts`
 | What should support infer from `Import failed` for a tl;dv meeting after this cleanup? | It may indicate malformed meeting data or recording download failure. A transcript fetch failure alone should not fail the import when the recording downloads successfully; check backend logs for the warning `Failed to fetch tldv transcript; importing recording without transcript`. |
 | Does auto-import move past a matching meeting that failed because provider data was malformed? | Not as a successful sync. Matching import failures are logged and skipped for that run, and `lastSyncedAt` is not advanced when any matching import fails. |
 | Can employees still use `scripts/uploadTldvRecordings.ts` for manual tl;dv uploads? | No. That local one-off script has been deleted and should not be used in support guidance. |
+
+## Crono Integration
+
+The Crono integration lets an admin connect a tenant to Crono with a public and a private API key. A scheduled job then imports recorded Crono calls as real calls.
+
+**Where is it in the app?**
+
+The route is `/settings/tenant/:tenantId/crono`, built by `appRoutes.toTenantSettingsCronoPage`. The Settings sidebar shows it under `Integrations` with the label `Crono`, which only admins see.
+
+Source: `src/appRoutes.ts`, `src/components/layouts/SettingsNav.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/crono/`
+
+**API**
+
+| Endpoint | Behavior |
+| --- | --- |
+| `GET /integrations/crono` | Returns `connected`, `minCallDurationSeconds` (default 60 when disconnected), and `lastSyncedAt`. Admin only. |
+| `PUT /integrations/crono` | Body `apiKey`, `apiSecret`, optional `minCallDurationSeconds` (0 to 600, default 60). Zell first calls Crono's user list with the keys; invalid keys return 400 `Invalid Crono API credentials`. Keys are stored encrypted in `tenant.integrations.crono`. |
+| `DELETE /integrations/crono` | Sets `tenant.integrations.crono` to null. Returns 400 when Crono is not connected. Already imported calls are kept. |
+
+Source: `src/api/integration/cronoRouter.ts`, `src/schemas/integrationSchemas.ts`, `src/services/integration/crono.ts`
+
+**Sync behavior**
+
+The `crono-sync-calls` scheduled job runs every 15 minutes for every tenant with a stored Crono key. For each tenant it:
+
+1. Searches Crono activities of type `Call` since `lastSyncedAt` minus 120 minutes, or the last 168 hours on the first sync.
+2. Skips calls without an `externalCallId`, calls shorter than `minCallDurationSeconds`, and calls without a duration unless Crono's call feedback is `Connected`.
+3. Skips calls already imported, matched on `call.metadata.cronoCallId`.
+4. Matches the Crono user (the activity's `userId`) to the first Zell user in the tenant whose email matches, or whose name matches the Crono first and last name (case-insensitive). Calls by Crono users who are not on Zell are skipped and logged as `Crono call skipped: user not on Zell`.
+5. Downloads the recording from `GET /Calls/{externalCallId}/recording`. Calls without a recording (Crono returns 404) are skipped.
+6. Stores the recording in tenant-private storage, creates a real call with `metadata.audioSource = "crono"` and title `Crono - <prospect name>`, and queues call processing.
+
+`lastSyncedAt` is set to the sync start time after each successful tenant sync. If any tenant fails, the job logs the error, continues with the remaining tenants, and then fails so the error is visible.
+
+Source: `src/services/integration/crono.ts`, `src/ports/adapters/cronoAdapter.ts`, `src/jobs/workers.ts`, `src/tests/services/cronoImport.test.ts`
+
+### Crono Edge Cases for Employee Q&A
+
+| Question | Accurate answer |
+| --- | --- |
+| Which Crono key is which? | The public key starts with `cpk_` and goes in `apiKey`; the private key starts with `csk_` and goes in `apiSecret`. |
+| Connected, but nothing is imported? | Most often the customer has no call recording enabled in Crono, the calls are shorter than the minimum duration, or the reps' Crono emails and names do not match their Zell users. |
+| Are Crono call outcomes mapped to Zell outcomes? | No. Crono has no outcome mapping yet. |
+| Does disconnecting delete imported calls? | No. It only removes the stored keys. |
 
 ## Current Documentation Status
 
