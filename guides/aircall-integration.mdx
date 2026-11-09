@@ -1,0 +1,101 @@
+---
+title: "Connect Aircall"
+description: "Import Aircall call recordings into Zell for automatic call analysis"
+icon: "phone"
+---
+
+## Overview
+
+The Aircall integration brings recorded Aircall calls into Zell for call analysis. Zell receives a call when Aircall has saved a recording for it.
+
+<Warning>
+  Every Aircall number whose calls should reach Zell needs call recording set to automatic. Turn on **Call recording**, **Incoming calls**, and **Outgoing calls**. In each direction's dropdown, choose **Start recording automatically** or **Start automatically with agent control**. The manual option, labeled **Agent manually start and stop the recording**, records a call only when the rep presses record, so most calls on that number never show up in Zell.
+</Warning>
+
+## Before You Start
+
+- **Zell admin access**: only tenant admins can see and manage integrations in Zell.
+- **Aircall admin access**: only an Aircall admin can change call recording on a number.
+- **Automatic recording on every number**: configure each number whose calls should reach Zell. One number left on manual recording keeps most of that number's calls out of Zell.
+
+## Set call recording to automatic
+
+Recording is configured on each Aircall number. Aircall documents the setting in [Activating call recording](https://support.aircall.io/en-gb/articles/10375395507101).
+
+<Note>
+  Confirm that call recording is allowed where your team operates before you turn it on.
+</Note>
+
+<Steps>
+  <Step title="Open the number">
+    Go to **Aircall Dashboard** → **Numbers**, select the number, and open the **Settings** tab.
+  </Step>
+
+  <Step title="Find Call recording">
+    Scroll to **Call recording**.
+  </Step>
+
+  <Step title="Turn recording on for both directions">
+    Turn on the **Call recording** toggle, then turn on **Incoming calls** and **Outgoing calls**.
+  </Step>
+
+  <Step title="Choose an automatic option">
+    In the dropdown for **Incoming calls**, and again for **Outgoing calls**, choose one of these:
+
+    - **Start recording automatically**: recording begins when the call connects.
+    - **Start automatically with agent control**: recording begins when the call connects, and the rep can pause it.
+
+    <Warning>
+      Do not use the manual option. The Aircall UI labels it **Agent manually start and stop the recording**. Aircall's help center calls the same option **Allow the agent to start & pause recording**. With that option, Aircall records a call only when the rep presses record, and the calls they did not record never show up in Zell.
+    </Warning>
+  </Step>
+
+  <Step title="Repeat for every number">
+    Repeat these settings for every Aircall number whose calls should reach Zell.
+  </Step>
+</Steps>
+
+## Connect Aircall in Zell
+
+<Steps>
+  <Step title="Open Tenant Settings">
+    At the bottom of the left sidebar, click **Settings** (the gear icon), then select **Tenant Settings**.
+
+    **Tenant Settings** only appears for admins. Zell opens the Team overview first.
+  </Step>
+
+  <Step title="Open the Aircall integration">
+    In the settings menu on the left, scroll to the **Integrations** section and click **Aircall**.
+  </Step>
+
+  <Step title="Connect the Aircall account">
+    Connect the Aircall account from this page, then complete the authorization Aircall presents.
+  </Step>
+</Steps>
+
+Tag mappings are managed on this same page after the account is connected.
+
+## Connect each user
+
+After an admin invites a new user, a popup lets them connect that user to Aircall. Connect each person whose calls should be analyzed in Zell.
+
+See [Invite Users](/guides/invite-users) for how to send the invitation.
+
+## Map Aircall tags
+
+Aircall tags can be mapped to a Zell call type, a call outcome, or both. When a mapped tag is present on an imported call, Zell uses the mapped value instead of automatic classification.
+
+Follow the [Aircall tag mapping](/guides/custom-call-types-outcomes#aircall) steps in Custom Call Types & Outcomes. That section covers **Refresh Tags**, choosing a call type and outcome for each tag, and saving the mapping.
+
+## Calls missing from Zell
+
+When calls from a number are missing, check that number's recording settings first:
+
+- **Call recording**, **Incoming calls**, and **Outgoing calls** are on.
+- Both dropdowns are **Start recording automatically** or **Start automatically with agent control**.
+- The same settings are applied on every number the team uses.
+- The rep was connected to Aircall from the popup shown when an admin invited them.
+
+<Note>
+  Aircall does not save a recording for an internal call, a recording shorter than 5 seconds, a recording longer than 4 hours, or a call with fewer than two participants. A call Aircall did not record does not show up in Zell.
+</Note>
