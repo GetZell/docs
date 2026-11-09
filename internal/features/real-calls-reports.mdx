@@ -57,4 +57,17 @@ Source references:
 
 The Real Calls Report list uses `GET /real-calls-reports`. It receives the unified global filter state and maps scorecard filters to `scorecardIds`, user filters to `userIds`, group filters to `groupIds`, and the selected date range to `dateFrom` and `dateTo`.
 
+### List state when returning from a call
+
+Opening a call from the list and coming back keeps the list as the manager left it. Everything is stored in the browser's localStorage, so it is per browser and not shared between users or devices.
+
+| State | Where it is stored | Behavior |
+| --- | --- | --- |
+| Filters and search | `real-calls-reports-filters` (`FilterGroup` in `ReportsWorkspace.tsx`, model in `useRealCallsReportsModel.ts`) | Users, groups, scorecards, call types, outcomes, coaching score, and the search text are kept. The search text is saved after the usual search debounce. Cleared when switching tenant. |
+| Date range | `real-calls-reports-date-range` (`useDateRangeWithStorage`) | Presets are recalculated from today; custom ranges are kept as chosen. The list waits for the stored range before loading, so it does not first load the default last 7 days. |
+| Column sort | `tableSorting`, keyed by table id `real-calls-reports` (`src/components/react-table/tableContext.tsx`) | Kept for 1 hour. Sorting is applied in the browser to the rows of the current page only; the endpoint has no sort parameter. |
+| Page and page size | `tablePagination`, keyed by table id | Kept for 1 hour. The page resets to the first page only when the list filters differ from the ones the page belonged to (`tableFixedFiltersSignature`). |
+
+The sort, page, and filter-signature behavior lives in the shared `TableProvider` and `TableWithApiCall`, so every table built on them behaves the same way.
+
 The Real Calls Report Coaching Insights view uses the shared Coaching Insights tab with `source=REAL_CALL`. Its summary cards are average performance, average coaching need, and average engagement. Lower average coaching need means less remaining coaching need.
