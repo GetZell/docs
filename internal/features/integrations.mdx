@@ -227,6 +227,8 @@ Source: `src/appRoutes.ts`, `src/components/layouts/SettingsNav.tsx`, `src/app/(
 | --- | --- |
 | `GET /integrations/crono` | Returns `connected`, `minCallDurationSeconds` (default 60 when disconnected), and `lastSyncedAt`. Admin only. |
 | `PUT /integrations/crono` | Body `apiKey`, `apiSecret`, optional `minCallDurationSeconds` (0 to 600, default 60). Zell first calls Crono's user list with the keys; invalid keys return 400 `Invalid Crono API credentials`. Keys are stored encrypted in `tenant.integrations.crono`. |
+| `GET /integrations/crono/calls` | Lists up to 100 Crono calls from the last 30 days, newest first, with `matchesFilter`, `filterReasons` (`no_recording`, `too_short`, `user_not_on_zell`) and `alreadyImported`. Uses the same rules as the scheduled sync. Returns 400 when Crono is not connected. |
+| `POST /integrations/crono/calls` | Body `callIds` (1 to 50 Crono activity IDs from the last 30 days). Imports each call and returns per-call results with `callId` or `error`: `Call not found`, `Already imported`, `No recording available`, `User not on Zell`, or `Import failed`. Calls that are too short can be imported manually. |
 | `DELETE /integrations/crono` | Sets `tenant.integrations.crono` to null. Returns 400 when Crono is not connected. Already imported calls are kept. |
 
 Source: `src/api/integration/cronoRouter.ts`, `src/schemas/integrationSchemas.ts`, `src/services/integration/crono.ts`
@@ -253,6 +255,7 @@ Source: `src/services/integration/crono.ts`, `src/ports/adapters/cronoAdapter.ts
 | Which Crono key is which? | The public key starts with `cpk_` and goes in `apiKey`; the private key starts with `csk_` and goes in `apiSecret`. |
 | Connected, but nothing is imported? | Most often the customer has no call recording enabled in Crono, the calls are shorter than the minimum duration, or the reps' Crono emails and names do not match their Zell users. |
 | Are Crono call outcomes mapped to Zell outcomes? | No. Crono has no outcome mapping yet. |
+| Can an admin import a call that the sync skipped? | Yes, if it is from the last 30 days, has a recording, and the rep is on Zell. Too-short calls can be imported manually from the Crono settings page. |
 | Does disconnecting delete imported calls? | No. It only removes the stored keys. |
 
 ## Current Documentation Status

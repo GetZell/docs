@@ -58,6 +58,23 @@ The first sync looks back 7 days. Each call is imported only once.
 
 Imported calls appear in Zell with the title `Crono - <contact name>` and are analyzed like any other call.
 
+## Import Calls Manually
+
+Below the connection status, **Import Crono calls** lists Crono calls from the last 30 days, newest first. Each row shows the call date, the rep, the contact, the duration, and a status:
+
+- **Available**: the call meets all rules and will also be imported automatically.
+- **Imported**: the call is already in Zell and cannot be selected again.
+- **Too short**, **No recording**, or **Rep not on Zell**: why the call is excluded from automatic import.
+
+Excluded calls are hidden by default. Turn on **Show excluded calls** to see them.
+
+To import calls now:
+
+1. Select one or more calls. The header checkbox selects or clears all visible calls that are not imported yet.
+2. Click **Import selected**.
+
+You can import calls marked **Too short** manually. Calls without a recording, or from reps who are not on Zell, cannot be imported. If some calls fail, Zell shows the reason and keeps them selected so you can retry.
+
 ## Disconnect Crono
 
 Click **Disconnect** on the Crono page. Zell deletes the stored keys and stops importing new calls. Calls that were already imported stay in Zell.
