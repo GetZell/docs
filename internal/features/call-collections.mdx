@@ -34,6 +34,29 @@ Source reference: `src/components/analysis/useCallAnalysisNavigation.ts`.
   </Card>
 </CardGroup>
 
+## Visibility and Permissions
+
+A collection is either **Private** (only its author sees it) or shared with the **Tenant** (everyone in the tenant sees it). Sharing a collection also lets teammates add to it.
+
+| Action | Author | Admin | Other tenant member |
+|---|---|---|---|
+| See the collection | ✅ | ✅ | Tenant collections only |
+| Add calls or snippets | ✅ | ✅ | Tenant collections only |
+| Remove calls or snippets | ✅ | ✅ | ❌ |
+| Rename, change visibility, delete | ✅ | ✅ | ❌ |
+
+"Admin" means the `ADMIN` or `INTERNAL_TOOL_ADMIN` role. A `USER` can still only add their own calls, so a rep cannot put a teammate's call into a shared collection.
+
+The Add to Collection dialog lists every collection the user can add to: their own, every tenant collection, and all collections for admins. On collections the user does not own, an already-added call shows as added but cannot be removed from the dialog.
+
+<Note>
+  If a rep sees "No collections yet" in the dialog, nobody in their tenant has shared a collection and they have not created one.
+</Note>
+
+Source references:
+- Backend: `canAddToCollection` and `authorOnly` in `src/api/callCollection/callCollectionMiddleware.ts`; the own-call rule in `assertCanCollectFromCall` in `src/services/callCollection/index.ts`.
+- Frontend: `useCollectableCollections` in `src/hooks/api-hooks/callCollections/queries/useCallCollections.ts`, used by `CollectionPickerDialog` and `SnippetBookmark`.
+
 ## Current Documentation Status
 
-This page is a feature placeholder. It should be expanded with create/edit/delete behavior, permission rules, sharing behavior, and collection detail page workflows.
+This page still needs create/edit/delete flows and collection detail page workflows.
