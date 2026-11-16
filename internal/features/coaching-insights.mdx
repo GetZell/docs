@@ -290,6 +290,8 @@ Managers can set one or more focus signals for a rep from the member detail pane
 | Clear focus | Sets `User.coachingFocus` to database null. |
 | Validation | The backend checks that the user and all selected signals belong to the same tenant. |
 | UI state | Focused signals show a focus badge in the member detail panel. |
+| Add and remove | **Add focus** and the badge's remove button save immediately, with no confirmation dialog. The panel stays on the tab the manager is on (Focus areas or Other signals), so several focus areas can be added in a row. |
+| Undo | Each change shows a toast (for example "Discovery added to the focus areas") with an **Undo** button for about 5 seconds. Undo saves the rep's previous focus list again, or clears the focus if the list was empty. Built with `useUndoToast` in `useMemberDetailPanelModel`. |
 | Downstream use | Feedback Inbox prioritizes snippets that match the rep's coaching focus. |
 
 The backend supports both the current multi-signal format and an older single-signal stored format when reading focus data.
