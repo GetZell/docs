@@ -48,6 +48,24 @@ Source references:
 - `src/components/analysis/useFloatingVideoResize.ts`
 - `src/components/analysis/useWaveformPlayer.ts`
 
+## Feedback Anchoring
+
+On the Conversation tab, each feedback card is tied to the transcript turn it refers to. The link comes from the comment's `transcriptIndex` and `transcriptEndIndex`; no extra backend data is needed.
+
+- **Card header.** Each anchored card shows a clickable timestamp (`▶ 01:17`) and the speaker of the first turn in its passage. The timestamp comes from that turn's `secondsFromStart`. The speaker uses the call's speaker names, then the `Speaker N` / `Colleague N` labels, then "Rep" or "Prospect".
+- **Passage highlight.** Hovering or selecting a card highlights every transcript turn from `transcriptIndex` to `transcriptEndIndex`.
+- **Two-way selection.** Clicking a card selects it and scrolls the transcript to its passage. Clicking the timestamp also seeks the recording to one second before the passage. Clicking a transcript line selects the card that starts on that line, otherwise the narrowest card whose passage covers it; a line with no feedback clears the selection.
+- **Layout.** In the side column, unselected cards show three lines of feedback and a one-line reply box (the dictation hint appears only once the box is focused). The selected card expands to show the full text and votes, and is placed level with its passage while the other cards move above and below it. If there is no room above, cards fall back to stacking downwards.
+- **Whole-call feedback.** A comment with no `transcriptIndex` is treated as feedback on the whole call. It is shown as a grey "Whole call" card pinned above the other cards, does not tint a transcript line, and adds no marker to the waveform.
+
+Source references:
+
+- `src/components/analysis/inlineCoaching/feedbackAnchors.ts`
+- `src/components/analysis/inlineCoaching/FeedbackAnchoringContext.tsx`
+- `src/components/analysis/inlineCoaching/CardAnchorHeader.tsx`
+- `src/components/analysis/transcript/CoachingRail.tsx`
+- `src/components/analysis/transcript/cardLayout.ts`
+
 ## Key Concepts
 
 <CardGroup cols={2}>
