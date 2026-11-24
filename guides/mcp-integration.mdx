@@ -20,7 +20,7 @@ Authentication uses OAuth, so you do not need to create or copy an API key.
   </Card>
 
   <Card title="ChatGPT" icon="sparkles" href="#chatgpt">
-    Add Zell as a custom app in ChatGPT Developer Mode.
+    An admin adds Zell once, then each member installs it.
   </Card>
 
   <Card title="Claude Code" icon="terminal" href="#claude-code">
@@ -87,40 +87,46 @@ For more information about plan permissions, see [Anthropic's custom connector g
 ## ChatGPT
 
 <Info>
-  ChatGPT Developer Mode is available on the web for Plus, Pro, Business, Enterprise, and Education accounts. Managed workspaces may restrict who can create or publish custom apps.
+  Custom MCP apps are available on ChatGPT web for Business, Enterprise, and Edu workspaces. Pro accounts can connect custom MCP servers with read-only access. You do not need to turn on Developer Mode.
 </Info>
 
-<Steps>
-  <Step title="Enable Developer Mode">
-    Open ChatGPT on the web, go to **Settings** → **Security and login**, and turn on **Developer mode**.
-  </Step>
+Setting up Zell in ChatGPT takes two parts. A workspace admin or owner adds Zell once for the whole workspace. Then **every member installs Zell in their own account** and signs in with their own Zell login.
 
-  <Step title="Create the Zell app">
-    Open [ChatGPT Plugins](https://chatgpt.com/plugins), click the **plus** button, and create a Developer Mode app with these details:
+<Steps>
+  <Step title="Admin: add Zell as a custom MCP server">
+    A workspace admin or owner opens [ChatGPT Plugins](https://chatgpt.com/plugins), clicks the **plus** button, and selects **Add custom MCP server**. Enter these details:
 
     | Field | Value |
     | --- | --- |
     | Name | `Zell` |
-    | MCP server URL | `https://api.getzell.com/mcp` |
+    | Connection | `https://api.getzell.com/mcp` |
     | Authentication | OAuth |
+
+    Check **I understand and want to continue**, then select **Create as a plugin**. Sign in to Zell when prompted and review the tools ChatGPT found.
   </Step>
 
-  <Step title="Authorize Zell">
-    Create the app and complete the OAuth prompt. Sign in to Zell and approve the connection. The finished app appears under **Drafts** in your ChatGPT app settings.
+  <Step title="Admin: publish Zell for the workspace">
+    Publish the Zell app so members can see it. In the [Admin Console](https://admin.openai.com), select your workspace, open **Plugins**, and publish the Zell draft. On Enterprise and Edu, you can also choose which actions and groups have access before you publish.
+
+    If you cannot create or publish apps, ask your ChatGPT workspace owner to check the **Create plugins with MCPs** permission in Workspace settings.
   </Step>
 
-  <Step title="Test Zell in a chat">
-    Start a new chat, open the **plus** menu, choose **Developer mode**, and select **Zell** for the conversation. Ask ChatGPT to use Zell in your prompt and review tool calls before approving them.
+  <Step title="Every member: install Zell in your own account">
+    Adding Zell to the workspace does not connect it for each person. Every member, including the admin who added it, must do this once:
+
+    1. In ChatGPT, go to **Settings** → **Plugins** and select **Zell**.
+    2. Select **Install plugin**, then **Connect**.
+    3. Sign in to Zell in the window that opens and approve the connection.
+  </Step>
+
+  <Step title="Use Zell in a chat">
+    Start a new chat, type **@**, and select **Zell**. You can also open the **plus** menu and choose Zell. Review tool calls before you approve them.
 
     <Check>Zell is now ready to use in ChatGPT.</Check>
   </Step>
-
-  <Step title="Publish for your workspace (optional)">
-    In a managed workspace, an admin or owner can review the draft and publish Zell for other members. Each member connects their own Zell account before first use.
-  </Step>
 </Steps>
 
-For current availability and security guidance, see [OpenAI's ChatGPT Developer Mode guide](https://developers.openai.com/api/docs/guides/developer-mode).
+For current availability and permissions, see [OpenAI's guide to connecting custom MCP servers](https://help.openai.com/en/articles/12584461-developer-mode-apps-and-full-connectors-in-chatgpt-beta).
 
 ## Claude Code
 
@@ -187,12 +193,16 @@ Complete the authorization in the browser window that opens. When you return to 
 ## Troubleshooting
 
 <AccordionGroup>
-  <Accordion title="ChatGPT does not show Developer Mode or Create">
-    Confirm that you are using ChatGPT web with a Plus, Pro, Business, Enterprise, or Education account. In a managed workspace, ask your workspace admin whether Developer Mode or custom app creation is restricted.
+  <Accordion title="Zell does not appear in ChatGPT">
+    Check that a workspace admin has added and published Zell. Then go to **Settings** → **Plugins**, select **Zell**, and select **Install plugin**. If Zell shows **Disabled by admin**, ask your workspace admin to turn it on.
+  </Accordion>
+
+  <Accordion title="ChatGPT does not show Add custom MCP server">
+    Confirm that you are using ChatGPT on the web with a Business, Enterprise, or Edu account. Only admins and owners, or members with the **Create plugins with MCPs** permission, can add custom MCP servers.
   </Accordion>
 
   <Accordion title="ChatGPT cannot scan the Zell tools">
-    Confirm that the MCP server URL is exactly `https://api.getzell.com/mcp`, refresh the Zell app from its settings, and complete the OAuth prompt again. If authorization expired, reconnect or recreate the app.
+    Confirm that the MCP server URL is exactly `https://api.getzell.com/mcp`, refresh the Zell app from the workspace app settings, and complete the OAuth prompt again. If authorization expired, reconnect from **Settings** → **Plugins** or recreate the app.
   </Accordion>
 
   <Accordion title="Zell does not appear in Claude Desktop">
@@ -208,6 +218,6 @@ Complete the authorization in the browser window that opens. When you return to 
   </Accordion>
 
   <Accordion title="Authorization expired or was revoked">
-    Start the OAuth flow again from the Claude Desktop connector list, `/mcp` in Claude Code, or `codex mcp login zell` in Codex.
+    Start the OAuth flow again from **Settings** → **Plugins** in ChatGPT, the Claude Desktop connector list, `/mcp` in Claude Code, or `codex mcp login zell` in Codex.
   </Accordion>
 </AccordionGroup>
