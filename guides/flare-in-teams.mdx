@@ -1,0 +1,212 @@
+---
+title: "Flare in Microsoft Teams"
+description: "Ask Flare, your Zell coach, right from Microsoft Teams"
+icon: "microsoft"
+---
+
+Flare is your Zell coach. With the Flare app for Microsoft Teams you can ask it things without opening Zell: how your calls went, who on your team needs help, what the playbook says.
+
+<Note>
+  Want to import Teams meeting recordings into Zell instead? That's a different integration: see [Connect Microsoft Teams](/guides/teams-integration).
+</Note>
+
+Setup happens once per company:
+
+1. Your IT team adds the Flare app to Teams.
+2. A Zell admin connects your company.
+
+After that, everyone with a Zell account can use Flare in Teams.
+
+## Add the app to Teams
+
+Zell sends you a `.zip` file with the Flare app. Don't unzip it.
+
+**For the whole company:** in the [Teams admin center](https://admin.teams.microsoft.com), go to **Teams apps** → **Manage apps** → **Upload new app** and pick the file.
+
+**Just for you, to try it first** (only works if your company allows custom apps):
+
+<Steps>
+  <Step title="Open Manage your apps">
+    Click **Store** in the left bar, then the gear at the top right. In older versions of Teams, Store is called **Apps**.
+
+    <img
+      src="/images/flare-teams/store-manage-apps.png"
+      alt="Teams Store with the Store icon in the left bar and the Manage your apps gear highlighted"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)' }}
+    />
+  </Step>
+
+  <Step title="Upload the app">
+    Click **Upload an app**.
+
+    <img
+      src="/images/flare-teams/upload-an-app.png"
+      alt="Manage your apps page with the Upload an app button highlighted"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '575px' }}
+    />
+  </Step>
+
+  <Step title="Pick the file">
+    Click **Upload a custom app** and pick the `.zip` file.
+
+    <img
+      src="/images/flare-teams/upload-custom-app.png"
+      alt="Upload an app dialog with Upload a custom app highlighted"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '600px' }}
+    />
+  </Step>
+
+  <Step title="Add Flare">
+    Click **Add**. Flare now shows up in your chat list.
+
+    <img
+      src="/images/flare-teams/add-flare.png"
+      alt="Flare app details with the Add button"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)' }}
+    />
+  </Step>
+</Steps>
+
+## Connect Zell
+
+A Zell admin does this once for the whole company.
+
+<Steps>
+  <Step title="Say hi to Flare">
+    Open Flare in Teams and send it any message. Flare answers with a **Connect Zell** button. Click it.
+
+    <img
+      src="/images/flare-teams/connect-zell.png"
+      alt="Flare's welcome message in Teams with the Connect Zell button highlighted"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '525px' }}
+    />
+  </Step>
+
+  <Step title="You're connected">
+    Flare confirms the connection. Everyone at your company with a Zell account can now use Flare in Teams.
+
+    <img
+      src="/images/flare-teams/connected.png"
+      alt="Flare message saying the organization is connected"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '525px' }}
+    />
+  </Step>
+</Steps>
+
+<Warning>
+  Flare finds people by email, so it has to be the same in Teams and in Zell. If it isn't, Flare shows a **Link my Zell account** button. Click it and sign in to Zell once.
+</Warning>
+
+To check or remove the connection, open **Settings** → **Tenant Settings** → **Integrations** → **Microsoft Teams** in Zell. You can disconnect there.
+
+<img
+  src="/images/flare-teams/zell-settings-connected.png"
+  alt="Microsoft Teams settings in Zell showing the connected organization and a Disconnect button"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)' }}
+/>
+
+## Ask Flare
+
+Open Flare from your chat list and ask the way you'd ask a coworker. For example:
+
+- "How did my calls go last week?"
+- "Help me prep my next discovery call."
+- "Which reps need coaching most?"
+- "What does our playbook say about price objections?"
+
+<img
+  src="/images/flare-teams/answer.png"
+  alt="Flare answering a question in a Teams chat, with thumbs up and down and suggested follow-up questions"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)' }}
+/>
+
+- Click a suggestion under the answer to keep going.
+- Thumbs up or down tells us if the answer helped.
+- Ask follow-ups in the same chat. Flare remembers what you said.
+- Click **Stop** to cut an answer short.
+
+## Channels and group chats
+
+First add Flare to the channel: find Flare in **Store**, click **Add**, then pick the channel and click **Go**.
+
+<img
+  src="/images/flare-teams/add-to-channel.png"
+  alt="Added successfully dialog with a channel selected and the Go button highlighted"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '420px' }}
+/>
+
+Then there are two ways to ask.
+
+### @Flare: everyone sees the answer
+
+Type **@Flare**, pick Flare, then your question. Flare replies in the thread.
+
+Everyone in the channel can read the answer, so Flare only talks about playbooks and how Zell works there. For your own calls and numbers, use your private chat with Flare.
+
+<img
+  src="/images/flare-teams/mention-flare.png"
+  alt="Mention suggestions in a Teams channel with Flare highlighted"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '300px' }}
+/>
+
+<img
+  src="/images/flare-teams/channel-answer.png"
+  alt="Flare answering a question in a channel thread"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '352px' }}
+/>
+
+### /flare: only you see the answer
+
+Type **/flare** and pick the one that says **Ask Flare privately**. Only you see the answer. Want others to see it? Click **Share to channel**.
+
+<img
+  src="/images/flare-teams/slash-flare.png"
+  alt="Slash command suggestions with Ask Flare privately highlighted"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '380px' }}
+/>
+
+<img
+  src="/images/flare-teams/private-answer.png"
+  alt="A private Flare answer marked Only you can see this message, with a Share to channel button"
+  style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '375px' }}
+/>
+
+## If something doesn't work
+
+<AccordionGroup>
+  <Accordion title="Flare says it couldn't match your Microsoft account">
+    Your company isn't connected yet (see [Connect Zell](#connect-zell)), or your Teams email is different from your Zell email. Click **Link my Zell account** if you see it.
+
+    <img
+      src="/images/flare-teams/account-not-matched.png"
+      alt="Flare replying that it couldn't match the Microsoft account to a Zell user"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)' }}
+    />
+  </Accordion>
+
+  <Accordion title="You can't find Flare">
+    Click **•••** in the left bar. If Flare isn't there, ask your IT team to add it (see [Add the app to Teams](#add-the-app-to-teams)).
+
+    <img
+      src="/images/flare-teams/find-flare.png"
+      alt="The ••• menu in the Teams left bar with Flare highlighted"
+      style={{ borderRadius: '0.75rem', border: '1px solid rgba(128, 128, 128, 0.25)', width: '100%', maxWidth: '364px' }}
+    />
+  </Accordion>
+
+  <Accordion title="Flare says only an admin can connect">
+    Connecting needs someone who is an admin in Zell.
+  </Accordion>
+
+  <Accordion title="Flare can't open your file">
+    Paste the text into your message instead.
+  </Accordion>
+
+  <Accordion title="You're not sure what to ask">
+    Type **help** in your chat with Flare.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Flare uses AI and can get things wrong. Check anything important before you act on it.
+</Note>
