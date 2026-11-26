@@ -1,6 +1,6 @@
 ---
 title: "Integrations"
-description: "Connect Zell with Gong, Slack, Aircall, HubSpot, tl;dv, and calling providers"
+description: "Connect Zell with Gong, Slack, Aircall, CloudTalk, HubSpot, tl;dv, and calling providers"
 icon: "plug"
 ---
 
@@ -23,6 +23,10 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
     Provider settings and call workflows for Aircall-connected tenants.
   </Card>
 
+  <Card title="CloudTalk" icon="phone">
+    Imports recorded CloudTalk calls and tags each call with the client from its campaign tag.
+  </Card>
+
   <Card title="HubSpot" icon="contact">
     CRM metadata can appear in call titles, contact names, and company context.
   </Card>
@@ -35,6 +39,73 @@ Integrations connect Zell to external tools for calls, scorecards, notifications
     Imports Teams meeting recordings through Microsoft Graph recording subscriptions.
   </Card>
 </CardGroup>
+
+## CloudTalk Integration
+
+The CloudTalk settings page lets an admin connect a tenant with a CloudTalk API key, sync calls automatically, and manually import selected recent calls.
+
+**Where is it in the app?**
+
+The route is `/settings/tenant/:tenantId/cloudtalk`, built by `appRoutes.toTenantSettingsCloudtalkPage`. The Settings sidebar shows it under `Integrations` with the label `CloudTalk`, after Amplemarket. Only admins see the `Integrations` section.
+
+Source: `src/appRoutes.ts`, `src/components/layouts/SettingsNav.tsx`, `src/app/(auth)/settings/tenant/[tenantId]/cloudtalk/`
+
+**How does an admin connect?**
+
+The admin enters a CloudTalk API key ID, key secret, and a minimum call duration (default 60 seconds, range 0–600). `PUT /integrations/cloudtalk` validates the key by listing CloudTalk agents. Rejected keys return `400` with `CloudTalk rejected these API credentials`. The secret is encrypted before it is stored in the tenant `integrations.cloudtalk` JSON.
+
+### CloudTalk API Calls
+
+| Frontend action | Hook | Method and endpoint | Notes |
+| --- | --- | --- | --- |
+| Load status | `useGetCloudtalkIntegration` | `GET /integrations/cloudtalk` | Returns `connected`, `minCallDurationSeconds`, `lastSyncedAt`. |
+| Connect | `useConnectCloudtalkIntegration` | `PUT /integrations/cloudtalk` | Body: `keyId`, `keySecret`, optional `minCallDurationSeconds`. |
+| Disconnect | `useDisconnectCloudtalkIntegration` | `DELETE /integrations/cloudtalk` | Removes the stored key. |
+| Sync now | `useSyncCloudtalkCalls` | `POST /integrations/cloudtalk/sync` | Runs the same sync as the scheduled job; returns `{ imported, skipped }`. |
+| Load recent calls | `useGetCloudtalkCalls` | `GET /integrations/cloudtalk/calls` | Up to 100 recent recorded calls at or above the minimum duration. |
+| Import selected calls | `useImportCloudtalkCalls` | `POST /integrations/cloudtalk/calls` | Body: `{ callIds: string[] }` (numeric IDs, max 50). Returns a result per call. |
+
+All endpoints require an admin. Source: `src/api/integration/cloudtalkRouter.ts`, `src/schemas/integrationSchemas.ts`
+
+### Client From Campaign Tags
+
+CloudTalk agents tag calls by campaign, for example `1531.03 / AWS / ALLISON / …`. Zell reads the second part of the first tag (`AWS`) as the client. The client is stored in `metadata.client`, all tags in `metadata.cloudtalkTags`, and the call title becomes `CloudTalk - <client> - <external number>`. Calls without a tag have no client, and the title falls back to `CloudTalk - <external number>`.
+
+Source: `parseCloudtalkClient` in `src/services/integration/cloudtalk.ts`
+
+### Backend Import And Sync
+
+| Concern | Behavior |
+| --- | --- |
+| Eligible calls | Only calls that are recorded and last at least the minimum duration. Most short calls in CloudTalk are voicemails or missed calls. |
+| User matching | CloudTalk calls carry only the agent ID. Zell lists CloudTalk agents and matches their email to a Zell user in the tenant, ignoring case. Calls from agents without a Zell user are skipped. |
+| First sync | Imports the newest 50 eligible calls. |
+| Later syncs | Fetch calls from `lastSyncedAt` minus 120 minutes, so calls that finished late are not missed. |
+| Scheduled job | `cloudtalk-sync-calls` runs every 15 minutes for every connected tenant. A failure for one tenant is logged and does not stop the others. |
+| Duplicate detection | A call is skipped when a real call in the tenant already has the same `metadata.cloudtalkCallId`. |
+| Recording storage | The WAV recording is saved as `recordings/real-calls/cloudtalk_<callId>.wav`. |
+| Call metadata | `audioSource = "cloudtalk"`, `cloudtalkCallId`, `cloudtalkTags`, `client`, `callDirection`, and the title. |
+| Queueing | Each import enqueues a `call-processing` `process` job. |
+| Rate limits | CloudTalk allows about 60 requests per minute. Zell retries on `429` and `5xx`, and waits about a second between recording downloads. |
+
+Source: `src/services/integration/cloudtalk.ts`, `src/ports/adapters/cloudtalkAdapter.ts`, `src/jobs/workers.ts`, `src/lib/storage/paths.ts`
+
+### Manual Import Table
+
+The connected page shows recent calls with agent, client, contact and number, duration, and status. Calls from agents who are not Zell users are hidden by default; `Show filtered` displays them with the badge `Agent not in Zell`, and they cannot be selected. Imported calls are shown as imported and cannot be selected again. The list reads the last 5,000 CloudTalk calls, which is about four days for a busy account.
+
+Each selected call returns its own result. Possible errors are `Call not found`, `Already imported`, `User not on platform`, and `No recording available`. Calls that fail stay selected so the admin can retry them.
+
+Source: `src/app/(auth)/settings/tenant/[tenantId]/cloudtalk/CloudtalkCallsList.tsx`, `useCloudtalkCallsViewModel.ts`, `src/components/integrations/useCallImportSelection.ts`
+
+### CloudTalk Edge Cases for Employee Q&A
+
+| Question | Accurate answer |
+| --- | --- |
+| Why was a call not imported? | It is unrecorded, shorter than the minimum duration, from an agent whose email is not a Zell user, or already imported. |
+| Why is the client empty? | The call has no tag, or the first tag has no second part after `/`. |
+| Can a call be imported again after deleting it in Zell? | Yes. Duplicate detection only checks existing real calls. |
+| Does Zell use CloudTalk webhooks? | No. Zell polls every 15 minutes. |
 
 ## Microsoft Teams Integration
 
@@ -209,4 +280,4 @@ Source: `src/schemas/integrationSchemas.ts`, `src/ports/adapters/tldvAdapter.ts`
 
 ## Current Documentation Status
 
-This page now covers the tl;dv settings integration, defensive request/provider validation, backend import behavior, and sync failure modes. It should still be expanded with screenshots and customer-specific troubleshooting examples as they emerge.
+This page now covers the CloudTalk and tl;dv settings integrations, defensive request/provider validation, backend import behavior, and sync failure modes. It should still be expanded with screenshots and customer-specific troubleshooting examples as they emerge.
